@@ -5,6 +5,8 @@
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 module Clingo.Raw.Types
 (
+    combineFlags,
+
     ClingoError,
     pattern ErrorSuccess,
     pattern ErrorRuntime,
@@ -94,11 +96,13 @@ module Clingo.Raw.Types
 )
 where
 
+import Data.Flags
 import Foreign.C
 
-import Data.Coerce
-
 #include <clingo.h>
+
+combineFlags :: Flags a => [a] -> a
+combineFlags = foldl (.+.) noFlags
 
 newtype ClingoError = MkClingoError CInt
     deriving (Show, Eq)
@@ -144,7 +148,7 @@ pattern BraveConsequences = MkModelType #{const clingo_model_type_brave_conseque
 pattern CautiousConsequences = MkModelType #{const clingo_model_type_cautious_consequences}
 
 newtype ShowFlag = MkShowFlag CInt
-    deriving (Show, Eq)
+    deriving (Show, Eq, Flags)
 
 pattern ShowCSP = MkShowFlag #{const clingo_show_type_csp}
 pattern ShowShown = MkShowFlag #{const clingo_show_type_shown}
@@ -155,6 +159,7 @@ pattern ShowAll = MkShowFlag #{const clingo_show_type_all}
 pattern ShowComplement = MkShowFlag #{const clingo_show_type_complement}
 
 newtype SolveResult = MkSolveResult CInt
+    deriving (Show, Eq, Flags)
 
 pattern ResultSatisfiable = MkSolveResult #{const clingo_solve_result_satisfiable}
 pattern ResultUnsatisfiable = MkSolveResult #{const clingo_solve_result_unsatisfiable}
@@ -198,7 +203,7 @@ pattern ExternalFalse = MkExternalType #{const clingo_external_type_false}
 pattern ExternalRelease = MkExternalType #{const clingo_external_type_release}
 
 newtype ConfigurationType = MkConfigType CInt
-    deriving (Show, Eq)
+    deriving (Show, Eq, Flags)
 
 pattern ConfigValue = MkConfigType #{const clingo_configuration_type_value}
 pattern ConfigArray = MkConfigType #{const clingo_configuration_type_array}
