@@ -1,0 +1,4 @@
+module Clingo.Clingo
+(
+)
+where
