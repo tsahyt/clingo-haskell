@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Clingo.Clingo
                        Clingo.Raw.Types
+                       Clingo.Raw.Enums
   build-depends:       base >= 4.7 && < 5,
                        data-flags >= 0.0.3 && <= 0.0.4
   extra-libraries:     clingo
