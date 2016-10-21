@@ -137,10 +137,14 @@ data PropagateInit
 data Assignment
 data PropagateControl
 
-type CallbackPropagatorInit a = Ptr PropagateInit -> Ptr a -> IO (#type bool)
-type CallbackPropagatorPropagate a = Ptr PropagateControl -> Ptr Literal -> CSize -> Ptr a -> IO (#type bool)
-type CallbackPropagatorUndo a = Ptr PropagateControl -> Ptr Literal -> CSize -> Ptr a -> IO (#type bool)
-type CallbackPropagatorCheck a = Ptr PropagateControl -> Ptr a -> IO (#type bool)
+type CallbackPropagatorInit a = 
+    Ptr PropagateInit -> Ptr a -> IO (CBool)
+type CallbackPropagatorPropagate a = 
+    Ptr PropagateControl -> Ptr Literal -> CSize -> Ptr a -> IO CBool
+type CallbackPropagatorUndo a = 
+    Ptr PropagateControl -> Ptr Literal -> CSize -> Ptr a -> IO CBool
+type CallbackPropagatorCheck a = 
+    Ptr PropagateControl -> Ptr a -> IO CBool
 
 data Propagator a = Propagator
     { propagatorInit      :: FunPtr (CallbackPropagatorInit a)
@@ -186,23 +190,38 @@ data Statistics
 data ProgramBuilder
 
 data GroundProgramObserver a = GroundProgramObserver
-    { gpoInitProgram   :: FunPtr ((#type bool) -> Ptr a -> IO (#type bool))
-    , gpoBeginStep     :: FunPtr (Ptr a -> IO (#type bool))
-    , gpoEndStep       :: FunPtr (Ptr a -> IO (#type bool))
-    , gpoRule          :: FunPtr ((#type bool) -> Ptr Atom -> CSize -> Ptr Literal -> CSize -> Ptr a -> IO (#type bool))
-    , gpoWeightRule    :: FunPtr ((#type bool) -> Ptr Atom -> CSize -> Weight -> Ptr WeightedLiteral -> CSize -> Ptr a -> IO (#type bool))
-    , gpoMinimize      :: FunPtr (Weight -> Ptr WeightedLiteral -> CSize -> Ptr a -> IO (#type bool))
-    , gpoProject       :: FunPtr (Ptr Atom -> CSize -> Ptr a -> IO (#type bool))
-    , gpoExternal      :: FunPtr (Atom -> ExternalType -> Ptr a -> IO (#type bool))
-    , gpoAssume        :: FunPtr (Ptr Literal -> CSize -> Ptr a -> IO (#type bool))
-    , gpoHeuristic     :: FunPtr (Atom -> HeuristicType -> CInt -> (#type unsigned) -> Ptr Literal -> CSize -> Ptr a -> IO (#type bool))
-    , gpoAcycEdge      :: FunPtr (CInt -> CInt -> Ptr Literal -> CSize -> Ptr a -> IO (#type bool))
-    , gpoTheoryTermNum :: FunPtr (Identifier -> CInt -> Ptr a -> IO (#type bool))
-    , gpoTheoryTermStr :: FunPtr (Identifier -> Ptr CChar -> IO (#type bool))
-    , gpoTheoryTermCmp :: FunPtr (Identifier -> CInt -> Ptr Identifier -> CSize -> Ptr a -> IO (#type bool))
-    , gpoTheoryElement :: FunPtr (Identifier -> Ptr Identifier -> CSize -> Ptr Literal -> CSize -> Ptr a -> IO (#type bool))
-    , gpoTheoryAtom    :: FunPtr (Identifier -> Identifier -> Ptr Identifier -> CSize -> IO (#type bool))
-    , gpoTheoryAtomGrd :: FunPtr (Identifier -> Identifier -> Ptr Identifier -> CSize -> Identifier -> Identifier -> Ptr a -> IO (#type bool))
+    { gpoInitProgram   :: FunPtr (CBool -> Ptr a -> IO CBool)
+    , gpoBeginStep     :: FunPtr (Ptr a -> IO CBool)
+    , gpoEndStep       :: FunPtr (Ptr a -> IO CBool)
+    , gpoRule          :: FunPtr (CBool -> Ptr Atom -> CSize 
+                                               -> Ptr Literal -> CSize 
+                                               -> Ptr a -> IO CBool)
+    , gpoWeightRule    :: FunPtr (CBool -> Ptr Atom -> CSize -> Weight 
+                                               -> Ptr WeightedLiteral -> CSize 
+                                               -> Ptr a -> IO CBool)
+    , gpoMinimize      :: FunPtr (Weight -> Ptr WeightedLiteral -> CSize 
+                                         -> Ptr a -> IO CBool)
+    , gpoProject       :: FunPtr (Ptr Atom -> CSize -> Ptr a -> IO CBool)
+    , gpoExternal      :: FunPtr (Atom -> ExternalType -> Ptr a -> IO CBool)
+    , gpoAssume        :: FunPtr (Ptr Literal -> CSize -> Ptr a -> IO CBool)
+    , gpoHeuristic     :: FunPtr (Atom -> HeuristicType -> CInt 
+                                       -> CUInt -> Ptr Literal -> CSize 
+                                       -> Ptr a -> IO CBool)
+    , gpoAcycEdge      :: FunPtr (CInt -> CInt -> Ptr Literal -> CSize 
+                                       -> Ptr a -> IO CBool)
+    , gpoTheoryTermNum :: FunPtr (Identifier -> CInt -> Ptr a -> IO CBool)
+    , gpoTheoryTermStr :: FunPtr (Identifier -> Ptr CChar -> IO CBool)
+    , gpoTheoryTermCmp :: FunPtr (Identifier -> CInt -> Ptr Identifier -> CSize 
+                                             -> Ptr a -> IO CBool)
+    , gpoTheoryElement :: FunPtr (Identifier -> Ptr Identifier -> CSize 
+                                             -> Ptr Literal -> CSize -> Ptr a 
+                                             -> IO CBool)
+    , gpoTheoryAtom    :: FunPtr (Identifier -> Identifier -> Ptr Identifier 
+                                             -> CSize -> IO CBool)
+    , gpoTheoryAtomGrd :: FunPtr (Identifier -> Identifier -> Ptr Identifier 
+                                             -> CSize -> Identifier 
+                                             -> Identifier -> Ptr a 
+                                             -> IO CBool)
     }
 
 instance Storable (GroundProgramObserver a) where
@@ -228,23 +247,31 @@ instance Storable (GroundProgramObserver a) where
         <*> (#{peek clingo_ground_program_observer_t, theory_atom_with_guard} p)
 
     poke p g = do
-        (#poke clingo_ground_program_observer_t, init_program) p (gpoInitProgram g)
+        (#poke clingo_ground_program_observer_t, init_program) p 
+            (gpoInitProgram g)
         (#poke clingo_ground_program_observer_t, begin_step) p (gpoBeginStep g)
         (#poke clingo_ground_program_observer_t, end_step) p (gpoEndStep g)
         (#poke clingo_ground_program_observer_t, rule) p (gpoRule g)
-        (#poke clingo_ground_program_observer_t, weight_rule) p (gpoWeightRule g)
+        (#poke clingo_ground_program_observer_t, weight_rule) p 
+            (gpoWeightRule g)
         (#poke clingo_ground_program_observer_t, minimize) p (gpoMinimize g)
         (#poke clingo_ground_program_observer_t, project) p (gpoProject g)
         (#poke clingo_ground_program_observer_t, external) p (gpoExternal g)
         (#poke clingo_ground_program_observer_t, assume) p (gpoAssume g)
         (#poke clingo_ground_program_observer_t, heuristic) p (gpoHeuristic g)
         (#poke clingo_ground_program_observer_t, acyc_edge) p (gpoAcycEdge g)
-        (#poke clingo_ground_program_observer_t, theory_term_number) p (gpoTheoryTermNum g)
-        (#poke clingo_ground_program_observer_t, theory_term_string) p (gpoTheoryTermStr g)
-        (#poke clingo_ground_program_observer_t, theory_term_compound) p (gpoTheoryTermCmp g)
-        (#poke clingo_ground_program_observer_t, theory_element) p (gpoTheoryElement g)
-        (#poke clingo_ground_program_observer_t, theory_atom) p (gpoTheoryAtom g)
-        (#poke clingo_ground_program_observer_t, theory_atom_with_guard) p (gpoTheoryAtomGrd g)
+        (#poke clingo_ground_program_observer_t, theory_term_number) p 
+            (gpoTheoryTermNum g)
+        (#poke clingo_ground_program_observer_t, theory_term_string) p 
+            (gpoTheoryTermStr g)
+        (#poke clingo_ground_program_observer_t, theory_term_compound) p 
+            (gpoTheoryTermCmp g)
+        (#poke clingo_ground_program_observer_t, theory_element) p 
+            (gpoTheoryElement g)
+        (#poke clingo_ground_program_observer_t, theory_atom) p 
+            (gpoTheoryAtom g)
+        (#poke clingo_ground_program_observer_t, theory_atom_with_guard) p 
+            (gpoTheoryAtomGrd g)
 
 data Control
 
@@ -267,7 +294,9 @@ instance Storable Part where
          (#poke clingo_part_t, params) p (partParams part)
          (#poke clingo_part_t, size) p (partSize part)
 
-type CallbackSymbol a = Ptr Symbol -> CSize -> Ptr a -> IO (#type bool)
-type CallbackGround a = Location -> Ptr CChar -> Ptr Symbol -> CSize -> Ptr a -> CallbackSymbol a -> Ptr a -> IO (#type bool)
-type CallbackModel a = Ptr Model -> Ptr a -> Ptr (#type bool) -> IO (#type bool)
-type CallbackFinish a = SolveResult -> Ptr a -> (#type bool)
+type CallbackSymbol a = Ptr Symbol -> CSize -> Ptr a -> IO CBool
+type CallbackGround a = 
+    Location -> Ptr CChar -> Ptr Symbol -> CSize -> Ptr a 
+             -> CallbackSymbol a -> Ptr a -> IO CBool
+type CallbackModel a = Ptr Model -> Ptr a -> Ptr CBool -> IO CBool
+type CallbackFinish a = SolveResult -> Ptr a -> CBool
