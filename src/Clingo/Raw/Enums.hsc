@@ -129,88 +129,78 @@ pattern TruthFree = #{const clingo_truth_value_free}
 pattern TruthFalse = #{const clingo_truth_value_false}
 pattern TruthTrue = #{const clingo_truth_value_true}
 
-newtype SymbolType = MkSymbolType (#type clingo_symbol_type_t)
-    deriving (Show, Eq)
+type SymbolType = (#type clingo_symbol_type_t)
 
-pattern SymInfimum = MkSymbolType #{const clingo_symbol_type_infimum}
-pattern SymNumber = MkSymbolType #{const clingo_symbol_type_number}
-pattern SymString = MkSymbolType #{const clingo_symbol_type_string}
-pattern SymFunction = MkSymbolType #{const clingo_symbol_type_function}
-pattern SymSupremum = MkSymbolType #{const clingo_symbol_type_supremum}
+pattern SymInfimum = #{const clingo_symbol_type_infimum}
+pattern SymNumber = #{const clingo_symbol_type_number}
+pattern SymString = #{const clingo_symbol_type_string}
+pattern SymFunction = #{const clingo_symbol_type_function}
+pattern SymSupremum = #{const clingo_symbol_type_supremum}
 
-newtype ModelType = MkModelType (#type clingo_model_type_t)
-    deriving (Show, Eq)
+type ModelType = (#type clingo_model_type_t)
 
-pattern StableModel = MkModelType #{const clingo_model_type_stable_model}
-pattern BraveConsequences = MkModelType #{const clingo_model_type_brave_consequences}
-pattern CautiousConsequences = MkModelType #{const clingo_model_type_cautious_consequences}
+pattern StableModel = #{const clingo_model_type_stable_model}
+pattern BraveConsequences = #{const clingo_model_type_brave_consequences}
+pattern CautiousConsequences = #{const clingo_model_type_cautious_consequences}
 
-newtype ShowFlag = MkShowFlag (#type clingo_show_type_bitset_t)
-    deriving (Show, Eq, Flags)
+type ShowFlag = (#type clingo_show_type_bitset_t)
 
-pattern ShowCSP = MkShowFlag #{const clingo_show_type_csp}
-pattern ShowShown = MkShowFlag #{const clingo_show_type_shown}
-pattern ShowAtoms = MkShowFlag #{const clingo_show_type_atoms}
-pattern ShowTerms = MkShowFlag #{const clingo_show_type_terms}
-pattern ShowExtra = MkShowFlag #{const clingo_show_type_extra}
-pattern ShowAll = MkShowFlag #{const clingo_show_type_all}
-pattern ShowComplement = MkShowFlag #{const clingo_show_type_complement}
+pattern ShowCSP = #{const clingo_show_type_csp}
+pattern ShowShown = #{const clingo_show_type_shown}
+pattern ShowAtoms = #{const clingo_show_type_atoms}
+pattern ShowTerms = #{const clingo_show_type_terms}
+pattern ShowExtra = #{const clingo_show_type_extra}
+pattern ShowAll = #{const clingo_show_type_all}
+pattern ShowComplement = #{const clingo_show_type_complement}
 
-newtype SolveResult = MkSolveResult (#type clingo_solve_result_bitset_t)
-    deriving (Show, Eq, Flags)
+type SolveResult = (#type clingo_solve_result_bitset_t)
 
-pattern ResultSatisfiable = MkSolveResult #{const clingo_solve_result_satisfiable}
-pattern ResultUnsatisfiable = MkSolveResult #{const clingo_solve_result_unsatisfiable}
-pattern ResultExhausted = MkSolveResult #{const clingo_solve_result_exhausted}
-pattern ResultInterrupted = MkSolveResult #{const clingo_solve_result_interrupted}
+pattern ResultSatisfiable = #{const clingo_solve_result_satisfiable}
+pattern ResultUnsatisfiable = #{const clingo_solve_result_unsatisfiable}
+pattern ResultExhausted = #{const clingo_solve_result_exhausted}
+pattern ResultInterrupted = #{const clingo_solve_result_interrupted}
 
-newtype TheoryTerm = MkTheoryTerm (#type clingo_theory_term_type_t)
-    deriving (Show, Eq)
+type TheoryTerm = (#type clingo_theory_term_type_t)
 
-pattern TheoryTuple = MkTheoryTerm #{const clingo_theory_term_type_tuple}
-pattern TheoryList = MkTheoryTerm #{const clingo_theory_term_type_list}
-pattern TheorySet = MkTheoryTerm #{const clingo_theory_term_type_set}
-pattern TheoryFunction = MkTheoryTerm #{const clingo_theory_term_type_function}
-pattern TheoryNumber = MkTheoryTerm #{const clingo_theory_term_type_number}
-pattern TheorySymbol = MkTheoryTerm #{const clingo_theory_term_type_symbol}
+pattern TheoryTuple = #{const clingo_theory_term_type_tuple}
+pattern TheoryList = #{const clingo_theory_term_type_list}
+pattern TheorySet = #{const clingo_theory_term_type_set}
+pattern TheoryFunction = #{const clingo_theory_term_type_function}
+pattern TheoryNumber = #{const clingo_theory_term_type_number}
+pattern TheorySymbol = #{const clingo_theory_term_type_symbol}
 
-newtype ClauseType = MkClauseType (#type clingo_clause_type_t)
-    deriving (Show, Eq)
+type ClauseType = (#type clingo_clause_type_t)
 
-pattern ClauseLearnt = MkClauseType #{const clingo_clause_type_learnt}
-pattern ClauseStatic = MkClauseType #{const clingo_clause_type_static}
-pattern ClauseVolatile = MkClauseType #{const clingo_clause_type_volatile}
-pattern ClauseVolatileStatic = MkClauseType #{const clingo_clause_type_volatile_static}
+pattern ClauseLearnt = #{const clingo_clause_type_learnt}
+pattern ClauseStatic = #{const clingo_clause_type_static}
+pattern ClauseVolatile = #{const clingo_clause_type_volatile}
+pattern ClauseVolatileStatic = #{const clingo_clause_type_volatile_static}
 
-newtype HeuristicType = MkHeuristicType (#type clingo_heuristic_type_t)
-    deriving (Show, Eq)
+type HeuristicType = (#type clingo_heuristic_type_t)
 
-pattern HeuristicLevel = MkHeuristicType #{const clingo_heuristic_type_level}
-pattern HeuristicSign = MkHeuristicType #{const clingo_heuristic_type_sign}
-pattern HeuristicFactor = MkHeuristicType #{const clingo_heuristic_type_factor}
-pattern HeuristicInit = MkHeuristicType #{const clingo_heuristic_type_init}
-pattern HeuristicTrue = MkHeuristicType #{const clingo_heuristic_type_true}
-pattern HeuristicFalse = MkHeuristicType #{const clingo_heuristic_type_false}
+pattern HeuristicLevel = #{const clingo_heuristic_type_level}
+pattern HeuristicSign = #{const clingo_heuristic_type_sign}
+pattern HeuristicFactor = #{const clingo_heuristic_type_factor}
+pattern HeuristicInit = #{const clingo_heuristic_type_init}
+pattern HeuristicTrue = #{const clingo_heuristic_type_true}
+pattern HeuristicFalse = #{const clingo_heuristic_type_false}
 
-newtype ExternalType = MkExternalType (#type clingo_external_type_t)
-    deriving (Show, Eq)
+type ExternalType = (#type clingo_external_type_t)
 
-pattern ExternalFree = MkExternalType #{const clingo_external_type_free}
-pattern ExternalTrue = MkExternalType #{const clingo_external_type_true}
-pattern ExternalFalse = MkExternalType #{const clingo_external_type_false}
-pattern ExternalRelease = MkExternalType #{const clingo_external_type_release}
+pattern ExternalFree = #{const clingo_external_type_free}
+pattern ExternalTrue = #{const clingo_external_type_true}
+pattern ExternalFalse = #{const clingo_external_type_false}
+pattern ExternalRelease = #{const clingo_external_type_release}
 
-newtype ConfigurationType = MkConfigType (#type clingo_configuration_type_bitset_t)
-    deriving (Show, Eq, Flags)
+type ConfigurationType = (#type clingo_configuration_type_bitset_t)
 
-pattern ConfigValue = MkConfigType #{const clingo_configuration_type_value}
-pattern ConfigArray = MkConfigType #{const clingo_configuration_type_array}
-pattern ConfigMap = MkConfigType #{const clingo_configuration_type_map}
+pattern ConfigValue = #{const clingo_configuration_type_value}
+pattern ConfigArray = #{const clingo_configuration_type_array}
+pattern ConfigMap = #{const clingo_configuration_type_map}
 
-newtype StatisticsType = MkStatisticsType (#type clingo_statistics_type_t)
-    deriving (Show, Eq)
+type StatisticsType = (#type clingo_statistics_type_t)
 
-pattern StatsEmpty = MkStatisticsType #{const clingo_statistics_type_empty}
-pattern StatsValue = MkStatisticsType #{const clingo_statistics_type_value}
-pattern StatsArray = MkStatisticsType #{const clingo_statistics_type_array}
-pattern StatsMap = MkStatisticsType #{const clingo_statistics_type_map}
+pattern StatsEmpty = #{const clingo_statistics_type_empty}
+pattern StatsValue = #{const clingo_statistics_type_value}
+pattern StatsArray = #{const clingo_statistics_type_array}
+pattern StatsMap = #{const clingo_statistics_type_map}
