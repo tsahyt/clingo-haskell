@@ -123,12 +123,11 @@ pattern WarnVariableUnbounded = #{const clingo_warning_variable_unbounded}
 pattern WarnGlobalVariable = #{const clingo_warning_global_variable}
 pattern WarnOther = #{const clingo_warning_other}
 
-newtype TruthValue = MkTruthValue (#type clingo_truth_value_t)
-    deriving (Show, Eq)
+type TruthValue = (#type clingo_truth_value_t)
 
-pattern TruthFree = MkTruthValue #{const clingo_truth_value_free}
-pattern TruthFalse = MkTruthValue #{const clingo_truth_value_false}
-pattern TruthTrue = MkTruthValue #{const clingo_truth_value_true}
+pattern TruthFree = #{const clingo_truth_value_free}
+pattern TruthFalse = #{const clingo_truth_value_false}
+pattern TruthTrue = #{const clingo_truth_value_true}
 
 newtype SymbolType = MkSymbolType (#type clingo_symbol_type_t)
     deriving (Show, Eq)

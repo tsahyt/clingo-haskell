@@ -2,6 +2,8 @@
 {-# LANGUAGE EmptyDataDecls #-}
 module Clingo.Raw.Types
 (
+    CBool,
+
     -- * Basic types
     Literal,
     Atom,
@@ -13,6 +15,7 @@ module Clingo.Raw.Types
     -- * Symbols
     Signature,
     Symbol,
+    SymbolicLiteral,
 
     -- * Model and Solving
     Model,
@@ -66,6 +69,8 @@ import Clingo.Raw.Enums
 
 #include <clingo.h>
 
+type CBool = #type bool
+
 type Literal = #type clingo_literal_t
 type Atom = #type clingo_atom_t
 type Identifier = #type clingo_id_t
@@ -103,6 +108,21 @@ instance Storable Location where
 
 type Signature = #type clingo_signature_t
 type Symbol = #type clingo_symbol_t
+
+data SymbolicLiteral = SymbolicLiteral
+    { slitSymbol   :: Symbol
+    , slitPositive :: CBool }
+
+instance Storable SymbolicLiteral where
+    sizeOf _ = #{size clingo_symbolic_literal_t}
+    alignment = sizeOf
+    peek p = SymbolicLiteral
+         <$> (#{peek clingo_symbolic_literal_t, symbol} p)
+         <*> (#{peek clingo_symbolic_literal_t, positive} p)
+
+    poke p lit = do
+        (#poke clingo_symbolic_literal_t, symbol) p (slitSymbol lit)
+        (#poke clingo_symbolic_literal_t, positive) p (slitPositive lit)
 
 data SolveControl
 data Model
