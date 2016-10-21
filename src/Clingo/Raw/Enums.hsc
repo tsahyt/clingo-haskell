@@ -105,25 +105,23 @@ import Data.Word
 combineFlags :: Flags a => [a] -> a
 combineFlags = foldl (.+.) noFlags
 
-newtype ClingoError = MkClingoError (#type clingo_error_t)
-    deriving (Show, Eq)
+type ClingoError = (#type clingo_error_t)
 
-pattern ErrorSuccess = MkClingoError #{const clingo_error_success}
-pattern ErrorRuntime = MkClingoError #{const clingo_error_runtime}
-pattern ErrorLogic = MkClingoError #{const clingo_error_logic}
-pattern ErrorBadAlloc = MkClingoError #{const clingo_error_bad_alloc}
-pattern ErrorUnknown = MkClingoError #{const clingo_error_unknown}
+pattern ErrorSuccess = #{const clingo_error_success}
+pattern ErrorRuntime = #{const clingo_error_runtime}
+pattern ErrorLogic = #{const clingo_error_logic}
+pattern ErrorBadAlloc = #{const clingo_error_bad_alloc}
+pattern ErrorUnknown = #{const clingo_error_unknown}
 
-newtype ClingoWarning = MkClingoWarning (#type clingo_warning_t)
-    deriving (Show, Eq)
+type ClingoWarning = (#type clingo_warning_t)
 
-pattern WarnOpUndefined = MkClingoWarning #{const clingo_warning_operation_undefined}
-pattern WarnRTError = MkClingoWarning #{const clingo_warning_runtime_error}
-pattern WarnAtomUndefined = MkClingoWarning #{const clingo_warning_atom_undefined}
-pattern WarnFileIncluded = MkClingoWarning #{const clingo_warning_file_included}
-pattern WarnVariableUnbounded = MkClingoWarning #{const clingo_warning_variable_unbounded}
-pattern WarnGlobalVariable = MkClingoWarning #{const clingo_warning_global_variable}
-pattern WarnOther = MkClingoWarning #{const clingo_warning_other}
+pattern WarnOpUndefined = #{const clingo_warning_operation_undefined}
+pattern WarnRTError = #{const clingo_warning_runtime_error}
+pattern WarnAtomUndefined = #{const clingo_warning_atom_undefined}
+pattern WarnFileIncluded = #{const clingo_warning_file_included}
+pattern WarnVariableUnbounded = #{const clingo_warning_variable_unbounded}
+pattern WarnGlobalVariable = #{const clingo_warning_global_variable}
+pattern WarnOther = #{const clingo_warning_other}
 
 newtype TruthValue = MkTruthValue (#type clingo_truth_value_t)
     deriving (Show, Eq)
