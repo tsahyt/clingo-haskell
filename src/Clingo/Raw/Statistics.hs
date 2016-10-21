@@ -3,11 +3,17 @@ module Clingo.Raw.Statistics
 (
     statisticsRoot,
     statisticsType,
+
+    -- * Array Access
     statisticsArraySize,
     statisticsArrayAt,
+
+    -- * Map Access
     statisticsMapSize,
     statisticsMapSubkeyName,
     statisticsMapAt,
+
+    -- * Value Access
     statisticsValueGet
 )
 where
