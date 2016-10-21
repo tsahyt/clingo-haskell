@@ -10,7 +10,7 @@ maintainer:          paul@tsahyt.com
 copyright:           2016 Paul Ogris
 category:            ASP, Math, Symbolic Computation, Logic Programming, FFI
 build-type:          Simple
--- extra-source-files:
+extra-source-files:  cbits/wrappers.c
 cabal-version:       >=1.10
 
 library
@@ -20,9 +20,11 @@ library
                        Clingo.Raw.Enums
                        Clingo.Raw.Basic
                        Clingo.Raw.Control
+  c-sources:           cbits/wrappers.c
   build-depends:       base >= 4.7 && < 5,
                        data-flags >= 0.0.3 && <= 0.0.4
   extra-libraries:     clingo
+  include-dirs:        include
   ghc-options:         -Wall
   default-language:    Haskell2010
 

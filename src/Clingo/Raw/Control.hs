@@ -16,7 +16,7 @@ module Clingo.Raw.Control
     controlCleanup,
     controlAssignExternal,
     controlReleaseExternal,
-    -- controlRegisterPropagator,
+    controlRegisterPropagator,
     controlStatistics,
     controlInterrupt,
     controlClaspFacade,
@@ -30,7 +30,7 @@ module Clingo.Raw.Control
     controlHasConst,
     controlSymbolicAtoms,
     controlTheoryAtoms,
-    -- controlRegisterObserver,
+    controlRegisterObserver,
 
     -- * Program Modification
     controlBackend,
@@ -69,10 +69,8 @@ foreign import ccall "clingo.h clingo_control_assign_external" controlAssignExte
     Ptr Control -> Symbol -> TruthValue -> IO CBool
 foreign import ccall "clingo.h clingo_control_release_external" controlReleaseExternalFFI ::
     Ptr Control -> Symbol -> IO CBool
-{-
- -foreign import ccall "clingo.h clingo_control_register_propagator" controlRegisterPropagatorFFI ::
- -    Ptr Control -> Propagator a -> Ptr a -> CBool -> IO CBool
- -}
+foreign import ccall "wrappers.h clingo_control_register_propagator_ptr" controlRegisterPropagatorFFI ::
+    Ptr Control -> Ptr (Propagator a) -> Ptr a -> CBool -> IO CBool
 foreign import ccall "clingo.h clingo_control_statistics" controlStatisticsFFI ::
     Ptr Control -> Ptr (Ptr Statistics) -> IO CBool
 foreign import ccall "clingo.h clingo_control_interrupt" controlInterruptFFI ::
@@ -91,10 +89,8 @@ foreign import ccall "clingo.h clingo_control_symbolic_atoms" controlSymbolicAto
     Ptr Control -> Ptr (Ptr SymbolicAtoms) -> IO CBool
 foreign import ccall "clingo.h clingo_control_theory_atoms" controlTheoryAtomsFFI ::
     Ptr Control -> Ptr (Ptr TheoryAtoms) -> IO CBool
-{-
- -foreign import ccall "clingo.h clingo_control_register_observer" controlRegisterObserverFFI ::
- -    Ptr Control -> GroundProgramObserver a -> Ptr a -> IO CBool
- -}
+foreign import ccall "wrappers.h clingo_control_register_observer_ptr" controlRegisterObserverFFI ::
+    Ptr Control -> Ptr (GroundProgramObserver a) -> Ptr a -> IO CBool
 foreign import ccall "clingo.h clingo_control_backend" controlBackendFFI ::
     Ptr Control -> Ptr (Ptr Backend) -> IO CBool
 foreign import ccall "clingo.h clingo_control_program_builder" controlProgramBuilderFFI ::
@@ -134,10 +130,8 @@ controlAssignExternal a b c = liftIO $ controlAssignExternalFFI a b c
 controlReleaseExternal :: MonadIO m => Ptr Control -> Symbol -> m CBool
 controlReleaseExternal a b = liftIO $ controlReleaseExternalFFI a b
 
-{-
- -controlRegisterPropagator :: MonadIO m => Ptr Control -> Propagator a -> Ptr a -> CBool -> m CBool
- -controlRegisterPropagator a b c d = liftIO $ controlRegisterPropagatorFFI a b c d
- -}
+controlRegisterPropagator :: MonadIO m => Ptr Control -> Ptr (Propagator a) -> Ptr a -> CBool -> m CBool
+controlRegisterPropagator a b c d = liftIO $ controlRegisterPropagatorFFI a b c d
 
 controlStatistics :: MonadIO m => Ptr Control -> Ptr (Ptr Statistics) -> m CBool
 controlStatistics a b = liftIO $ controlStatisticsFFI a b
@@ -166,10 +160,8 @@ controlSymbolicAtoms a b = liftIO $ controlSymbolicAtomsFFI a b
 controlTheoryAtoms :: MonadIO m => Ptr Control -> Ptr (Ptr TheoryAtoms) -> m CBool
 controlTheoryAtoms a b = liftIO $ controlTheoryAtomsFFI a b
 
-{-
- -controlRegisterObserver :: MonadIO m => Ptr Control -> GroundProgramObserver a -> Ptr a -> m CBool
- -controlRegisterObserver a b c = liftIO $ controlRegisterObserverFFI a b c
- -}
+controlRegisterObserver :: MonadIO m => Ptr Control -> Ptr (GroundProgramObserver a) -> Ptr a -> m CBool
+controlRegisterObserver a b c = liftIO $ controlRegisterObserverFFI a b c
 
 controlBackend :: MonadIO m => Ptr Control -> Ptr (Ptr Backend) -> m CBool
 controlBackend a b = liftIO $ controlBackendFFI a b

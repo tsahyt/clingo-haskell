@@ -12,10 +12,8 @@ where
 
 import Foreign
 import Foreign.C
-import Foreign.C.String
 import Control.Monad.IO.Class
 import Clingo.Raw.Enums
-import Clingo.Raw.Types
 
 foreign import ccall "clingo.h clingo_error_string" errorStringFFI ::
     ClingoError -> IO CString
