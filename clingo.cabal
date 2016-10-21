@@ -24,6 +24,7 @@ library
                        Clingo.Raw.Symbol
                        Clingo.Raw.Iterative
                        Clingo.Raw.Asynchronous
+                       Clingo.Raw.Statistics
   c-sources:           cbits/wrappers.c
   build-depends:       base >= 4.7 && < 5,
                        data-flags >= 0.0.3 && <= 0.0.4
