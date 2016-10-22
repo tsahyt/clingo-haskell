@@ -314,17 +314,71 @@ type CallbackAST a = Ptr AstStatement -> Ptr a -> IO CBool
 data AstUnaryOperation = AstUnaryOperation AstUnaryOperator AstTerm
     deriving (Eq, Show)
 
+instance Storable AstUnaryOperation where
+    sizeOf _ = #{size clingo_ast_unary_operation_t}
+    alignment = sizeOf
+    peek p = AstUnaryOperation 
+        <$> (#{peek clingo_ast_unary_operation_t, unary_operator} p)
+        <*> (#{peek clingo_ast_unary_operation_t, argument} p)
+    poke p (AstUnaryOperation a b) = do
+        (#poke clingo_ast_unary_operation_t, unary_operator) p a
+        (#poke clingo_ast_unary_operation_t, argument) p b
+   
 data AstBinaryOperation = AstBinaryOperation AstBinaryOperator AstTerm AstTerm
     deriving (Eq, Show)
+
+instance Storable AstBinaryOperation where
+    sizeOf _ = #{size clingo_ast_binary_operation_t}
+    alignment = sizeOf
+    peek p = AstBinaryOperation 
+        <$> (#{peek clingo_ast_binary_operation_t, binary_operator} p)
+        <*> (#{peek clingo_ast_binary_operation_t, left} p)
+        <*> (#{peek clingo_ast_binary_operation_t, right} p)
+    poke p (AstBinaryOperation a b c) = do
+        (#poke clingo_ast_binary_operation_t, binary_operator) p a
+        (#poke clingo_ast_binary_operation_t, left) p b
+        (#poke clingo_ast_binary_operation_t, right) p c
 
 data AstInterval = AstInterval AstTerm AstTerm
     deriving (Eq, Show)
 
+instance Storable AstInterval where
+    sizeOf _ = #{size clingo_ast_interval_t}
+    alignment = sizeOf
+    peek p = AstInterval 
+        <$> (#{peek clingo_ast_interval_t, left} p)
+        <*> (#{peek clingo_ast_interval_t, right} p)
+    poke p (AstInterval a b) = do
+        (#poke clingo_ast_interval_t, left) p a
+        (#poke clingo_ast_interval_t, right) p b
+
 data AstFunction = AstFunction CString (Ptr AstTerm) CSize
     deriving (Eq, Show)
 
+instance Storable AstFunction where
+    sizeOf _ = #{size clingo_ast_function_t}
+    alignment = sizeOf
+    peek p = AstFunction 
+        <$> (#{peek clingo_ast_function_t, name} p)
+        <*> (#{peek clingo_ast_function_t, arguments} p)
+        <*> (#{peek clingo_ast_function_t, size} p)
+    poke p (AstFunction a b c) = do
+        (#poke clingo_ast_function_t, name) p a
+        (#poke clingo_ast_function_t, arguments) p b
+        (#poke clingo_ast_function_t, size) p c
+
 data AstPool = AstPool (Ptr AstTerm) CSize
     deriving (Eq, Show)
+
+instance Storable AstPool where
+    sizeOf _ = #{size clingo_ast_pool_t}
+    alignment = sizeOf
+    peek p = AstPool 
+        <$> (#{peek clingo_ast_pool_t, arguments} p)
+        <*> (#{peek clingo_ast_pool_t, size} p)
+    poke p (AstPool a b) = do
+        (#poke clingo_ast_pool_t, arguments) p a
+        (#poke clingo_ast_pool_t, size) p b
 
 data AstTerm = AstTermSymbol Location Symbol
              | AstTermVariable Location CString
@@ -335,23 +389,97 @@ data AstTerm = AstTermSymbol Location Symbol
              | AstTermPool Location AstPool
     deriving (Eq, Show)
 
+instance Storable AstTerm where
+    sizeOf _ = #{size clingo_ast_term_t}
+    alignment = sizeOf
+    peek p = undefined -- AstTerm 
+    poke p d = undefined
+
 data AstCspProductTerm = AstCspProductTerm Location AstTerm (Ptr AstTerm)
     deriving (Eq, Show)
+
+instance Storable AstCspProductTerm where
+    sizeOf _ = #{size clingo_ast_csp_product_term_t}
+    alignment = sizeOf
+    peek p = AstCspProductTerm 
+        <$> (#{peek clingo_ast_csp_product_term_t, location} p)
+        <*> (#{peek clingo_ast_csp_product_term_t, coefficient} p)
+        <*> (#{peek clingo_ast_csp_product_term_t, variable} p)
+    poke p (AstCspProductTerm a b c) = do
+        (#poke clingo_ast_csp_product_term_t, location) p a
+        (#poke clingo_ast_csp_product_term_t, coefficient) p b
+        (#poke clingo_ast_csp_product_term_t, variable) p c
 
 data AstCspSumTerm = AstCspSumTerm Location (Ptr AstCspProductTerm) CSize
     deriving (Eq, Show)
 
+instance Storable AstCspSumTerm where
+    sizeOf _ = #{size clingo_ast_csp_sum_term_t}
+    alignment = sizeOf
+    peek p = AstCspSumTerm 
+        <$> (#{peek clingo_ast_csp_sum_term_t, location} p)
+        <*> (#{peek clingo_ast_csp_sum_term_t, terms} p)
+        <*> (#{peek clingo_ast_csp_sum_term_t, size} p)
+    poke p (AstCspSumTerm a b c) = do
+        (#poke clingo_ast_csp_sum_term_t, location) p a
+        (#poke clingo_ast_csp_sum_term_t, terms) p b
+        (#poke clingo_ast_csp_sum_term_t, size) p c
+    
 data AstCspGuard = AstCspGuard AstComparisonOperator AstCspSumTerm
     deriving (Eq, Show)
+
+instance Storable AstCspGuard where
+    sizeOf _ = #{size clingo_ast_csp_guard_t}
+    alignment = sizeOf
+    peek p = AstCspGuard 
+        <$> (#{peek clingo_ast_csp_guard_t, comparison} p)
+        <*> (#{peek clingo_ast_csp_guard_t, term} p)
+    poke p (AstCspGuard a b) = do
+        (#poke clingo_ast_csp_guard_t, comparison) p a
+        (#poke clingo_ast_csp_guard_t, term) p b
 
 data AstCspLiteral = AstCspLiteral AstCspSumTerm (Ptr AstCspGuard) CSize
     deriving (Eq, Show)
 
+instance Storable AstCspLiteral where
+    sizeOf _ = #{size clingo_ast_csp_literal_t}
+    alignment = sizeOf
+    peek p = AstCspLiteral 
+        <$> (#{peek clingo_ast_csp_literal_t, term} p)
+        <*> (#{peek clingo_ast_csp_literal_t, guards} p)
+        <*> (#{peek clingo_ast_csp_literal_t, size} p)
+    poke p (AstCspLiteral a b c) = do
+        (#poke clingo_ast_csp_literal_t, term) p a
+        (#poke clingo_ast_csp_literal_t, guards) p b
+        (#poke clingo_ast_csp_literal_t, size) p c
+    
 data AstId = AstId Location CString
     deriving (Eq, Show)
 
+instance Storable AstId where
+    sizeOf _ = #{size clingo_ast_id_t}
+    alignment = sizeOf
+    peek p = AstId 
+        <$> (#{peek clingo_ast_id_t, location} p)
+        <*> (#{peek clingo_ast_id_t, id} p)
+    poke p (AstId a b) = do
+        (#poke clingo_ast_id_t, location) p a
+        (#poke clingo_ast_id_t, id) p b
+
 data AstComparison = AstComparison AstComparisonOperator AstTerm AstTerm
     deriving (Eq, Show)
+
+instance Storable AstComparison where
+    sizeOf _ = #{size clingo_ast_comparison_t}
+    alignment = sizeOf
+    peek p = AstComparison 
+        <$> (#{peek clingo_ast_comparison_t, comparison} p)
+        <*> (#{peek clingo_ast_comparison_t, left} p)
+        <*> (#{peek clingo_ast_comparison_t, right} p)
+    poke p (AstComparison a b c) = do
+        (#poke clingo_ast_comparison_t, comparison) p a
+        (#poke clingo_ast_comparison_t, left) p b
+        (#poke clingo_ast_comparison_t, right) p c
 
 data AstLiteral = AstLiteralBool Location AstSign CBool
                 | AstLiteralTerm Location AstSign AstTerm
@@ -359,59 +487,241 @@ data AstLiteral = AstLiteralBool Location AstSign CBool
                 | AstLiteralCSPL Location AstSign AstCspLiteral
     deriving (Eq, Show)
 
+instance Storable AstLiteral where
+    sizeOf _ = #{size clingo_ast_literal_t}
+    alignment = sizeOf
+    peek p = undefined -- AstLiteral
+    poke p d = undefined --  
+
 data AstAggregateGuard = AstAggregateGuard AstComparisonOperator AstTerm
     deriving (Eq, Show)
+
+instance Storable AstAggregateGuard where
+    sizeOf _ = #{size clingo_ast_aggregate_guard_t}
+    alignment = sizeOf
+    peek p = AstAggregateGuard 
+        <$> (#{peek clingo_ast_aggregate_guard_t, comparison} p)
+        <*> (#{peek clingo_ast_aggregate_guard_t, term} p)
+    poke p (AstAggregateGuard a b) = do
+        (#poke clingo_ast_aggregate_guard_t, comparison) p a
+        (#poke clingo_ast_aggregate_guard_t, term) p b
 
 data AstConditionalLiteral = AstConditionalLiteral AstLiteral 
                              (Ptr AstLiteral) CSize
     deriving (Eq, Show)
 
+instance Storable AstConditionalLiteral where
+    sizeOf _ = #{size clingo_ast_conditional_literal_t}
+    alignment = sizeOf
+    peek p = AstConditionalLiteral 
+        <$> (#{peek clingo_ast_conditional_literal_t, literal} p)
+        <*> (#{peek clingo_ast_conditional_literal_t, condition} p)
+        <*> (#{peek clingo_ast_conditional_literal_t, size} p)
+    poke p (AstConditionalLiteral a b c) = do
+        (#poke clingo_ast_conditional_literal_t, literal) p a
+        (#poke clingo_ast_conditional_literal_t, condition) p b
+        (#poke clingo_ast_conditional_literal_t, size) p c
+
 data AstAggregate = AstAggregate (Ptr AstConditionalLiteral) CSize
                     (Ptr AstAggregateGuard) (Ptr AstAggregateGuard)
     deriving (Eq, Show)
 
+instance Storable AstAggregate where
+    sizeOf _ = #{size clingo_ast_aggregate_t}
+    alignment = sizeOf
+    peek p = AstAggregate 
+        <$> (#{peek clingo_ast_aggregate_t, elements} p)
+        <*> (#{peek clingo_ast_aggregate_t, size} p)
+        <*> (#{peek clingo_ast_aggregate_t, left_guard} p)
+        <*> (#{peek clingo_ast_aggregate_t, right_guard} p)
+    poke p (AstAggregate a b c d) = do
+        (#poke clingo_ast_aggregate_t, elements) p a
+        (#poke clingo_ast_aggregate_t, size) p b
+        (#poke clingo_ast_aggregate_t, left_guard) p c
+        (#poke clingo_ast_aggregate_t, right_guard) p d
+    
 data AstBodyAggregateElement = AstBodyAggregateElement AstTerm CSize 
                                (Ptr AstLiteral) CSize
     deriving (Eq, Show)
 
+instance Storable AstBodyAggregateElement where
+    sizeOf _ = #{size clingo_ast_body_aggregate_element_t}
+    alignment = sizeOf
+    peek p = AstBodyAggregateElement 
+        <$> (#{peek clingo_ast_body_aggregate_element_t, tuple} p)
+        <*> (#{peek clingo_ast_body_aggregate_element_t, tuple_size} p)
+        <*> (#{peek clingo_ast_body_aggregate_element_t, condition} p)
+        <*> (#{peek clingo_ast_body_aggregate_element_t, condition_size} p)
+    poke p (AstBodyAggregateElement a b c d) = do
+        (#poke clingo_ast_body_aggregate_element_t, tuple) p a
+        (#poke clingo_ast_body_aggregate_element_t, tuple_size) p b
+        (#poke clingo_ast_body_aggregate_element_t, condition) p c
+        (#poke clingo_ast_body_aggregate_element_t, condition_size) p d
+    
 data AstBodyAggregate = AstBodyAggregate AstAggregateFunction
                         (Ptr AstBodyAggregateElement) CSize
                         (Ptr AstAggregateGuard) (Ptr AstAggregateGuard)
     deriving (Eq, Show)
 
+instance Storable AstBodyAggregate where
+    sizeOf _ = #{size clingo_ast_body_aggregate_t}
+    alignment = sizeOf
+    peek p = AstBodyAggregate 
+        <$> (#{peek clingo_ast_body_aggregate_t, function} p)
+        <*> (#{peek clingo_ast_body_aggregate_t, elements} p)
+        <*> (#{peek clingo_ast_body_aggregate_t, size} p)
+        <*> (#{peek clingo_ast_body_aggregate_t, left_guard} p)
+        <*> (#{peek clingo_ast_body_aggregate_t, right_guard} p)
+    poke p (AstBodyAggregate a b c d e) = do
+        (#poke clingo_ast_body_aggregate_t, function) p a
+        (#poke clingo_ast_body_aggregate_t, elements) p b
+        (#poke clingo_ast_body_aggregate_t, size) p c
+        (#poke clingo_ast_body_aggregate_t, left_guard) p d
+        (#poke clingo_ast_body_aggregate_t, right_guard) p e
+
 data AstHeadAggregateElement = AstHeadAggregateElement (Ptr AstTerm) CSize
                                AstConditionalLiteral
     deriving (Eq, Show)
 
+instance Storable AstHeadAggregateElement where
+    sizeOf _ = #{size clingo_ast_head_aggregate_element_t}
+    alignment = sizeOf
+    peek p = AstHeadAggregateElement 
+        <$> (#{peek clingo_ast_head_aggregate_element_t, tuple} p)
+        <*> (#{peek clingo_ast_head_aggregate_element_t, tuple_size} p)
+        <*> (#{peek clingo_ast_head_aggregate_element_t, conditional_literal} p)
+    poke p (AstHeadAggregateElement a b c) = do
+        (#poke clingo_ast_head_aggregate_element_t, tuple) p a
+        (#poke clingo_ast_head_aggregate_element_t, tuple_size) p b
+        (#poke clingo_ast_head_aggregate_element_t, conditional_literal) p c
+    
 data AstHeadAggregate = AstHeadAggregate AstAggregateFunction
                         (Ptr AstHeadAggregateElement) CSize
                         (Ptr AstAggregateGuard) (Ptr AstAggregateGuard)
     deriving (Eq, Show)
 
+instance Storable AstHeadAggregate where
+    sizeOf _ = #{size clingo_ast_aggregate_t}
+    alignment = sizeOf
+    peek p = AstHeadAggregate 
+        <$> (#{peek clingo_ast_head_aggregate_t, function} p)
+        <*> (#{peek clingo_ast_head_aggregate_t, elements} p)
+        <*> (#{peek clingo_ast_head_aggregate_t, size} p)
+        <*> (#{peek clingo_ast_head_aggregate_t, left_guard} p)
+        <*> (#{peek clingo_ast_head_aggregate_t, right_guard} p)
+    poke p (AstHeadAggregate a b c d e) = do
+        (#poke clingo_ast_head_aggregate_t, function) p a
+        (#poke clingo_ast_head_aggregate_t, elements) p b
+        (#poke clingo_ast_head_aggregate_t, size) p c
+        (#poke clingo_ast_head_aggregate_t, left_guard) p d
+        (#poke clingo_ast_head_aggregate_t, right_guard) p e
+    
 data AstDisjunction = AstDisjunction (Ptr AstConditionalLiteral) CSize
     deriving (Eq, Show)
 
+instance Storable AstDisjunction where
+    sizeOf _ = #{size clingo_ast_disjunction_t}
+    alignment = sizeOf
+    peek p = AstDisjunction 
+        <$> (#{peek clingo_ast_disjunction_t, elements} p)
+        <*> (#{peek clingo_ast_disjunction_t, size} p)
+    poke p (AstDisjunction a b) = do
+        (#poke clingo_ast_disjunction_t, elements) p a
+        (#poke clingo_ast_disjunction_t, size) p b
+    
 data AstDisjointElement = AstDisjointElement Location (Ptr AstTerm) CSize
                           AstCspSumTerm (Ptr AstLiteral) CSize
     deriving (Eq, Show)
 
+instance Storable AstDisjointElement where
+    sizeOf _ = #{size clingo_ast_disjoint_element_t}
+    alignment = sizeOf
+    peek p = AstDisjointElement 
+        <$> (#{peek clingo_ast_disjoint_element_t, location} p)
+        <*> (#{peek clingo_ast_disjoint_element_t, tuple} p)
+        <*> (#{peek clingo_ast_disjoint_element_t, tuple_size} p)
+        <*> (#{peek clingo_ast_disjoint_element_t, term} p)
+        <*> (#{peek clingo_ast_disjoint_element_t, condition} p)
+        <*> (#{peek clingo_ast_disjoint_element_t, condition_size} p)
+    poke p (AstDisjointElement a b c d e f) = do
+        (#poke clingo_ast_disjoint_element_t, location) p a
+        (#poke clingo_ast_disjoint_element_t, tuple) p b
+        (#poke clingo_ast_disjoint_element_t, tuple_size) p c
+        (#poke clingo_ast_disjoint_element_t, term) p d
+        (#poke clingo_ast_disjoint_element_t, condition) p e
+        (#poke clingo_ast_disjoint_element_t, condition_size) p f
+    
 data AstDisjoint = AstDisjoint (Ptr AstDisjointElement) CSize
     deriving (Eq, Show)
 
+instance Storable AstDisjoint where
+    sizeOf _ = #{size clingo_ast_disjoint_t}
+    alignment = sizeOf
+    peek p = AstDisjoint 
+        <$> (#{peek clingo_ast_disjoint_t, elements} p)
+        <*> (#{peek clingo_ast_disjoint_t, size} p)
+    poke p (AstDisjoint a b) = do
+        (#poke clingo_ast_disjoint_t, elements) p a
+        (#poke clingo_ast_disjoint_t, size) p b
+    
 data AstTheoryTermArray = AstTheoryTermArray (Ptr AstTheoryTerm) CSize
     deriving (Eq, Show)
+
+instance Storable AstTheoryTermArray where
+    sizeOf _ = #{size clingo_ast_theory_term_array_t}
+    alignment = sizeOf
+    peek p = AstTheoryTermArray 
+        <$> (#{peek clingo_ast_theory_term_array_t, terms} p)
+        <*> (#{peek clingo_ast_theory_term_array_t, size} p)
+    poke p (AstTheoryTermArray a b) = do
+        (#poke clingo_ast_theory_term_array_t, terms) p a
+        (#poke clingo_ast_theory_term_array_t, size) p b
 
 data AstTheoryFunction = AstTheoryFunction CString (Ptr AstTheoryTerm) CSize
     deriving (Eq, Show)
 
+instance Storable AstTheoryFunction where
+    sizeOf _ = #{size clingo_ast_theory_function_t}
+    alignment = sizeOf
+    peek p = AstTheoryFunction 
+        <$> (#{peek clingo_ast_theory_function_t, name} p)
+        <*> (#{peek clingo_ast_theory_function_t, arguments} p)
+        <*> (#{peek clingo_ast_theory_function_t, size} p)
+    poke p (AstTheoryFunction a b c) = do
+        (#poke clingo_ast_theory_function_t, name) p a
+        (#poke clingo_ast_theory_function_t, arguments) p b
+        (#poke clingo_ast_theory_function_t, size) p c
+    
 data AstTheoryUnparsedTermElement = AstTheoryUnparsedTermElement 
                                     (Ptr CString) CSize AstTheoryTerm
     deriving (Eq, Show)
+
+instance Storable AstTheoryUnparsedTermElement where
+    sizeOf _ = #{size clingo_ast_theory_unparsed_term_element_t}
+    alignment = sizeOf
+    peek p = AstTheoryUnparsedTermElement 
+        <$> (#{peek clingo_ast_theory_unparsed_term_element_t, operators} p)
+        <*> (#{peek clingo_ast_theory_unparsed_term_element_t, size} p)
+        <*> (#{peek clingo_ast_theory_unparsed_term_element_t, term} p)
+    poke p (AstTheoryUnparsedTermElement a b c) = do
+        (#poke clingo_ast_theory_unparsed_term_element_t, operators) p a
+        (#poke clingo_ast_theory_unparsed_term_element_t, size) p b
+        (#poke clingo_ast_theory_unparsed_term_element_t, term) p c
 
 data AstTheoryUnparsedTerm = AstTheoryUnparsedTerm 
                              (Ptr AstTheoryUnparsedTermElement) CSize
     deriving (Eq, Show)
 
+instance Storable AstTheoryUnparsedTerm where
+    sizeOf _ = #{size clingo_ast_theory_unparsed_term_t}
+    alignment = sizeOf
+    peek p = AstTheoryUnparsedTerm 
+        <$> (#{peek clingo_ast_theory_unparsed_term_t, elements} p)
+        <*> (#{peek clingo_ast_theory_unparsed_term_t, size} p)
+    poke p (AstTheoryUnparsedTerm a b) = do
+        (#poke clingo_ast_theory_unparsed_term_t, elements) p a
+        (#poke clingo_ast_theory_unparsed_term_t, size) p b
+    
 data AstTheoryTerm = AstTheoryTermSymbol Location Symbol
                    | AstTheoryTermVariable Location CString
                    | AstTheoryTermTuple Location (Ptr AstTheoryTermArray)
@@ -421,22 +731,72 @@ data AstTheoryTerm = AstTheoryTermSymbol Location Symbol
                    | AstTheoryTermUnparsed Location (Ptr AstTheoryUnparsedTerm)
     deriving (Eq, Show)
 
+instance Storable AstTheoryTerm where
+    sizeOf _ = #{size clingo_ast_theory_term_t}
+    alignment = sizeOf
+    peek p = undefined -- AstTheoryTerm 
+    poke p d = undefined
+
 data AstTheoryAtomElement = AstTheoryAtomElement (Ptr AstTheoryTerm) CSize
                             (Ptr AstLiteral) CSize
     deriving (Eq, Show)
 
+instance Storable AstTheoryAtomElement where
+    sizeOf _ = #{size clingo_ast_theory_atom_element_t}
+    alignment = sizeOf
+    peek p = AstTheoryAtomElement 
+        <$> (#{peek clingo_ast_theory_atom_element_t, tuple} p)
+        <*> (#{peek clingo_ast_theory_atom_element_t, tuple_size} p)
+        <*> (#{peek clingo_ast_theory_atom_element_t, condition} p)
+        <*> (#{peek clingo_ast_theory_atom_element_t, condition_size} p)
+    poke p (AstTheoryAtomElement a b c d) = do
+        (#poke clingo_ast_theory_atom_element_t, tuple) p a
+        (#poke clingo_ast_theory_atom_element_t, tuple_size) p b
+        (#poke clingo_ast_theory_atom_element_t, condition) p c
+        (#poke clingo_ast_theory_atom_element_t, condition_size) p d
+    
 data AstTheoryGuard = AstTheoryGuard CString AstTheoryTerm
     deriving (Eq, Show)
+
+instance Storable AstTheoryGuard where
+    sizeOf _ = #{size clingo_ast_theory_guard_t}
+    alignment = sizeOf
+    peek p = AstTheoryGuard 
+        <$> (#{peek clingo_ast_theory_guard_t, operator_name} p)
+        <*> (#{peek clingo_ast_theory_guard_t, term} p)
+    poke p (AstTheoryGuard a b) = do
+        (#poke clingo_ast_theory_guard_t, operator_name) p a
+        (#poke clingo_ast_theory_guard_t, term) p b
 
 data AstTheoryAtom = AstTheoryAtom AstTerm (Ptr AstTheoryAtomElement) CSize
                      AstTheoryGuard
     deriving (Eq, Show)
+
+instance Storable AstTheoryAtom where
+    sizeOf _ = #{size clingo_ast_theory_atom_t}
+    alignment = sizeOf
+    peek p = AstTheoryAtom 
+        <$> (#{peek clingo_ast_theory_atom_t, term} p)
+        <*> (#{peek clingo_ast_theory_atom_t, elements} p)
+        <*> (#{peek clingo_ast_theory_atom_t, size} p)
+        <*> (#{peek clingo_ast_theory_atom_t, guard} p)
+    poke p (AstTheoryAtom a b c d) = do
+        (#poke clingo_ast_theory_atom_t, term) p a
+        (#poke clingo_ast_theory_atom_t, elements) p b
+        (#poke clingo_ast_theory_atom_t, size) p c
+        (#poke clingo_ast_theory_atom_t, guard) p d
 
 data AstHeadLiteral = AstHeadLiteral Location (Ptr AstLiteral)
                     | AstHeadDisjunction Location (Ptr AstDisjunction)
                     | AstHeadLitAggregate Location (Ptr AstAggregate)
                     | AstHeadTheoryAtom Location (Ptr AstTheoryAtom)
     deriving (Eq, Show)
+
+instance Storable AstHeadLiteral where
+    sizeOf _ = #{size clingo_ast_head_literal_t}
+    alignment = sizeOf
+    peek p = undefined -- AstHeadLiteral 
+    poke p d = undefined
 
 data AstBodyLiteral 
     = AstBodyLiteral Location AstSign (Ptr AstLiteral)
@@ -446,63 +806,287 @@ data AstBodyLiteral
     | AstBodyDisjoint Location AstSign (Ptr AstDisjoint)
     deriving (Eq, Show)
 
+instance Storable AstBodyLiteral where
+    sizeOf _ = #{size clingo_ast_body_literal_t}
+    alignment = sizeOf
+    peek p = undefined -- AstBodyLiteral 
+    poke p d = undefined
+
 data AstTheoryOperatorDefinition = AstTheoryOperatorDefinition Location 
                                    CString CUInt AstTheoryOperatorType
     deriving (Eq, Show)
 
+instance Storable AstTheoryOperatorDefinition where
+    sizeOf _ = #{size clingo_ast_theory_operator_definition_t}
+    alignment = sizeOf
+    peek p = AstTheoryOperatorDefinition 
+        <$> (#{peek clingo_ast_theory_operator_definition_t, location} p)
+        <*> (#{peek clingo_ast_theory_operator_definition_t, name} p)
+        <*> (#{peek clingo_ast_theory_operator_definition_t, priority} p)
+        <*> (#{peek clingo_ast_theory_operator_definition_t, type} p)
+    poke p (AstTheoryOperatorDefinition a b c d) = do
+        (#poke clingo_ast_theory_operator_definition_t, location) p a
+        (#poke clingo_ast_theory_operator_definition_t, name) p b
+        (#poke clingo_ast_theory_operator_definition_t, priority) p c
+        (#poke clingo_ast_theory_operator_definition_t, type) p d
+    
 data AstTheoryTermDefinition = AstTheoryTermDefinition Location CString
                                (Ptr AstTheoryOperatorDefinition) CSize
     deriving (Eq, Show)
 
+instance Storable AstTheoryTermDefinition where
+    sizeOf _ = #{size clingo_ast_theory_term_definition_t}
+    alignment = sizeOf
+    peek p = AstTheoryTermDefinition 
+        <$> (#{peek clingo_ast_theory_term_definition_t, location} p)
+        <*> (#{peek clingo_ast_theory_term_definition_t, name} p)
+        <*> (#{peek clingo_ast_theory_term_definition_t, operators} p)
+        <*> (#{peek clingo_ast_theory_term_definition_t, size} p)
+    poke p (AstTheoryTermDefinition a b c d) = do
+        (#poke clingo_ast_theory_term_definition_t, location) p a
+        (#poke clingo_ast_theory_term_definition_t, name) p b
+        (#poke clingo_ast_theory_term_definition_t, operators) p c
+        (#poke clingo_ast_theory_term_definition_t, size) p d
+    
 data AstTheoryGuardDefinition = AstTheoryGuardDefinition CString (Ptr CString) 
                                 CSize
     deriving (Eq, Show)
+
+instance Storable AstTheoryGuardDefinition where
+    sizeOf _ = #{size clingo_ast_theory_guard_definition_t}
+    alignment = sizeOf
+    peek p = AstTheoryGuardDefinition 
+        <$> (#{peek clingo_ast_theory_guard_definition_t, term} p)
+        <*> (#{peek clingo_ast_theory_guard_definition_t, operators} p)
+        <*> (#{peek clingo_ast_theory_guard_definition_t, size} p)
+    poke p (AstTheoryGuardDefinition a b c) = do
+        (#poke clingo_ast_theory_guard_definition_t, term) p a
+        (#poke clingo_ast_theory_guard_definition_t, operators) p b
+        (#poke clingo_ast_theory_guard_definition_t, size) p c
 
 data AstTheoryAtomDefinition = AstTheoryAtomDefinition Location 
                                AstTheoryAtomDefType CString CUInt CString
                                (Ptr AstTheoryGuardDefinition)
     deriving (Eq, Show)
 
+instance Storable AstTheoryAtomDefinition where
+    sizeOf _ = #{size clingo_ast_theory_atom_definition_t}
+    alignment = sizeOf
+    peek p = AstTheoryAtomDefinition 
+        <$> (#{peek clingo_ast_theory_atom_definition_t, location} p)
+        <*> (#{peek clingo_ast_theory_atom_definition_t, type} p)
+        <*> (#{peek clingo_ast_theory_atom_definition_t, name} p)
+        <*> (#{peek clingo_ast_theory_atom_definition_t, arity} p)
+        <*> (#{peek clingo_ast_theory_atom_definition_t, elements} p)
+        <*> (#{peek clingo_ast_theory_atom_definition_t, guard} p)
+    poke p (AstTheoryAtomDefinition a b c d e f) = do
+        (#poke clingo_ast_theory_atom_definition_t, location) p a
+        (#poke clingo_ast_theory_atom_definition_t, type) p b
+        (#poke clingo_ast_theory_atom_definition_t, name) p c
+        (#poke clingo_ast_theory_atom_definition_t, arity) p d
+        (#poke clingo_ast_theory_atom_definition_t, elements) p e
+        (#poke clingo_ast_theory_atom_definition_t, guard) p f
+
 data AstTheoryDefinition = AstTheoryDefinition CString 
                            (Ptr AstTheoryTermDefinition) CSize
                            (Ptr AstTheoryAtomDefinition) CSize
     deriving (Eq, Show)
 
+instance Storable AstTheoryDefinition where
+    sizeOf _ = #{size clingo_ast_theory_definition_t}
+    alignment = sizeOf
+    peek p = AstTheoryDefinition 
+        <$> (#{peek clingo_ast_theory_definition_t, name} p)
+        <*> (#{peek clingo_ast_theory_definition_t, terms} p)
+        <*> (#{peek clingo_ast_theory_definition_t, terms_size} p)
+        <*> (#{peek clingo_ast_theory_definition_t, atoms} p)
+        <*> (#{peek clingo_ast_theory_definition_t, atoms_size} p)
+    poke p (AstTheoryDefinition a b c d e) = do
+        (#poke clingo_ast_theory_definition_t, name) p a
+        (#poke clingo_ast_theory_definition_t, terms) p b
+        (#poke clingo_ast_theory_definition_t, terms_size) p c
+        (#poke clingo_ast_theory_definition_t, atoms) p d
+        (#poke clingo_ast_theory_definition_t, atoms_size) p e
+    
 data AstRule = AstRule AstHeadLiteral (Ptr AstBodyLiteral) CSize
     deriving (Eq, Show)
 
+instance Storable AstRule where
+    sizeOf _ = #{size clingo_ast_rule_t}
+    alignment = sizeOf
+    peek p = AstRule 
+        <$> (#{peek clingo_ast_rule_t, head} p)
+        <*> (#{peek clingo_ast_rule_t, body} p)
+        <*> (#{peek clingo_ast_rule_t, size} p)
+    poke p (AstRule a b c) = do
+        (#poke clingo_ast_rule_t, head) p a
+        (#poke clingo_ast_rule_t, body) p b
+        (#poke clingo_ast_rule_t, size) p c
+    
 data AstDefinition = AstDefinition CString AstTerm CBool
     deriving (Eq, Show)
 
+instance Storable AstDefinition where
+    sizeOf _ = #{size clingo_ast_definition_t}
+    alignment = sizeOf
+    peek p = AstDefinition 
+        <$> (#{peek clingo_ast_definition_t, name} p)
+        <*> (#{peek clingo_ast_definition_t, value} p)
+        <*> (#{peek clingo_ast_definition_t, is_default} p)
+    poke p (AstDefinition a b c) = do
+        (#poke clingo_ast_definition_t, name) p a
+        (#poke clingo_ast_definition_t, value) p b
+        (#poke clingo_ast_definition_t, is_default) p c
+    
 data AstShowSignature = AstShowSignature Signature CBool
     deriving (Eq, Show)
+
+instance Storable AstShowSignature where
+    sizeOf _ = #{size clingo_ast_show_signature_t}
+    alignment = sizeOf
+    peek p = AstShowSignature 
+        <$> (#{peek clingo_ast_show_signature_t, signature} p)
+        <*> (#{peek clingo_ast_show_signature_t, csp} p)
+    poke p (AstShowSignature a b) = do
+        (#poke clingo_ast_show_signature_t, signature) p a
+        (#poke clingo_ast_show_signature_t, csp) p b
 
 data AstShowTerm = AstShowTerm AstTerm (Ptr AstBodyLiteral) CSize CBool
     deriving (Eq, Show)
 
+instance Storable AstShowTerm where
+    sizeOf _ = #{size clingo_ast_show_term_t}
+    alignment = sizeOf
+    peek p = AstShowTerm 
+        <$> (#{peek clingo_ast_show_term_t, term} p)
+        <*> (#{peek clingo_ast_show_term_t, body} p)
+        <*> (#{peek clingo_ast_show_term_t, size} p)
+        <*> (#{peek clingo_ast_show_term_t, csp} p)
+    poke p (AstShowTerm a b c d) = do
+        (#poke clingo_ast_show_term_t, term) p a
+        (#poke clingo_ast_show_term_t, body) p b
+        (#poke clingo_ast_show_term_t, size) p c
+        (#poke clingo_ast_show_term_t, csp) p d
+    
 data AstMinimize = AstMinimize AstTerm AstTerm (Ptr AstTerm) CSize 
                    (Ptr AstBodyLiteral) CSize
     deriving (Eq, Show)
 
+instance Storable AstMinimize where
+    sizeOf _ = #{size clingo_ast_minimize_t}
+    alignment = sizeOf
+    peek p = AstMinimize 
+        <$> (#{peek clingo_ast_minimize_t, weight} p)
+        <*> (#{peek clingo_ast_minimize_t, priority} p)
+        <*> (#{peek clingo_ast_minimize_t, tuple} p)
+        <*> (#{peek clingo_ast_minimize_t, tuple_size} p)
+        <*> (#{peek clingo_ast_minimize_t, body} p)
+        <*> (#{peek clingo_ast_minimize_t, body_size} p)
+    poke p (AstMinimize a b c d e f) = do
+        (#poke clingo_ast_minimize_t, weight) p a
+        (#poke clingo_ast_minimize_t, priority) p b
+        (#poke clingo_ast_minimize_t, tuple) p c
+        (#poke clingo_ast_minimize_t, tuple_size) p d
+        (#poke clingo_ast_minimize_t, body) p e
+        (#poke clingo_ast_minimize_t, body_size) p f
+
 data AstScript = AstScript AstScriptType CString
     deriving (Eq, Show)
+
+instance Storable AstScript where
+    sizeOf _ = #{size clingo_ast_script_t}
+    alignment = sizeOf
+    peek p = AstScript 
+        <$> (#{peek clingo_ast_script_t, type} p)
+        <*> (#{peek clingo_ast_script_t, code} p)
+    poke p (AstScript a b) = do
+        (#poke clingo_ast_script_t, type) p a
+        (#poke clingo_ast_script_t, code) p b
 
 data AstProgram = AstProgram CString (Ptr AstId) CSize
     deriving (Eq, Show)
 
+instance Storable AstProgram where
+    sizeOf _ = #{size clingo_ast_program_t}
+    alignment = sizeOf
+    peek p = AstProgram 
+        <$> (#{peek clingo_ast_program_t, name} p)
+        <*> (#{peek clingo_ast_program_t, parameters} p)
+        <*> (#{peek clingo_ast_program_t, size} p)
+    poke p (AstProgram a b c) = do
+        (#poke clingo_ast_program_t, name) p a
+        (#poke clingo_ast_program_t, parameters) p b
+        (#poke clingo_ast_program_t, size) p c
+    
 data AstExternal = AstExternal AstTerm (Ptr AstBodyLiteral) CSize
     deriving (Eq, Show)
+
+instance Storable AstExternal where
+    sizeOf _ = #{size clingo_ast_external_t}
+    alignment = sizeOf
+    peek p = AstExternal 
+        <$> (#{peek clingo_ast_external_t, atom} p)
+        <*> (#{peek clingo_ast_external_t, body} p)
+        <*> (#{peek clingo_ast_external_t, size} p)
+    poke p (AstExternal a b c) = do
+        (#poke clingo_ast_external_t, atom) p a
+        (#poke clingo_ast_external_t, body) p b
+        (#poke clingo_ast_external_t, size) p c
 
 data AstEdge = AstEdge AstTerm AstTerm (Ptr AstBodyLiteral) CSize
     deriving (Eq, Show)
 
+instance Storable AstEdge where
+    sizeOf _ = #{size clingo_ast_edge_t}
+    alignment = sizeOf
+    peek p = AstEdge 
+        <$> (#{peek clingo_ast_edge_t, u} p)
+        <*> (#{peek clingo_ast_edge_t, v} p)
+        <*> (#{peek clingo_ast_edge_t, body} p)
+        <*> (#{peek clingo_ast_edge_t, size} p)
+    poke p (AstEdge a b c d) = do
+        (#poke clingo_ast_edge_t, u) p a
+        (#poke clingo_ast_edge_t, v) p b
+        (#poke clingo_ast_edge_t, body) p c
+        (#poke clingo_ast_edge_t, size) p d
+    
 data AstHeuristic = AstHeuristic AstTerm (Ptr AstBodyLiteral) CSize 
                     AstTerm AstTerm AstTerm
     deriving (Eq, Show)
 
+instance Storable AstHeuristic where
+    sizeOf _ = #{size clingo_ast_heuristic_t}
+    alignment = sizeOf
+    peek p = AstHeuristic 
+        <$> (#{peek clingo_ast_heuristic_t, atom} p)
+        <*> (#{peek clingo_ast_heuristic_t, body} p)
+        <*> (#{peek clingo_ast_heuristic_t, size} p)
+        <*> (#{peek clingo_ast_heuristic_t, bias} p)
+        <*> (#{peek clingo_ast_heuristic_t, priority} p)
+        <*> (#{peek clingo_ast_heuristic_t, modifier} p)
+    poke p (AstHeuristic a b c d e f) = do
+        (#poke clingo_ast_heuristic_t, atom) p a
+        (#poke clingo_ast_heuristic_t, body) p b
+        (#poke clingo_ast_heuristic_t, size) p c
+        (#poke clingo_ast_heuristic_t, bias) p d
+        (#poke clingo_ast_heuristic_t, priority) p e
+        (#poke clingo_ast_heuristic_t, modifier) p f
+
 data AstProject = AstProject AstTerm (Ptr AstBodyLiteral) CSize
     deriving (Eq, Show)
 
+instance Storable AstProject where
+    sizeOf _ = #{size clingo_ast_project_t}
+    alignment = sizeOf
+    peek p = AstProject
+        <$> (#{peek clingo_ast_project_t, atom} p)
+        <*> (#{peek clingo_ast_project_t, body} p)
+        <*> (#{peek clingo_ast_project_t, size} p)
+    poke p (AstProject a b c) = do
+        (#poke clingo_ast_project_t, atom) p a
+        (#poke clingo_ast_project_t, body) p b
+        (#poke clingo_ast_project_t, size) p c
+    
 data AstStatement = AstStmtRule Location (Ptr AstRule)
                   | AstStmtDefinition Location (Ptr AstDefinition)
                   | AstStmtShowSignature Location (Ptr AstShowSignature)
@@ -517,6 +1101,12 @@ data AstStatement = AstStmtRule Location (Ptr AstRule)
                   | AstStmtSignature Signature
                   | AstStmtTheoryDefn (Ptr AstTheoryDefinition)
     deriving (Eq, Show)
+
+instance Storable AstStatement where
+    sizeOf _ = #{size clingo_ast_unary_operation_t}
+    alignment = sizeOf
+    peek p = undefined -- AstStatement 
+    poke p d = undefined
 
 foreign import ccall "clingo.h clingo_parse_program" parseProgramFFI ::
     CString -> FunPtr (CallbackAST a) -> Ptr a -> FunPtr (Logger b) -> Ptr b 
