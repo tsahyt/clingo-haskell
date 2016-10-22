@@ -25,6 +25,10 @@ library
                        Clingo.Raw.Iterative
                        Clingo.Raw.Asynchronous
                        Clingo.Raw.Statistics
+                       Clingo.Raw.Configuration
+                       Clingo.Raw.Propagation
+                       Clingo.Raw.Inspection.Symbolic
+                       Clingo.Raw.Inspection.Theory
   c-sources:           cbits/wrappers.c
   build-depends:       base >= 4.7 && < 5,
                        data-flags >= 0.0.3 && <= 0.0.4

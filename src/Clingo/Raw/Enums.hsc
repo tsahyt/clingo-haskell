@@ -55,7 +55,7 @@ module Clingo.Raw.Enums
     pattern ResultExhausted,
     pattern ResultInterrupted,
 
-    TheoryTerm,
+    TheoryTermType,
     pattern TheoryTuple,
     pattern TheoryList,
     pattern TheorySet,
@@ -160,7 +160,7 @@ pattern ResultUnsatisfiable = #{const clingo_solve_result_unsatisfiable}
 pattern ResultExhausted = #{const clingo_solve_result_exhausted}
 pattern ResultInterrupted = #{const clingo_solve_result_interrupted}
 
-type TheoryTerm = (#type clingo_theory_term_type_t)
+type TheoryTermType = (#type clingo_theory_term_type_t)
 
 pattern TheoryTuple = #{const clingo_theory_term_type_tuple}
 pattern TheoryList = #{const clingo_theory_term_type_list}
