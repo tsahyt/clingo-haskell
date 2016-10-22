@@ -85,6 +85,7 @@ data Location = Location
     , locEndLine   :: #type size_t
     , locBeginCol  :: #type size_t
     , locEndCol    :: #type size_t }
+    deriving (Eq, Show)
 
 instance Storable Location where
     sizeOf _ = #{size clingo_location_t}

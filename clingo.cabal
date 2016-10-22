@@ -16,19 +16,20 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Clingo.Clingo
-                       Clingo.Raw.Types
-                       Clingo.Raw.Enums
-                       Clingo.Raw.Basic
-                       Clingo.Raw.Control
-                       Clingo.Raw.Model
-                       Clingo.Raw.Symbol
-                       Clingo.Raw.Iterative
+                       Clingo.Raw.AST
                        Clingo.Raw.Asynchronous
-                       Clingo.Raw.Statistics
+                       Clingo.Raw.Basic
                        Clingo.Raw.Configuration
-                       Clingo.Raw.Propagation
+                       Clingo.Raw.Control
+                       Clingo.Raw.Enums
                        Clingo.Raw.Inspection.Symbolic
                        Clingo.Raw.Inspection.Theory
+                       Clingo.Raw.Iterative
+                       Clingo.Raw.Model
+                       Clingo.Raw.Propagation
+                       Clingo.Raw.Statistics
+                       Clingo.Raw.Symbol
+                       Clingo.Raw.Types
   c-sources:           cbits/wrappers.c
   build-depends:       base >= 4.7 && < 5,
                        data-flags >= 0.0.3 && <= 0.0.4
