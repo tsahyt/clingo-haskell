@@ -1,5 +1,4 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
-{-# LANGUAGE EmptyDataDecls #-}
 module Clingo.Raw.Types
 (
     CBool,
@@ -18,20 +17,20 @@ module Clingo.Raw.Types
     SymbolicLiteral,
 
     -- * Model and Solving
-    Model,
-    SolveControl,
-    IterSolver,
-    AsyncSolver,
+    Model (..),
+    SolveControl (..),
+    IterSolver (..),
+    AsyncSolver (..),
 
     -- * Symbolic and Theory Atoms
-    SymbolicAtoms,
+    SymbolicAtoms (..),
     SymbolicAtomIterator,
-    TheoryAtoms,
+    TheoryAtoms (..),
 
     -- * Propagators
-    PropagateInit,
-    Assignment,
-    PropagateControl,
+    PropagateInit (..),
+    Assignment (..),
+    PropagateControl (..),
     CallbackPropagatorInit,
     CallbackPropagatorPropagate,
     CallbackPropagatorUndo,
@@ -40,18 +39,18 @@ module Clingo.Raw.Types
 
     -- * Program Builder
     WeightedLiteral (..),
-    Backend,
-    ProgramBuilder,
+    Backend (..),
+    ProgramBuilder (..),
 
     -- * Configuration & Statistics
-    Configuration,
-    Statistics,
+    Configuration (..),
+    Statistics (..),
 
     -- * Program Inspection
     GroundProgramObserver (..),
 
     -- * Control
-    Control,
+    Control (..),
     Part,
     CallbackSymbol,
     CallbackGround,
@@ -125,27 +124,27 @@ instance Storable SymbolicLiteral where
         (#poke clingo_symbolic_literal_t, symbol) p (slitSymbol lit)
         (#poke clingo_symbolic_literal_t, positive) p (slitPositive lit)
 
-data SolveControl
-data Model
-data IterSolver
-data AsyncSolver
-data SymbolicAtoms
+newtype SolveControl = SolveControl (Ptr SolveControl)
+newtype Model = Model (Ptr Model)
+newtype IterSolver = IterSolver (Ptr IterSolver)
+newtype AsyncSolver = AsyncSolver (Ptr AsyncSolver)
+newtype SymbolicAtoms = SymbolicAtoms (Ptr SymbolicAtoms)
 
 type SymbolicAtomIterator = #type clingo_symbolic_atom_iterator_t
 
-data TheoryAtoms
-data PropagateInit
-data Assignment
-data PropagateControl
+newtype TheoryAtoms = TheoryAtoms (Ptr TheoryAtoms)
+newtype PropagateInit = PropagateInit (Ptr PropagateInit)
+newtype Assignment = Assignment (Ptr Assignment)
+newtype PropagateControl = PropagateControl (Ptr PropagateControl)
 
 type CallbackPropagatorInit a = 
-    Ptr PropagateInit -> Ptr a -> IO (CBool)
+    PropagateInit -> Ptr a -> IO (CBool)
 type CallbackPropagatorPropagate a = 
-    Ptr PropagateControl -> Ptr Literal -> CSize -> Ptr a -> IO CBool
+    PropagateControl -> Ptr Literal -> CSize -> Ptr a -> IO CBool
 type CallbackPropagatorUndo a = 
-    Ptr PropagateControl -> Ptr Literal -> CSize -> Ptr a -> IO CBool
+    PropagateControl -> Ptr Literal -> CSize -> Ptr a -> IO CBool
 type CallbackPropagatorCheck a = 
-    Ptr PropagateControl -> Ptr a -> IO CBool
+    PropagateControl -> Ptr a -> IO CBool
 
 data Propagator a = Propagator
     { propagatorInit      :: FunPtr (CallbackPropagatorInit a)
@@ -185,10 +184,10 @@ instance Storable WeightedLiteral where
         (#poke clingo_weighted_literal_t, literal) p (wlLiteral wl)
         (#poke clingo_weighted_literal_t, weight) p (wlWeight wl)
 
-data Backend
-data Configuration
-data Statistics
-data ProgramBuilder
+newtype Backend = Backend (Ptr Backend)
+newtype Configuration = Configuration (Ptr Configuration)
+newtype Statistics = Statistics (Ptr Statistics)
+newtype ProgramBuilder = ProgramBuilder (Ptr ProgramBuilder)
 
 data GroundProgramObserver a = GroundProgramObserver
     { gpoInitProgram   :: FunPtr (CBool -> Ptr a -> IO CBool)
@@ -274,7 +273,7 @@ instance Storable (GroundProgramObserver a) where
         (#poke clingo_ground_program_observer_t, theory_atom_with_guard) p 
             (gpoTheoryAtomGrd g)
 
-data Control
+newtype Control = Control (Ptr Control)
 
 data Part = Part
     { partName   :: Ptr CChar
@@ -299,5 +298,5 @@ type CallbackSymbol a = Ptr Symbol -> CSize -> Ptr a -> IO CBool
 type CallbackGround a = 
     Location -> Ptr CChar -> Ptr Symbol -> CSize -> Ptr a 
              -> CallbackSymbol a -> Ptr a -> IO CBool
-type CallbackModel a = Ptr Model -> Ptr a -> Ptr CBool -> IO CBool
+type CallbackModel a = Model -> Ptr a -> Ptr CBool -> IO CBool
 type CallbackFinish a = SolveResult -> Ptr a -> CBool
