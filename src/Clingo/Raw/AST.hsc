@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Clingo.Raw.AST
 (
     -- * Enumerations
@@ -386,14 +387,75 @@ data AstTerm = AstTermSymbol Location Symbol
              | AstTermBOp Location AstBinaryOperation
              | AstTermInterval Location AstInterval
              | AstTermFunction Location AstFunction
+             | AstTermExtFunction Location AstFunction
              | AstTermPool Location AstPool
     deriving (Eq, Show)
 
 instance Storable AstTerm where
     sizeOf _ = #{size clingo_ast_term_t}
     alignment = sizeOf
-    peek p = undefined -- AstTerm 
-    poke p d = undefined
+    peek p = do
+        loc <- (#{peek clingo_ast_term_t, location} p)
+        typ :: AstTermType <- (#{peek clingo_ast_term_t, type} p)
+        case typ of
+            AstTermTypeSymbol -> do
+                payload <- (#{peek clingo_ast_term_t, symbol} p)
+                pure $! AstTermSymbol loc payload
+            AstTermTypeVariable -> do
+                payload <- (#{peek clingo_ast_term_t, variable} p)
+                pure $! AstTermVariable loc payload
+            AstTermTypeUnaryOperation -> do
+                payload <- (#{peek clingo_ast_term_t, unary_operation} p)
+                pure $! AstTermUOp loc payload
+            AstTermTypeBinaryOperation -> do
+                payload <- (#{peek clingo_ast_term_t, binary_operation} p)
+                pure $! AstTermBOp loc payload
+            AstTermTypeInterval -> do
+                payload <- (#{peek clingo_ast_term_t, interval} p)
+                pure $! AstTermInterval loc payload
+            AstTermTypeFunction -> do
+                payload <- (#{peek clingo_ast_term_t, function} p)
+                pure $! AstTermFunction loc payload
+            AstTermTypeExternalFunction -> do
+                payload <- (#{peek clingo_ast_term_t, external_function} p)
+                pure $! AstTermExtFunction loc payload
+            AstTermTypePool -> do
+                payload <- (#{peek clingo_ast_term_t, pool} p)
+                pure $! AstTermPool loc payload
+            _ -> error "Malformed struct"
+    poke p d = case d of
+        AstTermSymbol l x -> do
+            (#poke clingo_ast_term_t, location) p l
+            (#poke clingo_ast_term_t, type) p (AstTermTypeSymbol :: AstTermType)
+            (#poke clingo_ast_term_t, symbol) p x
+        AstTermVariable l x -> do
+            (#poke clingo_ast_term_t, location) p l
+            (#poke clingo_ast_term_t, type) p (AstTermTypeVariable :: AstTermType)
+            (#poke clingo_ast_term_t, variable) p x
+        AstTermUOp l x -> do
+            (#poke clingo_ast_term_t, location) p l
+            (#poke clingo_ast_term_t, type) p (AstTermTypeUnaryOperation :: AstTermType)
+            (#poke clingo_ast_term_t, unary_operation) p x
+        AstTermBOp l x -> do
+            (#poke clingo_ast_term_t, location) p l
+            (#poke clingo_ast_term_t, type) p (AstTermTypeBinaryOperation :: AstTermType)
+            (#poke clingo_ast_term_t, binary_operation) p x
+        AstTermInterval l x -> do
+            (#poke clingo_ast_term_t, location) p l
+            (#poke clingo_ast_term_t, type) p (AstTermTypeInterval :: AstTermType)
+            (#poke clingo_ast_term_t, interval) p x
+        AstTermFunction l x -> do
+            (#poke clingo_ast_term_t, location) p l
+            (#poke clingo_ast_term_t, type) p (AstTermTypeFunction :: AstTermType)
+            (#poke clingo_ast_term_t, function) p x
+        AstTermExtFunction l x -> do
+            (#poke clingo_ast_term_t, location) p l
+            (#poke clingo_ast_term_t, type) p (AstTermTypeExternalFunction :: AstTermType)
+            (#poke clingo_ast_term_t, external_function) p x
+        AstTermPool l x -> do
+            (#poke clingo_ast_term_t, location) p l
+            (#poke clingo_ast_term_t, type) p (AstTermTypePool :: AstTermType)
+            (#poke clingo_ast_term_t, pool) p x
 
 data AstCspProductTerm = AstCspProductTerm Location AstTerm (Ptr AstTerm)
     deriving (Eq, Show)
@@ -490,8 +552,45 @@ data AstLiteral = AstLiteralBool Location AstSign CBool
 instance Storable AstLiteral where
     sizeOf _ = #{size clingo_ast_literal_t}
     alignment = sizeOf
-    peek p = undefined -- AstLiteral
-    poke p d = undefined --  
+    peek p = do
+        loc <- (#{peek clingo_ast_literal_t, location} p)
+        sign <- (#{peek clingo_ast_literal_t, sign} p)
+        typ :: AstLiteralType <- (#{peek clingo_ast_literal_t, type} p)
+        case typ of
+            AstLiteralTypeBoolean -> do
+                payload <- (#{peek clingo_ast_literal_t, boolean} p)
+                pure $! AstLiteralBool loc sign payload
+            AstLiteralTypeSymbolic -> do
+                payload <- (#{peek clingo_ast_literal_t, boolean} p)
+                pure $! AstLiteralTerm loc sign payload
+            AstLiteralTypeComparison -> do
+                payload <- (#{peek clingo_ast_literal_t, boolean} p)
+                pure $! AstLiteralComp loc sign payload
+            AstLiteralTypeCsp -> do
+                payload <- (#{peek clingo_ast_literal_t, boolean} p)
+                pure $! AstLiteralCSPL loc sign payload
+            _ -> error "Malformed struct"
+    poke p d = case d of
+        AstLiteralBool l s x -> do
+            (#poke clingo_ast_literal_t, location) p l
+            (#poke clingo_ast_literal_t, sign) p s
+            (#poke clingo_ast_literal_t, type) p (AstLiteralTypeBoolean :: AstLiteralType)
+            (#poke clingo_ast_literal_t, boolean) p x
+        AstLiteralTerm l s x -> do
+            (#poke clingo_ast_literal_t, location) p l
+            (#poke clingo_ast_literal_t, sign) p s
+            (#poke clingo_ast_literal_t, type) p (AstLiteralTypeSymbolic :: AstLiteralType)
+            (#poke clingo_ast_literal_t, symbol) p x
+        AstLiteralComp l s x -> do
+            (#poke clingo_ast_literal_t, location) p l
+            (#poke clingo_ast_literal_t, sign) p s
+            (#poke clingo_ast_literal_t, type) p (AstLiteralTypeComparison:: AstLiteralType)
+            (#poke clingo_ast_literal_t, comparison) p x
+        AstLiteralCSPL l s x -> do
+            (#poke clingo_ast_literal_t, location) p l
+            (#poke clingo_ast_literal_t, sign) p s
+            (#poke clingo_ast_literal_t, type) p (AstLiteralTypeCsp :: AstLiteralType)
+            (#poke clingo_ast_literal_t, csp_literal) p x
 
 data AstAggregateGuard = AstAggregateGuard AstComparisonOperator AstTerm
     deriving (Eq, Show)
@@ -734,8 +833,61 @@ data AstTheoryTerm = AstTheoryTermSymbol Location Symbol
 instance Storable AstTheoryTerm where
     sizeOf _ = #{size clingo_ast_theory_term_t}
     alignment = sizeOf
-    peek p = undefined -- AstTheoryTerm 
-    poke p d = undefined
+    peek p = do
+        loc <- (#{peek clingo_ast_theory_term_t, location} p)
+        typ :: AstTheoryTermType <- (#{peek clingo_ast_theory_term_t, type} p)
+        case typ of
+            AstTheoryTermTypeSymbol -> do
+                payload <- (#{peek clingo_ast_theory_term_t, symbol} p)
+                pure $! AstTheoryTermSymbol loc payload
+            AstTheoryTermTypeVariable -> do
+                payload <- (#{peek clingo_ast_theory_term_t, variable} p)
+                pure $! AstTheoryTermVariable loc payload
+            AstTheoryTermTypeTuple -> do
+                payload <- (#{peek clingo_ast_theory_term_t, tuple} p)
+                pure $! AstTheoryTermTuple loc payload
+            AstTheoryTermTypeList -> do
+                payload <- (#{peek clingo_ast_theory_term_t, list} p)
+                pure $! AstTheoryTermList loc payload
+            AstTheoryTermTypeSet -> do
+                payload <- (#{peek clingo_ast_theory_term_t, set} p)
+                pure $! AstTheoryTermSet loc payload
+            AstTheoryTermTypeFunction -> do
+                payload <- (#{peek clingo_ast_theory_term_t, function} p)
+                pure $! AstTheoryTermFunction loc payload
+            AstTheoryTermTypeUnparsedTerm -> do
+                payload <- (#{peek clingo_ast_theory_term_t, unparsed_term} p)
+                pure $! AstTheoryTermUnparsed loc payload
+            _ -> error "Malformed struct"
+    poke p d = case d of
+        AstTheoryTermSymbol l x -> do
+            (#poke clingo_ast_theory_term_t, location) p l
+            (#poke clingo_ast_theory_term_t, type) p (AstTheoryTermTypeSymbol :: AstTheoryTermType)
+            (#poke clingo_ast_theory_term_t, symbol) p x
+        AstTheoryTermVariable l x -> do
+            (#poke clingo_ast_theory_term_t, location) p l
+            (#poke clingo_ast_theory_term_t, type) p (AstTheoryTermTypeVariable :: AstTheoryTermType)
+            (#poke clingo_ast_theory_term_t, variable) p x
+        AstTheoryTermTuple l x -> do
+            (#poke clingo_ast_theory_term_t, location) p l
+            (#poke clingo_ast_theory_term_t, type) p (AstTheoryTermTypeTuple :: AstTheoryTermType)
+            (#poke clingo_ast_theory_term_t, tuple) p x
+        AstTheoryTermList l x -> do
+            (#poke clingo_ast_theory_term_t, location) p l
+            (#poke clingo_ast_theory_term_t, type) p (AstTheoryTermTypeList :: AstTheoryTermType)
+            (#poke clingo_ast_theory_term_t, list) p x
+        AstTheoryTermSet l x -> do
+            (#poke clingo_ast_theory_term_t, location) p l
+            (#poke clingo_ast_theory_term_t, type) p (AstTheoryTermTypeSet :: AstTheoryTermType)
+            (#poke clingo_ast_theory_term_t, set) p x
+        AstTheoryTermFunction l x -> do
+            (#poke clingo_ast_theory_term_t, location) p l
+            (#poke clingo_ast_theory_term_t, type) p (AstTheoryTermTypeFunction :: AstTheoryTermType)
+            (#poke clingo_ast_theory_term_t, function) p x
+        AstTheoryTermUnparsed l x -> do
+            (#poke clingo_ast_theory_term_t, location) p l
+            (#poke clingo_ast_theory_term_t, type) p (AstTheoryTermTypeUnparsedTerm :: AstTheoryTermType)
+            (#poke clingo_ast_theory_term_t, unparsed_term) p x
 
 data AstTheoryAtomElement = AstTheoryAtomElement (Ptr AstTheoryTerm) CSize
                             (Ptr AstLiteral) CSize
@@ -795,13 +947,49 @@ data AstHeadLiteral = AstHeadLiteral Location (Ptr AstLiteral)
 instance Storable AstHeadLiteral where
     sizeOf _ = #{size clingo_ast_head_literal_t}
     alignment = sizeOf
-    peek p = undefined -- AstHeadLiteral 
-    poke p d = undefined
+    peek p = do
+        loc <- (#{peek clingo_ast_head_literal_t, location} p)
+        typ :: AstHeadLiteralType <- (#{peek clingo_ast_head_literal_t, type} p)
+        case typ of
+            AstHeadLiteralTypeLiteral -> do
+                payload <- (#{peek clingo_ast_head_literal_t, literal} p)
+                pure $! AstHeadLiteral loc payload
+            AstHeadLiteralTypeDisjunction -> do
+                payload <- (#{peek clingo_ast_head_literal_t, disjunction} p)
+                pure $! AstHeadDisjunction loc payload
+            AstHeadLiteralTypeAggregate -> do
+                payload <- (#{peek clingo_ast_head_literal_t, aggregate} p)
+                pure $! AstHeadLitAggregate loc payload
+            AstHeadLiteralTypeHeadAggregate -> do
+                payload <- (#{peek clingo_ast_head_literal_t, head_aggregate} p)
+                pure $! AstHeadLiteral loc payload
+            AstHeadLiteralTypeTheoryAtom -> do
+                payload <- (#{peek clingo_ast_head_literal_t, theory_atom} p)
+                pure $! AstHeadTheoryAtom loc payload
+            _ -> error "Malformed struct"
+    poke p d = case d of
+        AstHeadLiteral l x -> do
+            (#{poke clingo_ast_head_literal_t, location}) p l
+            (#{poke clingo_ast_head_literal_t, type}) p (AstHeadLiteralTypeLiteral :: AstHeadLiteralType)
+            (#{poke clingo_ast_head_literal_t, literal}) p x
+        AstHeadDisjunction l x -> do
+            (#{poke clingo_ast_head_literal_t, location}) p l
+            (#{poke clingo_ast_head_literal_t, type}) p (AstHeadLiteralTypeLiteral :: AstHeadLiteralType)
+            (#{poke clingo_ast_head_literal_t, disjunction}) p x
+        AstHeadLitAggregate l x -> do
+            (#{poke clingo_ast_head_literal_t, location}) p l
+            (#{poke clingo_ast_head_literal_t, type}) p (AstHeadLiteralTypeLiteral :: AstHeadLiteralType)
+            (#{poke clingo_ast_head_literal_t, aggregate}) p x
+        AstHeadTheoryAtom l x -> do
+            (#{poke clingo_ast_head_literal_t, location}) p l
+            (#{poke clingo_ast_head_literal_t, type}) p (AstHeadLiteralTypeLiteral :: AstHeadLiteralType)
+            (#{poke clingo_ast_head_literal_t, theory_atom}) p x
 
 data AstBodyLiteral 
     = AstBodyLiteral Location AstSign (Ptr AstLiteral)
-    | AstBodyConditional Location AstSign (Ptr AstConditionalLiteral)
-    | AstBodyLitAggregate Location AstSign (Ptr AstBodyAggregate)
+    | AstBodyConditional Location (Ptr AstConditionalLiteral)
+    | AstBodyLitAggregate Location AstSign (Ptr AstAggregate)
+    | AstBodyBodyAggregate Location AstSign (Ptr AstBodyAggregate)
     | AstBodyTheoryAtom Location AstSign (Ptr AstTheoryAtom)
     | AstBodyDisjoint Location AstSign (Ptr AstDisjoint)
     deriving (Eq, Show)
@@ -809,8 +997,60 @@ data AstBodyLiteral
 instance Storable AstBodyLiteral where
     sizeOf _ = #{size clingo_ast_body_literal_t}
     alignment = sizeOf
-    peek p = undefined -- AstBodyLiteral 
-    poke p d = undefined
+    peek p = do
+        loc <- (#{peek clingo_ast_body_literal_t, location} p)
+        sign <- (#{peek clingo_ast_body_literal_t, sign} p)
+        typ :: AstBodyLiteralType <- (#{peek clingo_ast_body_literal_t, type} p)
+        case typ of
+            AstBodyLiteralTypeLiteral -> do
+                payload <- (#{peek clingo_ast_body_literal_t, literal} p)
+                pure $! AstBodyLiteral loc sign payload
+            AstBodyLiteralTypeConditional -> do
+                payload <- (#{peek clingo_ast_body_literal_t, conditional} p)
+                pure $! AstBodyConditional loc payload
+            AstBodyLiteralTypeAggregate -> do
+                payload <- (#{peek clingo_ast_body_literal_t, aggregate} p)
+                pure $! AstBodyLitAggregate loc sign payload
+            AstBodyLiteralTypeBodyAggregate -> do
+                payload <- (#{peek clingo_ast_body_literal_t, body_aggregate} p)
+                pure $! AstBodyBodyAggregate loc sign payload
+            AstBodyLiteralTypeTheoryAtom -> do
+                payload <- (#{peek clingo_ast_body_literal_t, theory_atom} p)
+                pure $! AstBodyTheoryAtom loc sign payload
+            AstBodyLiteralTypeDisjoint -> do
+                payload <- (#{peek clingo_ast_body_literal_t, disjoint} p)
+                pure $! AstBodyDisjoint loc sign payload
+            _ -> error "Malformed struct"
+    poke p d = case d of
+        AstBodyLiteral l s x -> do
+            (#poke clingo_ast_body_literal_t, location) p l
+            (#poke clingo_ast_body_literal_t, sign) p s
+            (#poke clingo_ast_body_literal_t, type) p (AstBodyLiteralTypeLiteral :: AstBodyLiteralType)
+            (#poke clingo_ast_body_literal_t, literal) p x
+        AstBodyConditional l x -> do
+            (#poke clingo_ast_body_literal_t, location) p l
+            (#poke clingo_ast_body_literal_t, type) p (AstBodyLiteralTypeConditional :: AstBodyLiteralType)
+            (#poke clingo_ast_body_literal_t, conditional) p x
+        AstBodyLitAggregate l s x -> do
+            (#poke clingo_ast_body_literal_t, location) p l
+            (#poke clingo_ast_body_literal_t, sign) p s
+            (#poke clingo_ast_body_literal_t, type) p (AstBodyLiteralTypeAggregate :: AstBodyLiteralType)
+            (#poke clingo_ast_body_literal_t, aggregate) p x
+        AstBodyBodyAggregate l s x -> do
+            (#poke clingo_ast_body_literal_t, location) p l
+            (#poke clingo_ast_body_literal_t, sign) p s
+            (#poke clingo_ast_body_literal_t, type) p (AstBodyLiteralTypeBodyAggregate :: AstBodyLiteralType)
+            (#poke clingo_ast_body_literal_t, body_aggregate) p x
+        AstBodyTheoryAtom l s x -> do
+            (#poke clingo_ast_body_literal_t, location) p l
+            (#poke clingo_ast_body_literal_t, sign) p s
+            (#poke clingo_ast_body_literal_t, type) p (AstBodyLiteralTypeTheoryAtom :: AstBodyLiteralType)
+            (#poke clingo_ast_body_literal_t, theory_atom) p x
+        AstBodyDisjoint l s x -> do
+            (#poke clingo_ast_body_literal_t, location) p l
+            (#poke clingo_ast_body_literal_t, sign) p s
+            (#poke clingo_ast_body_literal_t, type) p (AstBodyLiteralTypeDisjoint :: AstBodyLiteralType)
+            (#poke clingo_ast_body_literal_t, disjoint) p x
 
 data AstTheoryOperatorDefinition = AstTheoryOperatorDefinition Location 
                                    CString CUInt AstTheoryOperatorType
@@ -1097,16 +1337,111 @@ data AstStatement = AstStmtRule Location (Ptr AstRule)
                   | AstStmtExternal Location (Ptr AstExternal)
                   | AstStmtEdge Location (Ptr AstEdge)
                   | AstStmtHeuristic Location (Ptr AstHeuristic)
-                  | AstStmtProject (Ptr AstProject)
-                  | AstStmtSignature Signature
-                  | AstStmtTheoryDefn (Ptr AstTheoryDefinition)
+                  | AstStmtProject Location (Ptr AstProject)
+                  | AstStmtSignature Location Signature
+                  | AstStmtTheoryDefn Location (Ptr AstTheoryDefinition)
     deriving (Eq, Show)
 
 instance Storable AstStatement where
     sizeOf _ = #{size clingo_ast_unary_operation_t}
     alignment = sizeOf
-    peek p = undefined -- AstStatement 
-    poke p d = undefined
+    peek p = do
+        loc <- (#{peek clingo_ast_statement_t, location} p)
+        typ :: AstStatementType <- (#{peek clingo_ast_statement_t, type} p)
+        case typ of
+            AstStatementTypeRule -> do
+                payload <- (#{peek clingo_ast_statement_t, rule} p)
+                pure $! AstStmtRule loc payload
+            AstStatementTypeConst -> do
+                payload <- (#{peek clingo_ast_statement_t, definition} p)
+                pure $! AstStmtDefinition loc payload
+            AstStatementTypeShowSignature -> do
+                payload <- (#{peek clingo_ast_statement_t, show_signature} p)
+                pure $! AstStmtShowSignature loc payload
+            AstStatementTypeShowTerm -> do
+                payload <- (#{peek clingo_ast_statement_t, show_term} p)
+                pure $! AstStmtShowTerm loc payload
+            AstStatementTypeMinimize -> do
+                payload <- (#{peek clingo_ast_statement_t, minimize} p)
+                pure $! AstStmtMinimize loc payload
+            AstStatementTypeScript -> do
+                payload <- (#{peek clingo_ast_statement_t, script} p)
+                pure $! AstStmtScript loc payload
+            AstStatementTypeProgram -> do
+                payload <- (#{peek clingo_ast_statement_t, program} p)
+                pure $! AstStmtProgram loc payload
+            AstStatementTypeExternal -> do
+                payload <- (#{peek clingo_ast_statement_t, external} p)
+                pure $! AstStmtExternal loc payload
+            AstStatementTypeEdge -> do
+                payload <- (#{peek clingo_ast_statement_t, edge} p)
+                pure $! AstStmtEdge loc payload
+            AstStatementTypeHeuristic -> do
+                payload <- (#{peek clingo_ast_statement_t, heuristic} p)
+                pure $! AstStmtHeuristic loc payload
+            AstStatementTypeProjectAtom -> do
+                payload <- (#{peek clingo_ast_statement_t, project_atom} p)
+                pure $! AstStmtProject loc payload
+            AstStatementTypeProjectAtomSignature -> do
+                payload <- (#{peek clingo_ast_statement_t, project_signature} p)
+                pure $! AstStmtSignature loc payload
+            AstStatementTypeTheoryDefinition -> do
+                payload <- (#{peek clingo_ast_statement_t, theory_definition} p)
+                pure $! AstStmtTheoryDefn loc payload
+            _ -> error "Malformed struct"
+    poke p d = case d of
+        AstStmtRule l x -> do
+            (#poke clingo_ast_statement_t, location) p l
+            (#poke clingo_ast_statement_t, type) p (AstStatementTypeRule :: AstStatementType)
+            (#poke clingo_ast_statement_t, rule) p x
+        AstStmtDefinition l x -> do
+            (#poke clingo_ast_statement_t, location) p l
+            (#poke clingo_ast_statement_t, type) p (AstStatementTypeConst :: AstStatementType)
+            (#poke clingo_ast_statement_t, definition) p x
+        AstStmtShowSignature l x -> do
+            (#poke clingo_ast_statement_t, location) p l
+            (#poke clingo_ast_statement_t, type) p (AstStatementTypeShowSignature :: AstStatementType)
+            (#poke clingo_ast_statement_t, show_signature) p x
+        AstStmtShowTerm l x -> do
+            (#poke clingo_ast_statement_t, location) p l
+            (#poke clingo_ast_statement_t, type) p (AstStatementTypeShowTerm :: AstStatementType)
+            (#poke clingo_ast_statement_t, show_term) p x
+        AstStmtMinimize l x -> do
+            (#poke clingo_ast_statement_t, location) p l
+            (#poke clingo_ast_statement_t, type) p (AstStatementTypeMinimize :: AstStatementType)
+            (#poke clingo_ast_statement_t, minimize) p x
+        AstStmtScript l x -> do
+            (#poke clingo_ast_statement_t, location) p l
+            (#poke clingo_ast_statement_t, type) p (AstStatementTypeScript :: AstStatementType)
+            (#poke clingo_ast_statement_t, script) p x
+        AstStmtProgram l x -> do
+            (#poke clingo_ast_statement_t, location) p l
+            (#poke clingo_ast_statement_t, type) p (AstStatementTypeProgram :: AstStatementType)
+            (#poke clingo_ast_statement_t, program) p x
+        AstStmtExternal l x -> do
+            (#poke clingo_ast_statement_t, location) p l
+            (#poke clingo_ast_statement_t, type) p (AstStatementTypeExternal :: AstStatementType)
+            (#poke clingo_ast_statement_t, external) p x
+        AstStmtEdge l x -> do
+            (#poke clingo_ast_statement_t, location) p l
+            (#poke clingo_ast_statement_t, type) p (AstStatementTypeEdge :: AstStatementType)
+            (#poke clingo_ast_statement_t, edge) p x
+        AstStmtHeuristic l x -> do
+            (#poke clingo_ast_statement_t, location) p l
+            (#poke clingo_ast_statement_t, type) p (AstStatementTypeHeuristic :: AstStatementType)
+            (#poke clingo_ast_statement_t, heuristic) p x
+        AstStmtProject l x -> do
+            (#poke clingo_ast_statement_t, location) p l
+            (#poke clingo_ast_statement_t, type) p (AstStatementTypeProjectAtom :: AstStatementType)
+            (#poke clingo_ast_statement_t, project_atom) p x
+        AstStmtSignature l x -> do
+            (#poke clingo_ast_statement_t, location) p l
+            (#poke clingo_ast_statement_t, type) p (AstStatementTypeProjectAtomSignature :: AstStatementType)
+            (#poke clingo_ast_statement_t, project_signature) p x
+        AstStmtTheoryDefn l x -> do
+            (#poke clingo_ast_statement_t, location) p l
+            (#poke clingo_ast_statement_t, type) p (AstStatementTypeTheoryDefinition :: AstStatementType)
+            (#poke clingo_ast_statement_t, theory_definition) p x
 
 foreign import ccall "clingo.h clingo_parse_program" parseProgramFFI ::
     CString -> FunPtr (CallbackAST a) -> Ptr a -> FunPtr (Logger b) -> Ptr b 
