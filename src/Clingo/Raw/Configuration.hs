@@ -8,16 +8,11 @@ module Clingo.Raw.Configuration
     -- * Functions to access arrays
     configurationArraySize,
     configurationArrayAt,
-    statisticsArraySize,
-    statisticsArrayAt,
     
     -- * Functions to access maps
     configurationMapSize,
     configurationMapSubkeyName,
     configurationMapAt,
-    statisticsMapSize,
-    statisticsMapSubkeyName,
-    statisticsMapAt,
 
     -- * Functions to access values
     configurationValueIsAssigned,
@@ -45,22 +40,12 @@ foreign import ccall "clingo.h clingo_configuration_array_size" configurationArr
     Configuration -> Identifier -> Word64 -> Ptr CSize -> IO CBool
 foreign import ccall "clingo.h clingo_configuration_array_at" configurationArrayAtFFI ::
     Configuration -> Identifier -> CSize -> Ptr Identifier -> IO CBool
-foreign import ccall "clingo.h clingo_statistics_array_size" statisticsArraySizeFFI ::
-    Statistics -> Word64 -> Ptr CSize -> IO CBool
-foreign import ccall "clingo.h clingo_statistics_array_at" statisticsArrayAtFFI ::
-    Statistics -> Word64 -> Ptr CSize -> IO CBool
 foreign import ccall "clingo.h clingo_configuration_map_size" configurationMapSizeFFI ::
     Configuration -> Identifier -> Ptr CSize -> IO CBool
 foreign import ccall "clingo.h clingo_configuration_map_subkey_name" configurationMapSubkeyNameFFI ::
     Configuration -> Identifier -> CSize -> Ptr CString -> IO CBool
 foreign import ccall "clingo.h clingo_configuration_map_at" configurationMapAtFFI ::
     Configuration -> Identifier -> CString -> Ptr Identifier -> IO CBool
-foreign import ccall "clingo.h clingo_statistics_map_size" statisticsMapSizeFFI ::
-    Statistics -> Word64 -> Ptr CSize -> IO CBool
-foreign import ccall "clingo.h clingo_statistics_map_subkey_name" statisticsMapSubkeyNameFFI ::
-    Statistics -> Word64 -> CSize -> Ptr CString -> IO CBool
-foreign import ccall "clingo.h clingo_statistics_map_at" statisticsMapAtFFI ::
-    Statistics -> Word64 -> CString -> Ptr Word64 -> IO CBool
 foreign import ccall "clingo.h clingo_configuration_value_is_assigned" configurationValueIsAssignedFFI ::
     Configuration -> Identifier -> Ptr CBool -> IO CBool
 foreign import ccall "clingo.h clingo_configuration_value_get_size" configurationValueGetSizeFFI ::
@@ -85,12 +70,6 @@ configurationArraySize a b c d = liftIO $ configurationArraySizeFFI a b c d
 configurationArrayAt :: MonadIO m => Configuration -> Identifier -> CSize -> Ptr Identifier -> m CBool
 configurationArrayAt a b c d = liftIO $ configurationArrayAtFFI a b c d
 
-statisticsArraySize :: MonadIO m => Statistics -> Word64 -> Ptr CSize -> m CBool
-statisticsArraySize a b c = liftIO $ statisticsArraySizeFFI a b c
-
-statisticsArrayAt :: MonadIO m => Statistics -> Word64 -> Ptr CSize -> m CBool
-statisticsArrayAt a b c = liftIO $ statisticsArrayAtFFI a b c
-
 configurationMapSize :: MonadIO m => Configuration -> Identifier -> Ptr CSize -> m CBool
 configurationMapSize a b c = liftIO $ configurationMapSizeFFI a b c
 
@@ -99,15 +78,6 @@ configurationMapSubkeyName a b c d = liftIO $ configurationMapSubkeyNameFFI a b 
 
 configurationMapAt :: MonadIO m => Configuration -> Identifier -> CString -> Ptr Identifier -> m CBool
 configurationMapAt a b c d = liftIO $ configurationMapAtFFI a b c d
-
-statisticsMapSize :: MonadIO m => Statistics -> Word64 -> Ptr CSize -> m CBool
-statisticsMapSize a b c = liftIO $ statisticsMapSizeFFI a b c
-
-statisticsMapSubkeyName :: MonadIO m => Statistics -> Word64 -> CSize -> Ptr CString -> m CBool
-statisticsMapSubkeyName a b c d = liftIO $ statisticsMapSubkeyNameFFI a b c d
-
-statisticsMapAt :: MonadIO m => Statistics -> Word64 -> CString -> Ptr Word64 -> m CBool
-statisticsMapAt a b c d = liftIO $ statisticsMapAtFFI a b c d
 
 configurationValueIsAssigned :: MonadIO m => Configuration -> Identifier -> Ptr CBool -> m CBool
 configurationValueIsAssigned a b c = liftIO $ configurationValueIsAssignedFFI a b c
