@@ -32,8 +32,7 @@ library
                        Clingo.Raw.Symbol
                        Clingo.Raw.Types
   c-sources:           cbits/wrappers.c
-  build-depends:       base >= 4.7 && < 5,
-                       data-flags >= 0.0.3 && <= 0.0.4
+  build-depends:       base >= 4.7 && < 5
   extra-libraries:     clingo
   include-dirs:        include
   ghc-options:         -Wall

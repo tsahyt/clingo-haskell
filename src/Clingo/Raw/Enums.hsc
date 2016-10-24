@@ -5,8 +5,6 @@
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 module Clingo.Raw.Enums
 (
-    combineFlags,
-
     ClingoError,
     pattern ErrorSuccess,
     pattern ErrorRuntime,
@@ -96,14 +94,10 @@ module Clingo.Raw.Enums
 )
 where
 
-import Data.Flags
 import Data.Int
 import Data.Word
 
 #include <clingo.h>
-
-combineFlags :: Flags a => [a] -> a
-combineFlags = foldl (.+.) noFlags
 
 type ClingoError = (#type clingo_error_t)
 
