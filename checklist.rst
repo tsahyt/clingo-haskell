@@ -8,11 +8,11 @@ Raw.Asynchronous
 
 Raw.Basic
 =========
-+ [ ] errorCode :: MonadIO m => m ClingoError
-+ [ ] errorMessage :: MonadIO m => m CString
++ [X] 2016-10-25 errorCode :: MonadIO m => m ClingoError
++ [X] 2016-10-25 errorMessage :: MonadIO m => m CString
 + [ ] errorString :: MonadIO m => ClingoError -> m CString
 + [ ] setError :: MonadIO m => ClingoError -> CString -> m ()
-+ [ ] version :: MonadIO m => Ptr CInt -> Ptr CInt -> Ptr CInt -> m ()
++ [X] 2016-10-25 version :: MonadIO m => Ptr CInt -> Ptr CInt -> Ptr CInt -> m ()
 + [ ] warningString :: MonadIO m => ClingoWarning -> m CString
 
 Raw.Configuration
@@ -38,18 +38,18 @@ Raw.Control
 + [ ] controlClaspFacade :: MonadIO m => Control -> Ptr (Ptr ()) -> m CBool
 + [ ] controlCleanup :: MonadIO m => Control -> m CBool
 + [ ] controlConfiguration :: MonadIO m => Control -> Ptr Configuration
-+ [ ] controlFree :: MonadIO m => Control -> m ()
++ [X] 2016-10-25 controlFree :: MonadIO m => Control -> m ()
 + [ ] controlGetConst :: MonadIO m => Control -> CString -> Ptr Symbol -> m CBool
-+ [ ] controlGround :: MonadIO m => Control -> Ptr Part -> CSize 
++ [o] controlGround :: MonadIO m => Control -> Ptr Part -> CSize 
 + [ ] controlHasConst :: MonadIO m => Control -> CString -> Ptr CBool -> m CBool
 + [ ] controlInterrupt :: MonadIO m => Control -> m ()
-+ [ ] controlLoad :: MonadIO m => Control -> CString -> m CBool
-+ [ ] controlNew :: MonadIO m => Ptr CString -> CSize -> FunPtr (Logger a) 
++ [X] 2016-10-25 controlLoad :: MonadIO m => Control -> CString -> m CBool
++ [X] 2016-10-25 controlNew :: MonadIO m => Ptr CString -> CSize -> FunPtr (Logger a) 
 + [ ] controlProgramBuilder :: MonadIO m => Control -> Ptr ProgramBuilder
 + [ ] controlRegisterObserver :: MonadIO m => Control 
 + [ ] controlRegisterPropagator :: MonadIO m => Control -> Ptr (Propagator a) 
 + [ ] controlReleaseExternal :: MonadIO m => Control -> Symbol -> m CBool
-+ [ ] controlSolve :: MonadIO m => Control -> FunPtr (CallbackModel a) -> Ptr a 
++ [o] controlSolve :: MonadIO m => Control -> FunPtr (CallbackModel a) -> Ptr a 
 + [ ] controlSolveAsync :: MonadIO m => Control -> FunPtr (CallbackModel a) 
 + [ ] controlSolveIter :: MonadIO m => Control -> Ptr SymbolicLiteral -> CSize 
 + [ ] controlStatistics :: MonadIO m => Control -> Ptr Statistics -> m CBool
@@ -130,7 +130,7 @@ Raw.Statistics
 
 Raw.Symbol
 ==========
-+ [ ] addString :: MonadIO m => CString -> Ptr CString -> m CBool
++ [o] addString :: MonadIO m => CString -> Ptr CString -> m CBool
 + [ ] parseTerm :: MonadIO m => CString -> FunPtr (Logger a) -> Ptr a -> CUInt 
 + [ ] signatureArity :: Signature -> Word32
 + [ ] signatureCreate :: MonadIO m => CString -> Word32 -> CBool -> Ptr Signature 
@@ -143,18 +143,18 @@ Raw.Symbol
 + [ ] symbolArguments :: MonadIO m => Symbol -> Ptr (Ptr Symbol) -> Ptr CSize 
 + [ ] symbolCreateFunction :: MonadIO m => CString -> Ptr Symbol -> CSize -> CBool 
 + [ ] symbolCreateId :: MonadIO m => CString -> CBool -> Ptr Symbol -> m CBool
-+ [ ] symbolCreateInfimum :: MonadIO m => Ptr Symbol -> m ()
-+ [ ] symbolCreateNumber :: MonadIO m => CInt -> Ptr Symbol -> m ()
++ [X] 2016-10-25 symbolCreateInfimum :: MonadIO m => Ptr Symbol -> m ()
++ [X] 2016-10-25 symbolCreateNumber :: MonadIO m => CInt -> Ptr Symbol -> m ()
 + [ ] symbolCreateString :: MonadIO m => CString -> Ptr Symbol -> m CBool
-+ [ ] symbolCreateSupremum :: MonadIO m => Ptr Symbol -> m ()
-+ [ ] symbolHash :: Symbol -> CSize
-+ [ ] symbolIsEqualTo :: Symbol -> Symbol -> CBool
-+ [ ] symbolIsLessThan :: Symbol -> Symbol -> CBool
-+ [ ] symbolIsNegative :: MonadIO m => Symbol -> Ptr CBool -> m CBool
-+ [ ] symbolIsPositive :: MonadIO m => Symbol -> Ptr CBool -> m CBool
++ [X] 2016-10-25 symbolCreateSupremum :: MonadIO m => Ptr Symbol -> m ()
++ [X] 2016-10-25 symbolHash :: Symbol -> CSize
++ [X] 2016-10-25 symbolIsEqualTo :: Symbol -> Symbol -> CBool
++ [X] 2016-10-25 symbolIsLessThan :: Symbol -> Symbol -> CBool
++ [X] 2016-10-25 symbolIsNegative :: MonadIO m => Symbol -> Ptr CBool -> m CBool
++ [X] 2016-10-25 symbolIsPositive :: MonadIO m => Symbol -> Ptr CBool -> m CBool
 + [ ] symbolName :: MonadIO m => Symbol -> Ptr CString -> m CBool
 + [ ] symbolNumber :: MonadIO m => Symbol -> Ptr CInt -> m CBool
 + [ ] symbolString :: MonadIO m => Symbol -> Ptr CString -> m CBool
 + [ ] symbolSymbolToString :: MonadIO m => Symbol -> Ptr CChar -> m CBool
 + [ ] symbolSymbolToStringSize :: MonadIO m => Symbol -> Ptr CSize -> m CBool
-+ [ ] symbolType :: Symbol -> SymbolType
++ [X] 2016-10-25 symbolType :: Symbol -> SymbolType
