@@ -6,6 +6,7 @@ module Clingo.Internal.Utils
     checkAndThrow,
     marshall0,
     marshall1,
+    marshall1V,
     marshall1A,
     marshall2,
     marshall3V
@@ -52,6 +53,16 @@ marshall1 action = do
     checkAndThrow res
     return a
 {-# INLINE marshall1 #-}
+
+marshall1V :: (Storable a, MonadIO m) 
+           => (Ptr a -> IO ()) -> m a
+marshall1V action = do
+    a <- liftIO $ alloca $ \ptr -> do
+        _ <- action ptr
+        a <- peek ptr
+        return a
+    return a
+{-# INLINE marshall1V #-}
 
 marshall2 :: (Storable a, Storable b, MonadIO m, MonadThrow m)
           => (Ptr a -> Ptr b -> IO Raw.CBool) -> m (a,b)

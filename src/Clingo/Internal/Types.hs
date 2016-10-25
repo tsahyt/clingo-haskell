@@ -1,6 +1,7 @@
 module Clingo.Internal.Types
 (
     Clingo (..),
+    Symbol (..),
     Part (..),
     rawPart,
     SymbolicLiteral (..),
@@ -9,20 +10,33 @@ module Clingo.Internal.Types
 where
 
 import Data.Text (Text)
+import Foreign.Marshal.Utils
 import qualified Clingo.Raw as Raw
 
 newtype Clingo s = Clingo Raw.Control
 
-data Part = Part
-    { partName   :: Text
-    , partParams :: [()] }
+newtype Symbol s = Symbol { rawSymbol :: Raw.Symbol }
 
-rawPart :: Part -> Raw.Part
+data Part s = Part
+    { partName   :: Text
+    , partParams :: [Symbol s] }
+
+rawPart :: Part s -> Raw.Part
 rawPart = undefined
 
-data SymbolicLiteral = SymLit
-    { symLitSymbol   :: ()
-    , symLitPositive :: Bool }
+data SymbolicLiteral s 
+    = SLPositive (Symbol s)
+    | SLNegative (Symbol s)
 
-rawSymLit :: SymbolicLiteral -> Raw.SymbolicLiteral
-rawSymLit = undefined
+symLitSymbol :: SymbolicLiteral s -> Symbol s
+symLitSymbol (SLPositive s) = s
+symLitSymbol (SLNegative s) = s
+
+symLitPositive :: SymbolicLiteral s -> Bool
+symLitPositive (SLPositive _) = True
+symLitPositive _ = False
+
+rawSymLit :: SymbolicLiteral s -> Raw.SymbolicLiteral
+rawSymLit sl = Raw.SymbolicLiteral
+    { Raw.slitSymbol   = rawSymbol (symLitSymbol sl)
+    , Raw.slitPositive = fromBool (symLitPositive sl) }

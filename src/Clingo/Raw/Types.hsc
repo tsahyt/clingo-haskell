@@ -15,7 +15,7 @@ module Clingo.Raw.Types
     -- * Symbols
     Signature,
     Symbol,
-    SymbolicLiteral,
+    SymbolicLiteral (..),
 
     -- * Model and Solving
     Model (..),

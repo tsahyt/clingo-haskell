@@ -42,13 +42,13 @@ addProgram :: (MonadIO m, MonadThrow m)
            => Clingo s -> Text -> [Text] -> Text -> m ()
 addProgram (Clingo ctrl) name params code = marshall0 undefined
 
-ground :: (MonadIO m, MonadThrow m) => Clingo s -> [Part] -> m ()
+ground :: (MonadIO m, MonadThrow m) => Clingo s -> [Part s] -> m ()
 ground (Clingo ctrl) parts = marshall0 $
     withArrayLen (map rawPart parts) $ \len arr ->
         Raw.controlGround ctrl arr (fromIntegral len) nullFunPtr nullPtr
 
 solve :: (MonadIO m, MonadThrow m) 
-      => Clingo s -> [SymbolicLiteral] -> m Raw.SolveResult
+      => Clingo s -> [SymbolicLiteral s] -> m Raw.SolveResult
 solve (Clingo ctrl) assumptions = marshall1 go
     where go x = withArrayLen (map rawSymLit assumptions) $ 
                      \len arr -> Raw.controlSolve ctrl nullFunPtr nullPtr 
