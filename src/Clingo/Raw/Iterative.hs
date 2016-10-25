@@ -13,14 +13,14 @@ import Clingo.Raw.Types
 import Foreign
 
 foreign import ccall "clingo.h clingo_solve_iteratively_next" solveIterativelyNextFFI ::
-    IterSolver -> Ptr (Ptr Model) -> IO CBool
+    IterSolver -> Ptr Model -> IO CBool
 foreign import ccall "clingo.h clingo_solve_iteratively_get" solveIterativelyGetFFI ::
     IterSolver -> Ptr SolveResult -> IO CBool
 foreign import ccall "clingo.h clingo_solve_iteratively_close" solveIterativelyCloseFFI ::
     IterSolver -> IO CBool
 
 solveIterativelyNext :: MonadIO m 
-                     => IterSolver -> Ptr (Ptr Model) -> m CBool
+                     => IterSolver -> Ptr Model -> m CBool
 solveIterativelyNext a b = liftIO $ solveIterativelyNextFFI a b
 
 solveIterativelyGet :: MonadIO m 

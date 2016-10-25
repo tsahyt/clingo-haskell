@@ -125,11 +125,11 @@ instance Storable SymbolicLiteral where
         (#poke clingo_symbolic_literal_t, symbol) p (slitSymbol lit)
         (#poke clingo_symbolic_literal_t, positive) p (slitPositive lit)
 
-newtype SolveControl = SolveControl (Ptr SolveControl)
-newtype Model = Model (Ptr Model)
-newtype IterSolver = IterSolver (Ptr IterSolver)
-newtype AsyncSolver = AsyncSolver (Ptr AsyncSolver)
-newtype SymbolicAtoms = SymbolicAtoms (Ptr SymbolicAtoms)
+newtype SolveControl = SolveControl (Ptr SolveControl) deriving Storable
+newtype Model = Model (Ptr Model) deriving Storable
+newtype IterSolver = IterSolver (Ptr IterSolver) deriving Storable
+newtype AsyncSolver = AsyncSolver (Ptr AsyncSolver) deriving Storable
+newtype SymbolicAtoms = SymbolicAtoms (Ptr SymbolicAtoms) deriving Storable
 
 type SymbolicAtomIterator = #type clingo_symbolic_atom_iterator_t
 

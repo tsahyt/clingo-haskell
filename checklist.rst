@@ -59,9 +59,9 @@ Raw.Control
 
 Raw.Iterative
 =============
-+ [ ] solveIterativelyClose :: MonadIO m 
-+ [ ] solveIterativelyGet :: MonadIO m 
-+ [ ] solveIterativelyNext :: MonadIO m 
++ [X] 2016-10-25 solveIterativelyClose :: MonadIO m 
++ [o] solveIterativelyGet :: MonadIO m 
++ [X] 2016-10-25 solveIterativelyNext :: MonadIO m 
 
 Raw.Model
 =========

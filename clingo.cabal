@@ -22,6 +22,7 @@ library
   exposed-modules:     Clingo.Control
                        Clingo.Symbol
                        Clingo.Asynchronous
+                       Clingo.Iterative
                        Clingo.Raw
                        Clingo.Raw.AST
                        Clingo.Raw.Asynchronous

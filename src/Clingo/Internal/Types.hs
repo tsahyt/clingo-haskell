@@ -19,7 +19,9 @@ module Clingo.Internal.Types
     SymbolicLiteral (..),
     rawSymLit,
     Signature (..),
-    AsyncSolver (..)
+    AsyncSolver (..),
+    IterSolver (..),
+    Model (..)
 )
 where
 
@@ -116,3 +118,7 @@ instance Signed (Signature s) where
     negative = toBool . Raw.signatureIsNegative . rawSignature
 
 newtype AsyncSolver s = AsyncSolver Raw.AsyncSolver
+
+newtype IterSolver s = IterSolver Raw.IterSolver
+
+newtype Model s = Model Raw.Model
