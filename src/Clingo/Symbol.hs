@@ -7,7 +7,9 @@ module Clingo.Symbol
     createSupremum,
     createInfimum,
     
-    symbolHash
+    -- * Symbol inspection
+    symbolHash,
+    symbolType
 )
 where
 

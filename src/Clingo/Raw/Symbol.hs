@@ -92,7 +92,7 @@ foreign import ccall "clingo.h clingo_symbol_is_negative" symbolIsNegativeFFI ::
 foreign import ccall "clingo.h clingo_symbol_arguments" symbolArgumentsFFI ::
     Symbol -> Ptr (Ptr Symbol) -> Ptr CSize -> IO CBool
 foreign import ccall "clingo.h clingo_symbol_type" symbolTypeFFI ::
-    Symbol -> IO SymbolType
+    Symbol -> SymbolType
 foreign import ccall "clingo.h clingo_symbol_symbol_to_string_size" 
     symbolSymbolToStringSizeFFI :: Symbol -> Ptr CSize -> IO CBool
 foreign import ccall "clingo.h clingo_symbol_symbol_to_string" 
@@ -174,8 +174,8 @@ symbolArguments :: MonadIO m => Symbol -> Ptr (Ptr Symbol) -> Ptr CSize
                              -> m CBool
 symbolArguments a b c = liftIO $ symbolArgumentsFFI a b c
 
-symbolType :: MonadIO m => Symbol -> m SymbolType
-symbolType a = liftIO $ symbolTypeFFI a
+symbolType :: Symbol -> SymbolType
+symbolType = symbolTypeFFI
 
 symbolSymbolToStringSize :: MonadIO m => Symbol -> Ptr CSize -> m CBool
 symbolSymbolToStringSize a b = liftIO $ symbolSymbolToStringSizeFFI a b
