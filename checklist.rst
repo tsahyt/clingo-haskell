@@ -132,14 +132,14 @@ Raw.Symbol
 ==========
 + [o] addString :: MonadIO m => CString -> Ptr CString -> m CBool
 + [ ] parseTerm :: MonadIO m => CString -> FunPtr (Logger a) -> Ptr a -> CUInt 
-+ [ ] signatureArity :: Signature -> Word32
++ [X] 2016-10-25 signatureArity :: Signature -> Word32
 + [ ] signatureCreate :: MonadIO m => CString -> Word32 -> CBool -> Ptr Signature 
-+ [ ] signatureHash :: Signature -> CSize
-+ [ ] signatureIsEqualTo :: Signature -> Signature -> CBool
-+ [ ] signatureIsLessThan :: Signature -> Signature -> CBool
-+ [ ] signatureIsNegative :: Signature -> CBool
-+ [ ] signatureIsPositive :: Signature -> CBool
-+ [ ] signatureName :: Signature -> CString
++ [X] 2016-10-25 signatureHash :: Signature -> CSize
++ [X] 2016-10-25 signatureIsEqualTo :: Signature -> Signature -> CBool
++ [X] 2016-10-25 signatureIsLessThan :: Signature -> Signature -> CBool
++ [X] 2016-10-25 signatureIsNegative :: Signature -> CBool
++ [X] 2016-10-25 signatureIsPositive :: Signature -> CBool
++ [X] 2016-10-25 signatureName :: Signature -> CString
 + [ ] symbolArguments :: MonadIO m => Symbol -> Ptr (Ptr Symbol) -> Ptr CSize 
 + [ ] symbolCreateFunction :: MonadIO m => CString -> Ptr Symbol -> CSize -> CBool 
 + [ ] symbolCreateId :: MonadIO m => CString -> CBool -> Ptr Symbol -> m CBool

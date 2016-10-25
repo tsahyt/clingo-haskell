@@ -12,10 +12,13 @@ module Clingo.Internal.Types
     pattern SymString,
     pattern SymFunction,
     pattern SymSupremum,
+    FunctionSymbol,
+    functionSymbol,
     Part (..),
     rawPart,
     SymbolicLiteral (..),
     rawSymLit,
+    Signature (..),
     AsyncSolver (..)
 )
 where
@@ -92,9 +95,24 @@ symLitPositive :: SymbolicLiteral s -> Bool
 symLitPositive (SLPositive _) = True
 symLitPositive _ = False
 
+instance Signed (SymbolicLiteral s) where
+    positive = symLitPositive
+
 rawSymLit :: SymbolicLiteral s -> Raw.SymbolicLiteral
 rawSymLit sl = Raw.SymbolicLiteral
     { Raw.slitSymbol   = rawSymbol (symLitSymbol sl)
     , Raw.slitPositive = fromBool (symLitPositive sl) }
+
+newtype Signature s = Signature { rawSignature :: Raw.Signature }
+
+instance Eq (Signature s) where
+    (Signature a) == (Signature b) = toBool (Raw.signatureIsEqualTo a b)
+
+instance Ord (Signature s) where
+    (Signature a) <= (Signature b) = toBool (Raw.signatureIsLessThan a b)
+
+instance Signed (Signature s) where
+    positive = toBool . Raw.signatureIsPositive . rawSignature
+    negative = toBool . Raw.signatureIsNegative . rawSignature
 
 newtype AsyncSolver s = AsyncSolver Raw.AsyncSolver
