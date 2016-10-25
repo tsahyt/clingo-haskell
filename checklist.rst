@@ -2,9 +2,9 @@ Checklist to keep track of which parts of the Raw API are covered by the high-le
 
 Raw.Asynchronous
 ================
-+ [ ] solveAsyncCancel :: MonadIO m => AsyncSolver -> m CBool
-+ [ ] solveAsyncGet :: MonadIO m => AsyncSolver -> Ptr SolveResult -> m CBool
-+ [ ] solveAsyncWait :: MonadIO m => AsyncSolver -> CDouble -> Ptr CBool 
++ [X] 2016-10-25 solveAsyncCancel :: MonadIO m => AsyncSolver -> m CBool
++ [o] solveAsyncGet :: MonadIO m => AsyncSolver -> Ptr SolveResult -> m CBool
++ [X] 2016-10-25 solveAsyncWait :: MonadIO m => AsyncSolver -> CDouble -> Ptr CBool 
 
 Raw.Basic
 =========

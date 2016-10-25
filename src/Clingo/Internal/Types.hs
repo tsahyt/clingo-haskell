@@ -15,7 +15,8 @@ module Clingo.Internal.Types
     Part (..),
     rawPart,
     SymbolicLiteral (..),
-    rawSymLit
+    rawSymLit,
+    AsyncSolver (..)
 )
 where
 
@@ -95,3 +96,5 @@ rawSymLit :: SymbolicLiteral s -> Raw.SymbolicLiteral
 rawSymLit sl = Raw.SymbolicLiteral
     { Raw.slitSymbol   = rawSymbol (symLitSymbol sl)
     , Raw.slitPositive = fromBool (symLitPositive sl) }
+
+newtype AsyncSolver s = AsyncSolver Raw.AsyncSolver
