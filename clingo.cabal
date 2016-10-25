@@ -13,9 +13,13 @@ build-type:          Simple
 extra-source-files:  cbits/wrappers.c
 cabal-version:       >=1.10
 
+flag examples
+  description:       Build examples
+  default:           True
+
 library
   hs-source-dirs:      src
-  exposed-modules:     Clingo.Clingo
+  exposed-modules:     Clingo.Control
                        Clingo.Raw
                        Clingo.Raw.AST
                        Clingo.Raw.Asynchronous
@@ -32,11 +36,26 @@ library
                        Clingo.Raw.Statistics
                        Clingo.Raw.Symbol
                        Clingo.Raw.Types
+  other-modules:       Clingo.Internal.Utils
+                       Clingo.Internal.Types
   c-sources:           cbits/wrappers.c
-  build-depends:       base >= 4.7 && < 5
+  build-depends:       base >= 4.7 && < 5,
+                       mtl,
+                       exceptions,
+                       text
   extra-libraries:     clingo
   include-dirs:        include
   ghc-options:         -Wall
+  default-language:    Haskell2010
+
+executable version
+  if flag(examples)
+      build-depends:   base, clingo
+  else 
+      buildable:       False
+
+  hs-source-dirs:      examples
+  main-is:             Version.hs
   default-language:    Haskell2010
 
 source-repository head

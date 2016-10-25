@@ -1,4 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Clingo.Raw.Types
 (
     CBool,
@@ -273,7 +274,7 @@ instance Storable (GroundProgramObserver a) where
         (#poke clingo_ground_program_observer_t, theory_atom_with_guard) p 
             (gpoTheoryAtomGrd g)
 
-newtype Control = Control (Ptr Control)
+newtype Control = Control (Ptr Control) deriving Storable
 
 data Part = Part
     { partName   :: Ptr CChar
