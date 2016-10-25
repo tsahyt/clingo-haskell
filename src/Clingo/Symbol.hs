@@ -1,5 +1,13 @@
 module Clingo.Symbol
 (
+    Symbol,
+
+    -- * Symbol creation
+    createNumber,
+    createSupremum,
+    createInfimum,
+    
+    symbolHash
 )
 where
 
@@ -29,3 +37,6 @@ createSupremum _ = Symbol <$>
 createInfimum :: MonadIO m => Clingo s -> m (Symbol s)
 createInfimum _ = Symbol <$> 
     marshall1V Raw.symbolCreateSupremum
+
+symbolHash :: Symbol s -> Integer
+symbolHash = fromIntegral . Raw.symbolHash . rawSymbol
