@@ -141,11 +141,11 @@ Raw.Symbol
 + [X] 2016-10-25 signatureIsPositive :: Signature -> CBool
 + [X] 2016-10-25 signatureName :: Signature -> CString
 + [ ] symbolArguments :: MonadIO m => Symbol -> Ptr (Ptr Symbol) -> Ptr CSize 
-+ [ ] symbolCreateFunction :: MonadIO m => CString -> Ptr Symbol -> CSize -> CBool 
-+ [ ] symbolCreateId :: MonadIO m => CString -> CBool -> Ptr Symbol -> m CBool
++ [X] 2016-10-26 symbolCreateFunction :: MonadIO m => CString -> Ptr Symbol -> CSize -> CBool 
++ [X] 2016-10-26 symbolCreateId :: MonadIO m => CString -> CBool -> Ptr Symbol -> m CBool
 + [X] 2016-10-25 symbolCreateInfimum :: MonadIO m => Ptr Symbol -> m ()
 + [X] 2016-10-25 symbolCreateNumber :: MonadIO m => CInt -> Ptr Symbol -> m ()
-+ [ ] symbolCreateString :: MonadIO m => CString -> Ptr Symbol -> m CBool
++ [X] 2016-10-26 symbolCreateString :: MonadIO m => CString -> Ptr Symbol -> m CBool
 + [X] 2016-10-25 symbolCreateSupremum :: MonadIO m => Ptr Symbol -> m ()
 + [X] 2016-10-25 symbolHash :: Symbol -> CSize
 + [X] 2016-10-25 symbolIsEqualTo :: Symbol -> Symbol -> CBool
