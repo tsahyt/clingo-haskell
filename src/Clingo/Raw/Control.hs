@@ -60,7 +60,7 @@ foreign import ccall "clingo.h clingo_control_load"
 foreign import ccall "clingo.h clingo_control_add" 
                      controlAddFFI ::
     Control -> CString -> Ptr CString -> CSize -> CString -> IO CBool
-foreign import ccall "clingo.h clingo_control_ground" 
+foreign import ccall "clingo.h clingo_control_ground_ptr" 
                      controlGroundFFI ::
     Control -> Ptr Part -> CSize -> FunPtr (CallbackGround a) -> Ptr a 
                 -> IO CBool

@@ -48,9 +48,16 @@ ground :: (MonadIO m, MonadThrow m)
        -> [Part s] 
        -> (Location -> Text -> [Symbol s] -> ([Symbol s] -> IO ()) -> IO ())
        -> m ()
-ground (Clingo ctrl) parts _ = marshall0 $
-    withArrayLen (map rawPart parts) $ \len arr ->
-        Raw.controlGround ctrl arr (fromIntegral len) nullFunPtr nullPtr
+ground (Clingo ctrl) parts extFun = marshall0 $
+    withArrayLen (map rawPart parts) $ \len arr -> do
+        groundCB <- wrapCBGround extFun
+        Raw.controlGround ctrl arr (fromIntegral len) groundCB nullPtr
+
+wrapCBGround :: MonadIO m
+             => (Location -> Text -> [Symbol s] 
+                          -> ([Symbol s] -> IO ()) -> IO ())
+             -> m (FunPtr (Raw.CallbackGround ()))
+wrapCBGround f = undefined
 
 solve :: (MonadIO m, MonadThrow m) 
       => Clingo s 

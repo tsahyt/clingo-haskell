@@ -301,16 +301,13 @@ instance Storable Part where
 
 type CallbackSymbol a = Ptr Symbol -> CSize -> Ptr a -> IO CBool
 type CallbackGround a = 
-    Location -> Ptr CChar -> Ptr Symbol -> CSize -> Ptr a 
-             -> CallbackSymbol a -> Ptr a -> IO CBool
+    Ptr Location -> Ptr CChar -> Ptr Symbol -> CSize -> Ptr a 
+                 -> FunPtr (CallbackSymbol a) -> Ptr a -> IO CBool
 type CallbackModel a = Model -> Ptr a -> Ptr CBool -> IO CBool
 type CallbackFinish a = SolveResult -> Ptr a -> CBool
 
-{-
- -foreign import ccall "wrapper" mkCallbackGround ::
- -    CallbackGround a -> IO (FunPtr (CallbackGround a))
- -}
-mkCallbackGround = undefined
+foreign import ccall "wrapper" mkCallbackGround ::
+    CallbackGround a -> IO (FunPtr (CallbackGround a))
 
 foreign import ccall "wrapper" mkCallbackSymbol ::
     CallbackSymbol a -> IO (FunPtr (CallbackSymbol a))
