@@ -7,8 +7,18 @@ module Clingo.Control
     loadProgram,
     addProgram,
     ground,
+    interrupt,
+    cleanup,
     solve,
     solveAsync,
+    solveIterative,
+
+    statistics,
+    programBuilder,
+    configuration,
+    backend,
+    symbolicAtoms,
+    theoryAtoms,
 
     version
 )
@@ -17,11 +27,9 @@ where
 import Control.Monad.IO.Class
 import Control.Monad.Catch
 import Data.Text (Text, pack)
-import qualified Data.Text.Foreign as T
 
 import Foreign
 import Foreign.C
-import Foreign.Marshal.Utils
 
 import qualified Clingo.Raw as Raw
 import Clingo.Internal.Utils
@@ -71,6 +79,12 @@ unwrapCBSymbol f syms =
     withArrayLen (map rawSymbol syms) $ \len arr -> 
         marshall0 (f arr (fromIntegral len) nullPtr)
 
+interrupt :: MonadIO m => Clingo s -> m ()
+interrupt (Clingo ctrl) = Raw.controlInterrupt ctrl
+
+cleanup :: (MonadIO m, MonadThrow m) => Clingo s -> m ()
+cleanup (Clingo ctrl) = marshall0 (Raw.controlCleanup ctrl)
+
 solve :: (MonadIO m, MonadThrow m) 
       => Clingo s 
       -> (Model s -> IO Bool)
@@ -97,6 +111,15 @@ solveAsync (Clingo ctrl) onModel onFinish assumptions =
                                                 finishCB nullPtr
                                                 arr (fromIntegral len) x
 
+solveIterative :: (MonadIO m, MonadThrow m)
+               => Clingo s
+               -> [SymbolicLiteral s]
+               -> m (IterSolver s)
+solveIterative (Clingo ctrl) assumptions =
+    IterSolver <$> marshall1 go
+    where go x = withArrayLen (map rawSymLit assumptions) $ \len arr ->
+                     Raw.controlSolveIter ctrl arr (fromIntegral len) x
+
 wrapCBModel :: MonadIO m 
             => (Model s -> IO Bool) 
             -> m (FunPtr (Raw.CallbackModel ()))
@@ -110,6 +133,28 @@ wrapCBFinish :: MonadIO m
 wrapCBFinish f = liftIO $ Raw.mkCallbackFinish go
     where go :: Raw.SolveResult -> Ptr () -> IO Raw.CBool
           go s _ = reraiseIO $ f (fromRawSolveResult s)
+
+statistics :: (MonadIO m, MonadThrow m) => Clingo s -> m (Statistics s)
+statistics (Clingo ctrl) = Statistics <$> marshall1 (Raw.controlStatistics ctrl)
+
+programBuilder :: (MonadIO m, MonadThrow m) => Clingo s -> m (ProgramBuilder s)
+programBuilder (Clingo ctrl) = ProgramBuilder <$> 
+    marshall1 (Raw.controlProgramBuilder ctrl)
+
+backend :: (MonadIO m, MonadThrow m) => Clingo s -> m (Backend s)
+backend (Clingo ctrl) = Backend <$> marshall1 (Raw.controlBackend ctrl)
+
+configuration :: (MonadIO m, MonadThrow m) => Clingo s -> m (Configuration s)
+configuration (Clingo ctrl) = Configuration <$> 
+    marshall1 (Raw.controlConfiguration ctrl)
+
+symbolicAtoms :: (MonadIO m, MonadThrow m) => Clingo s -> m (SymbolicAtoms s)
+symbolicAtoms (Clingo ctrl) = SymbolicAtoms <$> 
+    marshall1 (Raw.controlSymbolicAtoms ctrl)
+
+theoryAtoms :: (MonadIO m, MonadThrow m) => Clingo s -> m (TheoryAtoms s)
+theoryAtoms (Clingo ctrl) = TheoryAtoms <$> 
+    marshall1 (Raw.controlTheoryAtoms ctrl)
 
 version :: MonadIO m => m (Int, Int, Int)
 version = do 

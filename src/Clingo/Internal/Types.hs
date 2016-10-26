@@ -30,6 +30,12 @@ module Clingo.Internal.Types
     fromRawSolveResult,
     exhausted,
     wrapCBLogger,
+    Statistics (..),
+    ProgramBuilder (..),
+    Configuration (..),
+    Backend (..),
+    SymbolicAtoms (..),
+    TheoryAtoms (..)
 )
 where
 
@@ -182,3 +188,15 @@ wrapCBLogger f = liftIO $ Raw.mkCallbackLogger go
     where go :: Raw.ClingoWarning -> CString -> Ptr () -> IO ()
           go w str _ = peekCString str >>= \cstr ->
                            f (ClingoWarning w) (pack cstr)
+
+newtype Statistics s = Statistics Raw.Statistics
+
+newtype ProgramBuilder s = ProgramBuilder Raw.ProgramBuilder
+
+newtype Configuration s = Configuration Raw.Configuration
+
+newtype Backend s = Backend Raw.Backend
+
+newtype SymbolicAtoms s = SymbolicAtoms Raw.SymbolicAtoms
+
+newtype TheoryAtoms s = TheoryAtoms Raw.TheoryAtoms

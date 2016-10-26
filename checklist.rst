@@ -13,7 +13,7 @@ Raw.Basic
 + [X] 2016-10-26 errorString :: MonadIO m => ClingoError -> m CString
 + [X] 2016-10-26 setError :: MonadIO m => ClingoError -> CString -> m ()
 + [X] 2016-10-25 version :: MonadIO m => Ptr CInt -> Ptr CInt -> Ptr CInt -> m ()
-+ [ ] warningString :: MonadIO m => ClingoWarning -> m CString
++ [X] 2016-10-26 warningString :: MonadIO m => ClingoWarning -> m CString
 
 Raw.Configuration
 =================
@@ -32,29 +32,29 @@ Raw.Configuration
 
 Raw.Control
 ===========
-+ [ ] controlAdd :: MonadIO m => Control -> CString -> Ptr CString -> CSize 
++ [o] controlAdd :: MonadIO m => Control -> CString -> Ptr CString -> CSize 
 + [ ] controlAssignExternal :: MonadIO m => Control -> Symbol -> TruthValue 
-+ [ ] controlBackend :: MonadIO m => Control -> Ptr Backend -> m CBool
++ [X] 2016-10-26 controlBackend :: MonadIO m => Control -> Ptr Backend -> m CBool
 + [ ] controlClaspFacade :: MonadIO m => Control -> Ptr (Ptr ()) -> m CBool
-+ [ ] controlCleanup :: MonadIO m => Control -> m CBool
-+ [ ] controlConfiguration :: MonadIO m => Control -> Ptr Configuration
++ [X] 2016-10-26 controlCleanup :: MonadIO m => Control -> m CBool
++ [X] 2016-10-26 controlConfiguration :: MonadIO m => Control -> Ptr Configuration
 + [X] 2016-10-25 controlFree :: MonadIO m => Control -> m ()
 + [ ] controlGetConst :: MonadIO m => Control -> CString -> Ptr Symbol -> m CBool
 + [X] 2016-10-26 controlGround :: MonadIO m => Control -> Ptr Part -> CSize 
 + [ ] controlHasConst :: MonadIO m => Control -> CString -> Ptr CBool -> m CBool
-+ [ ] controlInterrupt :: MonadIO m => Control -> m ()
++ [X] 2016-10-26 controlInterrupt :: MonadIO m => Control -> m ()
 + [X] 2016-10-25 controlLoad :: MonadIO m => Control -> CString -> m CBool
 + [X] 2016-10-25 controlNew :: MonadIO m => Ptr CString -> CSize -> FunPtr (Logger a) 
-+ [ ] controlProgramBuilder :: MonadIO m => Control -> Ptr ProgramBuilder
++ [X] 2016-10-26 controlProgramBuilder :: MonadIO m => Control -> Ptr ProgramBuilder
 + [ ] controlRegisterObserver :: MonadIO m => Control 
 + [ ] controlRegisterPropagator :: MonadIO m => Control -> Ptr (Propagator a) 
 + [ ] controlReleaseExternal :: MonadIO m => Control -> Symbol -> m CBool
 + [X] 2016-10-26 controlSolve :: MonadIO m => Control -> FunPtr (CallbackModel a) -> Ptr a 
-+ [ ] controlSolveAsync :: MonadIO m => Control -> FunPtr (CallbackModel a) 
-+ [ ] controlSolveIter :: MonadIO m => Control -> Ptr SymbolicLiteral -> CSize 
-+ [ ] controlStatistics :: MonadIO m => Control -> Ptr Statistics -> m CBool
-+ [ ] controlSymbolicAtoms :: MonadIO m => Control -> Ptr SymbolicAtoms
-+ [ ] controlTheoryAtoms :: MonadIO m => Control -> Ptr TheoryAtoms
++ [X] 2016-10-26 controlSolveAsync :: MonadIO m => Control -> FunPtr (CallbackModel a) 
++ [X] 2016-10-26 controlSolveIter :: MonadIO m => Control -> Ptr SymbolicLiteral -> CSize 
++ [X] 2016-10-26 controlStatistics :: MonadIO m => Control -> Ptr Statistics -> m CBool
++ [X] 2016-10-26 controlSymbolicAtoms :: MonadIO m => Control -> Ptr SymbolicAtoms
++ [X] 2016-10-26 controlTheoryAtoms :: MonadIO m => Control -> Ptr TheoryAtoms
 + [ ] controlUseEnumAssumption :: MonadIO m => Control -> CBool -> m CBool
 
 Raw.Iterative
@@ -131,9 +131,9 @@ Raw.Statistics
 Raw.Symbol
 ==========
 + [o] addString :: MonadIO m => CString -> Ptr CString -> m CBool
-+ [ ] parseTerm :: MonadIO m => CString -> FunPtr (Logger a) -> Ptr a -> CUInt 
++ [X] 2016-10-26 parseTerm :: MonadIO m => CString -> FunPtr (Logger a) -> Ptr a -> CUInt 
 + [X] 2016-10-25 signatureArity :: Signature -> Word32
-+ [ ] signatureCreate :: MonadIO m => CString -> Word32 -> CBool -> Ptr Signature 
++ [X] 2016-10-26 signatureCreate :: MonadIO m => CString -> Word32 -> CBool -> Ptr Signature 
 + [X] 2016-10-25 signatureHash :: Signature -> CSize
 + [X] 2016-10-25 signatureIsEqualTo :: Signature -> Signature -> CBool
 + [X] 2016-10-25 signatureIsLessThan :: Signature -> Signature -> CBool

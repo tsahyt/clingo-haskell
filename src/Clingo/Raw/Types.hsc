@@ -142,10 +142,11 @@ newtype SymbolicAtoms = SymbolicAtoms (Ptr SymbolicAtoms) deriving Storable
 
 type SymbolicAtomIterator = #type clingo_symbolic_atom_iterator_t
 
-newtype TheoryAtoms = TheoryAtoms (Ptr TheoryAtoms)
-newtype PropagateInit = PropagateInit (Ptr PropagateInit)
-newtype Assignment = Assignment (Ptr Assignment)
-newtype PropagateControl = PropagateControl (Ptr PropagateControl)
+newtype TheoryAtoms = TheoryAtoms (Ptr TheoryAtoms) deriving Storable
+newtype PropagateInit = PropagateInit (Ptr PropagateInit) deriving Storable
+newtype Assignment = Assignment (Ptr Assignment) deriving Storable
+newtype PropagateControl = PropagateControl (Ptr PropagateControl) 
+    deriving Storable
 
 type CallbackPropagatorInit a = 
     PropagateInit -> Ptr a -> IO (CBool)
@@ -194,10 +195,10 @@ instance Storable WeightedLiteral where
         (#poke clingo_weighted_literal_t, literal) p (wlLiteral wl)
         (#poke clingo_weighted_literal_t, weight) p (wlWeight wl)
 
-newtype Backend = Backend (Ptr Backend)
-newtype Configuration = Configuration (Ptr Configuration)
-newtype Statistics = Statistics (Ptr Statistics)
-newtype ProgramBuilder = ProgramBuilder (Ptr ProgramBuilder)
+newtype Backend = Backend (Ptr Backend) deriving Storable
+newtype Configuration = Configuration (Ptr Configuration) deriving Storable
+newtype Statistics = Statistics (Ptr Statistics) deriving Storable
+newtype ProgramBuilder = ProgramBuilder (Ptr ProgramBuilder) deriving Storable
 
 data GroundProgramObserver a = GroundProgramObserver
     { gpoInitProgram   :: FunPtr (CBool -> Ptr a -> IO CBool)
