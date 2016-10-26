@@ -96,7 +96,7 @@ foreign import ccall "clingo.h clingo_symbol_type" symbolTypeFFI ::
 foreign import ccall "clingo.h clingo_symbol_symbol_to_string_size" 
     symbolSymbolToStringSizeFFI :: Symbol -> Ptr CSize -> IO CBool
 foreign import ccall "clingo.h clingo_symbol_symbol_to_string" 
-    symbolSymbolToStringFFI :: Symbol -> Ptr CChar -> IO CBool
+    symbolSymbolToStringFFI :: Symbol -> Ptr CChar -> CSize -> IO CBool
 foreign import ccall "clingo.h clingo_symbol_is_equal_to" symbolIsEqualToFFI ::
     Symbol -> Symbol -> CBool
 foreign import ccall "clingo.h clingo_symbol_is_less_than" 
@@ -180,8 +180,8 @@ symbolType = symbolTypeFFI
 symbolSymbolToStringSize :: MonadIO m => Symbol -> Ptr CSize -> m CBool
 symbolSymbolToStringSize a b = liftIO $ symbolSymbolToStringSizeFFI a b
 
-symbolSymbolToString :: MonadIO m => Symbol -> Ptr CChar -> m CBool
-symbolSymbolToString a b = liftIO $ symbolSymbolToStringFFI a b
+symbolSymbolToString :: MonadIO m => Symbol -> Ptr CChar -> CSize -> m CBool
+symbolSymbolToString a b c = liftIO $ symbolSymbolToStringFFI a b c
 
 symbolIsEqualTo :: Symbol -> Symbol -> CBool
 symbolIsEqualTo = symbolIsEqualToFFI

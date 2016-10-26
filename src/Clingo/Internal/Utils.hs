@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE LambdaCase #-}
 module Clingo.Internal.Utils
 (
     ClingoException,
@@ -8,6 +9,7 @@ module Clingo.Internal.Utils
     marshall1,
     marshall1V,
     marshall1A,
+    marshall1RT,
     marshall2,
     marshall3V,
     reraiseIO
@@ -40,6 +42,16 @@ checkAndThrow :: (MonadIO m, MonadThrow m) => Raw.CBool -> m ()
 checkAndThrow b = unless (toBool b) $ getException >>= throwM
 {-# INLINE checkAndThrow #-}
 
+checkAndThrowRT :: (MonadIO m, MonadThrow m) => a -> Raw.CBool -> m (Maybe a)
+checkAndThrowRT a b
+    | toBool b = return (Just a)
+    | otherwise = do
+        exc <- getException
+        case exc of
+            ClingoException Raw.ErrorRuntime _ -> return (Just a)
+            _ -> throwM exc
+{-# INLINE checkAndThrowRT #-}
+
 marshall0 :: (MonadIO m, MonadThrow m) => IO Raw.CBool -> m ()
 marshall0 action = liftIO action >>= checkAndThrow
 {-# INLINE marshall0 #-}
@@ -63,6 +75,16 @@ marshall1V action =
         peek ptr
 {-# INLINE marshall1V #-}
 
+marshall1RT :: (Storable a, MonadIO m, MonadThrow m)
+            => (Ptr a -> IO Raw.CBool) -> m (Maybe a)
+marshall1RT action = do
+    (res, a) <- liftIO $ alloca $ \ptr -> do
+        res <- action ptr
+        a <- peek ptr
+        return (res, a)
+    checkAndThrowRT a res
+{-# INLINE marshall1RT #-}
+
 marshall2 :: (Storable a, Storable b, MonadIO m, MonadThrow m)
           => (Ptr a -> Ptr b -> IO Raw.CBool) -> m (a,b)
 marshall2 action = do
@@ -77,13 +99,14 @@ marshall2 action = do
 {-# INLINE marshall2 #-}
 
 marshall1A :: (Storable a, MonadIO m, MonadThrow m)
-           => (Ptr a -> Ptr CSize -> IO Raw.CBool) -> m [a]
+           => (Ptr (Ptr a) -> Ptr CSize -> IO Raw.CBool) -> m [a]
 marshall1A action = do
     (res, as) <- liftIO $ alloca $ \ptr1 -> 
         alloca $ \ptr2 -> do
-            res <- action ptr1 ptr2
-            len <- peek ptr2
-            arr <- peekArray (fromIntegral len) ptr1
+            res  <- action ptr1 ptr2
+            len  <- peek ptr2
+            arrp <- peek ptr1
+            arr  <- peekArray (fromIntegral len) arrp
             return (res, arr)
     checkAndThrow res
     return as

@@ -85,3 +85,35 @@ createId c t = createFunction c t []
 
 symbolHash :: Symbol s -> Integer
 symbolHash = fromIntegral . Raw.symbolHash . rawSymbol
+
+symbolNumber :: (MonadIO m, MonadThrow m) => Symbol s -> m (Maybe Integer)
+symbolNumber s = fmap fromIntegral <$> 
+    marshall1RT (Raw.symbolNumber (rawSymbol s))
+
+symbolName :: (MonadIO m, MonadThrow m) => Symbol s -> m (Maybe Text)
+symbolName s = do
+    x <- marshall1RT (Raw.symbolName (rawSymbol s))
+    case x of
+        Nothing   -> return Nothing
+        Just cstr -> liftIO $ (Just . pack) <$> peekCString cstr
+
+symbolString :: (MonadIO m, MonadThrow m) => Symbol s -> m (Maybe Text)
+symbolString s = do
+    x <- marshall1RT (Raw.symbolString (rawSymbol s))
+    case x of
+        Nothing   -> return Nothing
+        Just cstr -> liftIO $ (Just . pack) <$> peekCString cstr
+
+symbolArguments :: (MonadIO m, MonadThrow m) => Symbol s -> m [Symbol s]
+symbolArguments s = map Symbol <$> 
+    marshall1A (Raw.symbolArguments (rawSymbol s))
+
+prettySymbol :: (MonadIO m, MonadThrow m) => Symbol s -> m Text
+prettySymbol s = do
+    len <- marshall1 (Raw.symbolSymbolToStringSize (rawSymbol s))
+    str <- liftIO $ alloca $ \ptr -> do
+        b <- Raw.symbolSymbolToString (rawSymbol s) ptr len
+        x <- peekCString ptr
+        checkAndThrow b
+        return x
+    return (pack str)

@@ -140,7 +140,7 @@ Raw.Symbol
 + [X] 2016-10-25 signatureIsNegative :: Signature -> CBool
 + [X] 2016-10-25 signatureIsPositive :: Signature -> CBool
 + [X] 2016-10-25 signatureName :: Signature -> CString
-+ [ ] symbolArguments :: MonadIO m => Symbol -> Ptr (Ptr Symbol) -> Ptr CSize 
++ [X] 2016-10-26 symbolArguments :: MonadIO m => Symbol -> Ptr (Ptr Symbol) -> Ptr CSize 
 + [X] 2016-10-26 symbolCreateFunction :: MonadIO m => CString -> Ptr Symbol -> CSize -> CBool 
 + [X] 2016-10-26 symbolCreateId :: MonadIO m => CString -> CBool -> Ptr Symbol -> m CBool
 + [X] 2016-10-25 symbolCreateInfimum :: MonadIO m => Ptr Symbol -> m ()
@@ -152,9 +152,9 @@ Raw.Symbol
 + [X] 2016-10-25 symbolIsLessThan :: Symbol -> Symbol -> CBool
 + [X] 2016-10-25 symbolIsNegative :: MonadIO m => Symbol -> Ptr CBool -> m CBool
 + [X] 2016-10-25 symbolIsPositive :: MonadIO m => Symbol -> Ptr CBool -> m CBool
-+ [ ] symbolName :: MonadIO m => Symbol -> Ptr CString -> m CBool
-+ [ ] symbolNumber :: MonadIO m => Symbol -> Ptr CInt -> m CBool
-+ [ ] symbolString :: MonadIO m => Symbol -> Ptr CString -> m CBool
-+ [ ] symbolSymbolToString :: MonadIO m => Symbol -> Ptr CChar -> m CBool
-+ [ ] symbolSymbolToStringSize :: MonadIO m => Symbol -> Ptr CSize -> m CBool
++ [X] 2016-10-26 symbolName :: MonadIO m => Symbol -> Ptr CString -> m CBool
++ [X] 2016-10-26 symbolNumber :: MonadIO m => Symbol -> Ptr CInt -> m CBool
++ [X] 2016-10-26 symbolString :: MonadIO m => Symbol -> Ptr CString -> m CBool
++ [X] 2016-10-26 symbolSymbolToString :: MonadIO m => Symbol -> Ptr CChar -> m CBool
++ [X] 2016-10-26 symbolSymbolToStringSize :: MonadIO m => Symbol -> Ptr CSize -> m CBool
 + [X] 2016-10-25 symbolType :: Symbol -> SymbolType
