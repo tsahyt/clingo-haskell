@@ -9,7 +9,8 @@ module Clingo.Internal.Utils
     marshall1V,
     marshall1A,
     marshall2,
-    marshall3V
+    marshall3V,
+    reraiseIO
 )
 where
 
@@ -103,3 +104,10 @@ marshall3V action = do
                 return (a,b,c)
     return (a,b,c)
 {-# INLINE marshall3V #-}
+
+reraiseIO :: IO a -> IO Raw.CBool
+reraiseIO action = catch (action >> return (fromBool True)) $ 
+    \(ClingoException e s) -> do
+        withCString s $ Raw.setError e
+        return (fromBool False)
+{-# INLINE reraiseIO #-}

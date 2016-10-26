@@ -21,7 +21,10 @@ module Clingo.Internal.Types
     Signature (..),
     AsyncSolver (..),
     IterSolver (..),
-    Model (..)
+    Model (..),
+    Location (..),
+    rawLocation,
+    fromRawLocation
 )
 where
 
@@ -29,6 +32,7 @@ import Data.Text (Text)
 import Foreign.Marshal.Utils
 import qualified Clingo.Raw as Raw
 import Clingo.Internal.Utils
+import Numeric.Natural
 
 import System.IO.Unsafe
 
@@ -122,3 +126,18 @@ newtype AsyncSolver s = AsyncSolver Raw.AsyncSolver
 newtype IterSolver s = IterSolver Raw.IterSolver
 
 newtype Model s = Model Raw.Model
+
+data Location = Location
+    { locBeginFile :: FilePath
+    , locEndFile   :: FilePath
+    , locBeginLine :: Natural
+    , locEndLine   :: Natural
+    , locBeginCol  :: Natural
+    , locEndCol    :: Natural }
+    deriving (Eq, Show)
+
+rawLocation :: Location -> Raw.Location
+rawLocation = undefined
+
+fromRawLocation :: Raw.Location -> Location
+fromRawLocation = undefined

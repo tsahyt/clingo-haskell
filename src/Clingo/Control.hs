@@ -1,4 +1,5 @@
 {-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Clingo.Control
 (
     withClingo,
@@ -42,17 +43,32 @@ addProgram :: (MonadIO m, MonadThrow m)
            => Clingo s -> Text -> [Text] -> Text -> m ()
 addProgram (Clingo ctrl) name params code = marshall0 undefined
 
-ground :: (MonadIO m, MonadThrow m) => Clingo s -> [Part s] -> m ()
-ground (Clingo ctrl) parts = marshall0 $
+ground :: (MonadIO m, MonadThrow m) 
+       => Clingo s 
+       -> [Part s] 
+       -> (Location -> Text -> [Symbol s] -> ([Symbol s] -> IO ()) -> IO ())
+       -> m ()
+ground (Clingo ctrl) parts _ = marshall0 $
     withArrayLen (map rawPart parts) $ \len arr ->
         Raw.controlGround ctrl arr (fromIntegral len) nullFunPtr nullPtr
 
 solve :: (MonadIO m, MonadThrow m) 
-      => Clingo s -> [SymbolicLiteral s] -> m Raw.SolveResult
-solve (Clingo ctrl) assumptions = marshall1 go
-    where go x = withArrayLen (map rawSymLit assumptions) $ 
-                     \len arr -> Raw.controlSolve ctrl nullFunPtr nullPtr 
-                                                  arr (fromIntegral len) x
+      => Clingo s 
+      -> (Model s -> IO Bool)
+      -> [SymbolicLiteral s] 
+      -> m Raw.SolveResult
+solve (Clingo ctrl) onModel assumptions = marshall1 go
+    where go x = withArrayLen (map rawSymLit assumptions) $ \len arr -> do
+                     modelCB <- wrapCBModel onModel
+                     Raw.controlSolve ctrl modelCB nullPtr 
+                                      arr (fromIntegral len) x
+
+wrapCBModel :: MonadIO m 
+            => (Model s -> IO Bool) 
+            -> m (FunPtr (Raw.CallbackModel ()))
+wrapCBModel f = liftIO $ Raw.mkCallbackModel go
+    where go :: Raw.Model -> Ptr a -> Ptr Raw.CBool -> IO Raw.CBool
+          go m _ r = reraiseIO $ poke r . fromBool =<< f (Model m)
 
 version :: MonadIO m => m (Int, Int, Int)
 version = do 

@@ -49,7 +49,7 @@ Raw.Control
 + [ ] controlRegisterObserver :: MonadIO m => Control 
 + [ ] controlRegisterPropagator :: MonadIO m => Control -> Ptr (Propagator a) 
 + [ ] controlReleaseExternal :: MonadIO m => Control -> Symbol -> m CBool
-+ [o] controlSolve :: MonadIO m => Control -> FunPtr (CallbackModel a) -> Ptr a 
++ [X] 2016-10-26 controlSolve :: MonadIO m => Control -> FunPtr (CallbackModel a) -> Ptr a 
 + [ ] controlSolveAsync :: MonadIO m => Control -> FunPtr (CallbackModel a) 
 + [ ] controlSolveIter :: MonadIO m => Control -> Ptr SymbolicLiteral -> CSize 
 + [ ] controlStatistics :: MonadIO m => Control -> Ptr Statistics -> m CBool
