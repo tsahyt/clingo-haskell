@@ -8,6 +8,7 @@ module Clingo.Control
     addProgram,
     ground,
     solve,
+    solveAsync,
 
     version
 )
@@ -74,12 +75,27 @@ solve :: (MonadIO m, MonadThrow m)
       => Clingo s 
       -> (Model s -> IO Bool)
       -> [SymbolicLiteral s] 
-      -> m Raw.SolveResult
-solve (Clingo ctrl) onModel assumptions = marshall1 go
+      -> m SolveResult
+solve (Clingo ctrl) onModel assumptions = fromRawSolveResult <$> marshall1 go
     where go x = withArrayLen (map rawSymLit assumptions) $ \len arr -> do
                      modelCB <- wrapCBModel onModel
                      Raw.controlSolve ctrl modelCB nullPtr 
                                       arr (fromIntegral len) x
+
+solveAsync :: (MonadIO m, MonadThrow m)
+           => Clingo s
+           -> (Model s -> IO Bool)
+           -> (SolveResult -> IO ())
+           -> [SymbolicLiteral s]
+           -> m (AsyncSolver s)
+solveAsync (Clingo ctrl) onModel onFinish assumptions = 
+    AsyncSolver <$> marshall1 go
+    where go x = withArrayLen (map rawSymLit assumptions) $ \len arr -> do
+                     modelCB <- wrapCBModel onModel
+                     finishCB <- wrapCBFinish onFinish
+                     Raw.controlSolveAsync ctrl modelCB nullPtr
+                                                finishCB nullPtr
+                                                arr (fromIntegral len) x
 
 wrapCBModel :: MonadIO m 
             => (Model s -> IO Bool) 
@@ -87,6 +103,13 @@ wrapCBModel :: MonadIO m
 wrapCBModel f = liftIO $ Raw.mkCallbackModel go
     where go :: Raw.Model -> Ptr a -> Ptr Raw.CBool -> IO Raw.CBool
           go m _ r = reraiseIO $ poke r . fromBool =<< f (Model m)
+
+wrapCBFinish :: MonadIO m
+             => (SolveResult -> IO ())
+             -> m (FunPtr (Raw.CallbackFinish ()))
+wrapCBFinish f = liftIO $ Raw.mkCallbackFinish go
+    where go :: Raw.SolveResult -> Ptr () -> IO Raw.CBool
+          go s _ = reraiseIO $ f (fromRawSolveResult s)
 
 version :: MonadIO m => m (Int, Int, Int)
 version = do 

@@ -305,7 +305,7 @@ type CallbackGround a =
     Ptr Location -> Ptr CChar -> Ptr Symbol -> CSize -> Ptr a 
                  -> FunPtr (CallbackSymbol a) -> Ptr a -> IO CBool
 type CallbackModel a = Model -> Ptr a -> Ptr CBool -> IO CBool
-type CallbackFinish a = SolveResult -> Ptr a -> CBool
+type CallbackFinish a = SolveResult -> Ptr a -> IO CBool
 
 foreign import ccall "wrapper" mkCallbackGround ::
     CallbackGround a -> IO (FunPtr (CallbackGround a))

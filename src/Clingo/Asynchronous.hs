@@ -16,8 +16,9 @@ import Clingo.Internal.Utils
 import Clingo.Internal.Types
 
 asyncGet :: (MonadIO m, MonadThrow m) 
-         => AsyncSolver s -> m Raw.SolveResult
-asyncGet (AsyncSolver a) = marshall1 (Raw.solveAsyncGet a)
+         => AsyncSolver s -> m SolveResult
+asyncGet (AsyncSolver a) = fromRawSolveResult <$> 
+                               marshall1 (Raw.solveAsyncGet a)
 
 asyncWait :: (MonadIO m, MonadThrow m)
           => AsyncSolver s -> Double -> m Bool

@@ -76,7 +76,7 @@ foreign import ccall "clingo.h clingo_control_solve_async"
                      controlSolveAsyncFFI ::
     Control -> FunPtr (CallbackModel a) -> Ptr a 
                 -> FunPtr (CallbackFinish b) -> Ptr b -> Ptr SymbolicLiteral 
-                -> CSize -> Ptr (Ptr AsyncSolver) -> IO CBool
+                -> CSize -> Ptr AsyncSolver -> IO CBool
 foreign import ccall "clingo.h clingo_control_cleanup" 
                      controlCleanupFFI ::
     Control -> IO CBool
@@ -157,7 +157,7 @@ controlSolveIter a b c d = liftIO $ controlSolveIterFFI a b c d
 controlSolveAsync :: MonadIO m => Control -> FunPtr (CallbackModel a) 
                                -> Ptr a -> FunPtr (CallbackFinish b) -> Ptr b 
                                -> Ptr SymbolicLiteral -> CSize 
-                               -> Ptr (Ptr AsyncSolver) -> m CBool
+                               -> Ptr AsyncSolver -> m CBool
 controlSolveAsync a b c d e f g h = 
     liftIO $ controlSolveAsyncFFI a b c d e f g h
 

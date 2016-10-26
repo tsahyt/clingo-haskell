@@ -3,15 +3,15 @@ Checklist to keep track of which parts of the Raw API are covered by the high-le
 Raw.Asynchronous
 ================
 + [X] 2016-10-25 solveAsyncCancel :: MonadIO m => AsyncSolver -> m CBool
-+ [o] solveAsyncGet :: MonadIO m => AsyncSolver -> Ptr SolveResult -> m CBool
++ [X] 2016-10-26 solveAsyncGet :: MonadIO m => AsyncSolver -> Ptr SolveResult -> m CBool
 + [X] 2016-10-25 solveAsyncWait :: MonadIO m => AsyncSolver -> CDouble -> Ptr CBool 
 
 Raw.Basic
 =========
 + [X] 2016-10-25 errorCode :: MonadIO m => m ClingoError
 + [X] 2016-10-25 errorMessage :: MonadIO m => m CString
-+ [ ] errorString :: MonadIO m => ClingoError -> m CString
-+ [ ] setError :: MonadIO m => ClingoError -> CString -> m ()
++ [X] 2016-10-26 errorString :: MonadIO m => ClingoError -> m CString
++ [X] 2016-10-26 setError :: MonadIO m => ClingoError -> CString -> m ()
 + [X] 2016-10-25 version :: MonadIO m => Ptr CInt -> Ptr CInt -> Ptr CInt -> m ()
 + [ ] warningString :: MonadIO m => ClingoWarning -> m CString
 
@@ -40,7 +40,7 @@ Raw.Control
 + [ ] controlConfiguration :: MonadIO m => Control -> Ptr Configuration
 + [X] 2016-10-25 controlFree :: MonadIO m => Control -> m ()
 + [ ] controlGetConst :: MonadIO m => Control -> CString -> Ptr Symbol -> m CBool
-+ [o] controlGround :: MonadIO m => Control -> Ptr Part -> CSize 
++ [X] 2016-10-26 controlGround :: MonadIO m => Control -> Ptr Part -> CSize 
 + [ ] controlHasConst :: MonadIO m => Control -> CString -> Ptr CBool -> m CBool
 + [ ] controlInterrupt :: MonadIO m => Control -> m ()
 + [X] 2016-10-25 controlLoad :: MonadIO m => Control -> CString -> m CBool
@@ -60,7 +60,7 @@ Raw.Control
 Raw.Iterative
 =============
 + [X] 2016-10-25 solveIterativelyClose :: MonadIO m 
-+ [o] solveIterativelyGet :: MonadIO m 
++ [X] 2016-10-26 solveIterativelyGet :: MonadIO m 
 + [X] 2016-10-25 solveIterativelyNext :: MonadIO m 
 
 Raw.Model

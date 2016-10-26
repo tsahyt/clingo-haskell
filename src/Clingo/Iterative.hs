@@ -20,8 +20,9 @@ iterativelyNext (IterSolver s) = Model <$>
     marshall1 (Raw.solveIterativelyNext s)
 
 iterativelyGet :: (MonadIO m, MonadThrow m)
-               => IterSolver s -> m Raw.SolveResult
-iterativelyGet (IterSolver s) = marshall1 (Raw.solveIterativelyGet s)
+               => IterSolver s -> m SolveResult
+iterativelyGet (IterSolver s) = 
+    fromRawSolveResult <$> marshall1 (Raw.solveIterativelyGet s)
 
 iterativelyClose :: (MonadIO m, MonadThrow m)
                  => IterSolver s -> m ()

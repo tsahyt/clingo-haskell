@@ -24,11 +24,16 @@ module Clingo.Internal.Types
     Model (..),
     Location (..),
     rawLocation,
-    fromRawLocation
+    fromRawLocation,
+    SolveResult (..),
+    rawSolveResult,
+    fromRawSolveResult,
+    exhausted
 )
 where
 
 import Data.Text (Text)
+import Data.Bits
 import Foreign.Marshal.Utils
 import qualified Clingo.Raw as Raw
 import Clingo.Internal.Utils
@@ -141,3 +146,27 @@ rawLocation = undefined
 
 fromRawLocation :: Raw.Location -> Location
 fromRawLocation = undefined
+
+data SolveResult = Satisfiable Bool | Unsatisfiable Bool | Interrupted
+    deriving (Eq, Show, Read)
+
+exhausted :: SolveResult -> Bool
+exhausted (Satisfiable b) = b
+exhausted (Unsatisfiable b) = b
+exhausted _ = False
+
+rawSolveResult :: SolveResult -> Raw.SolveResult
+rawSolveResult (Satisfiable e) =
+    Raw.ResultSatisfiable .|. if e then Raw.ResultExhausted else zeroBits
+rawSolveResult (Unsatisfiable e) =
+    Raw.ResultUnsatisfiable .|. if e then Raw.ResultExhausted else zeroBits
+rawSolveResult Interrupted = Raw.ResultInterrupted
+
+fromRawSolveResult :: Raw.SolveResult -> SolveResult
+fromRawSolveResult r
+    | r == Raw.ResultSatisfiable .|. Raw.ResultExhausted = Satisfiable True
+    | r == Raw.ResultSatisfiable = Satisfiable False
+    | r == Raw.ResultUnsatisfiable .|. Raw.ResultExhausted = Unsatisfiable True
+    | r == Raw.ResultUnsatisfiable = Unsatisfiable False
+    | r == Raw.ResultInterrupted = Interrupted
+    | otherwise = error "Malformed clingo_solve_result_bitset_t"
