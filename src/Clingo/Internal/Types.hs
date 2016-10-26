@@ -28,12 +28,16 @@ module Clingo.Internal.Types
     SolveResult (..),
     rawSolveResult,
     fromRawSolveResult,
-    exhausted
+    exhausted,
+    wrapCBLogger,
 )
 where
 
-import Data.Text (Text)
+import Control.Monad.IO.Class
+import Data.Text (Text, pack)
 import Data.Bits
+import Foreign
+import Foreign.C
 import Foreign.Marshal.Utils
 import qualified Clingo.Raw as Raw
 import Clingo.Internal.Utils
@@ -170,3 +174,11 @@ fromRawSolveResult r
     | r == Raw.ResultUnsatisfiable = Unsatisfiable False
     | r == Raw.ResultInterrupted = Interrupted
     | otherwise = error "Malformed clingo_solve_result_bitset_t"
+
+wrapCBLogger :: MonadIO m
+             => (ClingoWarning -> Text -> IO ())
+             -> m (FunPtr (Raw.Logger ()))
+wrapCBLogger f = liftIO $ Raw.mkCallbackLogger go
+    where go :: Raw.ClingoWarning -> CString -> Ptr () -> IO ()
+          go w str _ = peekCString str >>= \cstr ->
+                           f (ClingoWarning w) (pack cstr)

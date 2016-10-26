@@ -2,21 +2,29 @@ module Clingo.Symbol
 (
     Symbol,
 
+    signatureCreate,
+    prettySymbol,
+    parseTerm,
+
     -- * Signature inspection
-    signatureName,
     signatureArity,
     signatureHash,
+    signatureName,
 
     -- * Symbol creation
-    createNumber,
-    createSupremum,
-    createInfimum,
-    createString,
     createFunction,
     createId,
+    createInfimum,
+    createNumber,
+    createString,
+    createSupremum,
     
     -- * Symbol inspection
+    symbolArguments,
     symbolHash,
+    symbolName,
+    symbolNumber,
+    symbolString,
     symbolType
 )
 where
@@ -41,6 +49,17 @@ import System.IO.Unsafe
  -addString = undefined
  -}
 
+parseTerm :: (MonadIO m, MonadThrow m)
+          => Clingo s
+          -> Text
+          -> Maybe (ClingoWarning -> Text -> IO ())
+          -> Natural
+          -> m (Symbol s)
+parseTerm _ t logger limit = Symbol <$> marshall1 go
+    where go x = withCString (unpack t) $ \cstr -> do
+                     logCB <- maybe (return nullFunPtr) wrapCBLogger logger
+                     Raw.parseTerm cstr logCB nullPtr (fromIntegral limit) x
+
 signatureName :: Signature s -> Text
 signatureName s = unsafePerformIO $
     pack <$> (peekCString . Raw.signatureName . rawSignature $ s)
@@ -50,6 +69,13 @@ signatureArity = fromIntegral . Raw.signatureArity . rawSignature
 
 signatureHash :: Signature s -> Integer
 signatureHash = fromIntegral . Raw.symbolHash . rawSignature
+
+signatureCreate :: (MonadIO m, MonadThrow m)
+                => Clingo s -> Text -> Natural -> Bool -> m (Signature s)
+signatureCreate _ name arity pos = Signature <$> marshall1 go
+    where go x = withCString (unpack name) $ \cstr ->
+                     Raw.signatureCreate cstr (fromIntegral arity) 
+                                         (fromBool pos) x
 
 createNumber :: (Integral a, MonadIO m) => Clingo s -> a -> m (Symbol s)
 createNumber _ a = Symbol <$> 

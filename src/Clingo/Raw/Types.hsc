@@ -10,6 +10,7 @@ module Clingo.Raw.Types
     Identifier,
     Weight,
     Logger,
+    mkCallbackLogger,
     Location (..),
 
     -- * Symbols
@@ -82,6 +83,9 @@ type Identifier = #type clingo_id_t
 type Weight = #type clingo_weight_t
 
 type Logger a = ClingoWarning -> Ptr CChar -> Ptr a -> IO ()
+
+foreign import ccall "wrapper" mkCallbackLogger ::
+    Logger a -> IO (FunPtr (Logger a))
 
 data Location = Location
     { locBeginFile :: Ptr CChar

@@ -3,6 +3,9 @@
 module Clingo.Internal.Utils
 (
     ClingoException,
+    getException,
+    ClingoWarning (..),
+    warningString,
 
     checkAndThrow,
     marshall0,
@@ -20,16 +23,22 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Catch
 import Data.Typeable
+import Data.Text (Text, pack)
 
 import Foreign
 import Foreign.C
 
-import Clingo.Raw as Raw
+import qualified Clingo.Raw as Raw
 
 data ClingoException = ClingoException Raw.ClingoError String
     deriving (Show, Typeable)
 
 instance Exception ClingoException
+
+newtype ClingoWarning = ClingoWarning Raw.ClingoWarning
+    deriving (Show, Typeable)
+
+instance Exception ClingoWarning
     
 getException :: MonadIO m => m ClingoException
 getException = liftIO $ do
@@ -37,6 +46,10 @@ getException = liftIO $ do
     estr <- peekCString =<< Raw.errorString code
     return $ ClingoException code estr
 {-# INLINE getException #-}
+
+warningString :: MonadIO m => ClingoWarning -> m Text
+warningString (ClingoWarning w) = liftIO $
+    Raw.warningString w >>= fmap pack . peekCString
 
 checkAndThrow :: (MonadIO m, MonadThrow m) => Raw.CBool -> m ()
 checkAndThrow b = unless (toBool b) $ getException >>= throwM
