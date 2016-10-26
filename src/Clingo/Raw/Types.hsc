@@ -55,6 +55,7 @@ module Clingo.Raw.Types
     Part,
     CallbackSymbol,
     mkCallbackSymbol,
+    getCallbackSymbol,
     CallbackGround,
     mkCallbackGround,
     CallbackModel,
@@ -311,6 +312,9 @@ foreign import ccall "wrapper" mkCallbackGround ::
 
 foreign import ccall "wrapper" mkCallbackSymbol ::
     CallbackSymbol a -> IO (FunPtr (CallbackSymbol a))
+
+foreign import ccall "dynamic" getCallbackSymbol ::
+    FunPtr (CallbackSymbol a) -> CallbackSymbol a
 
 foreign import ccall "wrapper" mkCallbackFinish ::
     CallbackFinish a -> IO (FunPtr (CallbackFinish a))

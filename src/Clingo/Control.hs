@@ -15,7 +15,7 @@ where
 
 import Control.Monad.IO.Class
 import Control.Monad.Catch
-import Data.Text (Text)
+import Data.Text (Text, pack)
 import qualified Data.Text.Foreign as T
 
 import Foreign
@@ -57,7 +57,18 @@ wrapCBGround :: MonadIO m
              => (Location -> Text -> [Symbol s] 
                           -> ([Symbol s] -> IO ()) -> IO ())
              -> m (FunPtr (Raw.CallbackGround ()))
-wrapCBGround f = undefined
+wrapCBGround f = liftIO $ Raw.mkCallbackGround go
+    where go :: Raw.CallbackGround ()
+          go loc name arg args _ cbSym _ = reraiseIO $ do
+              loc'  <- fromRawLocation <$> peek loc
+              name' <- pack <$> peekCString name
+              syms  <- map Symbol <$> peekArray (fromIntegral args) arg
+              f loc' name' syms (unwrapCBSymbol $ Raw.getCallbackSymbol cbSym)
+
+unwrapCBSymbol :: Raw.CallbackSymbol () -> ([Symbol s] -> IO ())
+unwrapCBSymbol f syms =
+    withArrayLen (map rawSymbol syms) $ \len arr -> 
+        marshall0 (f arr (fromIntegral len) nullPtr)
 
 solve :: (MonadIO m, MonadThrow m) 
       => Clingo s 
