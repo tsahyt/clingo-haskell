@@ -57,12 +57,10 @@ marshall1 action = do
 
 marshall1V :: (Storable a, MonadIO m) 
            => (Ptr a -> IO ()) -> m a
-marshall1V action = do
-    a <- liftIO $ alloca $ \ptr -> do
+marshall1V action =
+    liftIO $ alloca $ \ptr -> do
         _ <- action ptr
-        a <- peek ptr
-        return a
-    return a
+        peek ptr
 {-# INLINE marshall1V #-}
 
 marshall2 :: (Storable a, Storable b, MonadIO m, MonadThrow m)
