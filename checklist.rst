@@ -119,14 +119,14 @@ Raw.Propagation
 
 Raw.Statistics
 ==============
-+ [ ] statisticsArrayAt :: MonadIO m => Statistics -> Word64 -> CSize 
-+ [ ] statisticsArraySize :: MonadIO m => Statistics -> Word64 -> Ptr Word64 
-+ [ ] statisticsMapAt :: MonadIO m => Statistics -> Word64 -> Ptr CString 
-+ [ ] statisticsMapSize :: MonadIO m => Statistics -> Word64 -> Ptr CSize 
-+ [ ] statisticsMapSubkeyName :: MonadIO m => Statistics -> Word64 -> CSize 
-+ [ ] statisticsRoot :: MonadIO m => Statistics -> Ptr Word64 -> m CBool
-+ [ ] statisticsType :: MonadIO m => Statistics -> Word64 -> Ptr StatisticsType 
-+ [ ] statisticsValueGet :: MonadIO m => Statistics -> Word64 -> Ptr CString 
++ [X] 2016-10-26 statisticsArrayAt :: MonadIO m => Statistics -> Word64 -> CSize 
++ [X] 2016-10-26 statisticsArraySize :: MonadIO m => Statistics -> Word64 -> Ptr Word64 
++ [X] 2016-10-26 statisticsMapAt :: MonadIO m => Statistics -> Word64 -> Ptr CString 
++ [X] 2016-10-26 statisticsMapSize :: MonadIO m => Statistics -> Word64 -> Ptr CSize 
++ [X] 2016-10-26 statisticsMapSubkeyName :: MonadIO m => Statistics -> Word64 -> CSize 
++ [X] 2016-10-26 statisticsRoot :: MonadIO m => Statistics -> Ptr Word64 -> m CBool
++ [X] 2016-10-26 statisticsType :: MonadIO m => Statistics -> Word64 -> Ptr StatisticsType 
++ [X] 2016-10-26 statisticsValueGet :: MonadIO m => Statistics -> Word64 -> Ptr CString 
 
 Raw.Symbol
 ==========

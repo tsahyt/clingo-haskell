@@ -31,6 +31,7 @@ module Clingo.Internal.Types
     exhausted,
     wrapCBLogger,
     Statistics (..),
+    StatisticsType (..),
     ProgramBuilder (..),
     Configuration (..),
     Backend (..),
@@ -190,6 +191,8 @@ wrapCBLogger f = liftIO $ Raw.mkCallbackLogger go
                            f (ClingoWarning w) (pack cstr)
 
 newtype Statistics s = Statistics Raw.Statistics
+
+newtype StatisticsType = StatisticsType Raw.StatisticsType
 
 newtype ProgramBuilder s = ProgramBuilder Raw.ProgramBuilder
 

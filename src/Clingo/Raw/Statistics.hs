@@ -40,10 +40,9 @@ foreign import ccall "clingo.h clingo_statistics_map_subkey_name"
     statisticsMapSubkeyNameFFI :: Statistics -> Word64 -> CSize 
                                -> Ptr CString -> IO CBool
 foreign import ccall "clingo.h clingo_statistics_map_at" statisticsMapAtFFI ::
-    Statistics -> Word64 -> Ptr CString -> Ptr Word64 -> IO CBool
+    Statistics -> Word64 -> CString -> Ptr Word64 -> IO CBool
 foreign import ccall "clingo.h clingo_statistics_value_get" 
-    statisticsValueGetFFI :: Statistics -> Word64 -> Ptr CString 
-                          -> Ptr Word64 -> IO CBool
+    statisticsValueGetFFI :: Statistics -> Word64 -> Ptr CDouble -> IO CBool
 
 statisticsRoot :: MonadIO m => Statistics -> Ptr Word64 -> m CBool
 statisticsRoot a b = liftIO $ statisticsRootFFI a b
@@ -68,10 +67,10 @@ statisticsMapSubkeyName :: MonadIO m => Statistics -> Word64 -> CSize
                         -> Ptr CString -> m CBool
 statisticsMapSubkeyName a b c d = liftIO $ statisticsMapSubkeyNameFFI a b c d
 
-statisticsMapAt :: MonadIO m => Statistics -> Word64 -> Ptr CString 
+statisticsMapAt :: MonadIO m => Statistics -> Word64 -> CString 
                 -> Ptr Word64 -> m CBool
 statisticsMapAt a b c d = liftIO $ statisticsMapAtFFI a b c d
 
-statisticsValueGet :: MonadIO m => Statistics -> Word64 -> Ptr CString 
-                   -> Ptr Word64 -> m CBool
-statisticsValueGet a b c d = liftIO $ statisticsValueGetFFI a b c d
+statisticsValueGet :: MonadIO m => Statistics -> Word64 -> Ptr CDouble
+                   -> m CBool
+statisticsValueGet a b c = liftIO $ statisticsValueGetFFI a b c
