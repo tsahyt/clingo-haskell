@@ -9,12 +9,12 @@ import Clingo.Model
 import Text.Printf
 import qualified Data.Text.IO as T
 
-onModel :: Model s -> IO Bool
+onModel :: Model s -> IO Continue
 onModel m = do
     syms <- mapM prettySymbol
         =<< modelSymbols m (selectNone { selectShown = True }) 
     putStr "Model: " >> print syms
-    return True
+    return Continue
     
 main :: IO ()
 main = withClingo $ \ctrl -> do

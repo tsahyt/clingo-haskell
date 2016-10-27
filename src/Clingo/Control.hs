@@ -12,6 +12,7 @@ module Clingo.Control
     ground,
     interrupt,
     cleanup,
+    Continue (..),
     solve,
     solveAsync,
     solveIterative,
@@ -97,9 +98,16 @@ interrupt (Clingo ctrl) = Raw.controlInterrupt ctrl
 cleanup :: (MonadIO m, MonadThrow m) => Clingo s -> m ()
 cleanup (Clingo ctrl) = marshall0 (Raw.controlCleanup ctrl)
 
+data Continue = Continue | Stop
+    deriving (Eq, Show, Ord, Read, Enum, Bounded)
+
+continueBool :: Continue -> Bool
+continueBool Continue = True
+continueBool Stop = False
+
 solve :: (MonadIO m, MonadThrow m) 
       => Clingo s 
-      -> Maybe (Model s -> IO Bool)
+      -> Maybe (Model s -> IO Continue)
       -> [SymbolicLiteral s] 
       -> m SolveResult
 solve (Clingo ctrl) onModel assumptions = fromRawSolveResult <$> marshall1 go
@@ -110,7 +118,7 @@ solve (Clingo ctrl) onModel assumptions = fromRawSolveResult <$> marshall1 go
 
 solveAsync :: (MonadIO m, MonadThrow m)
            => Clingo s
-           -> (Model s -> IO Bool)
+           -> (Model s -> IO Continue)
            -> (SolveResult -> IO ())
            -> [SymbolicLiteral s]
            -> m (AsyncSolver s)
@@ -133,11 +141,12 @@ solveIterative (Clingo ctrl) assumptions =
                      Raw.controlSolveIter ctrl arr (fromIntegral len) x
 
 wrapCBModel :: MonadIO m 
-            => (Model s -> IO Bool) 
+            => (Model s -> IO Continue) 
             -> m (FunPtr (Raw.CallbackModel ()))
 wrapCBModel f = liftIO $ Raw.mkCallbackModel go
     where go :: Raw.Model -> Ptr a -> Ptr Raw.CBool -> IO Raw.CBool
-          go m _ r = reraiseIO $ poke r . fromBool =<< f (Model m)
+          go m _ r = reraiseIO $ 
+              poke r . fromBool . continueBool =<< f (Model m)
 
 wrapCBFinish :: MonadIO m
              => (SolveResult -> IO ())
