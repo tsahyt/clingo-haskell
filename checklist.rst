@@ -65,17 +65,17 @@ Raw.Iterative
 
 Raw.Model
 =========
-+ [ ] modelContains :: MonadIO m => Model -> Symbol -> Ptr CBool -> m CBool
-+ [ ] modelContext :: MonadIO m => Model -> Ptr SolveControl -> m CBool
-+ [ ] modelCost :: MonadIO m => Model -> Ptr Int64 -> CSize -> m CBool
-+ [ ] modelCostSize :: MonadIO m => Model -> Ptr CSize -> m CBool
-+ [ ] modelNumber :: MonadIO m => Model -> Ptr Word64 -> m CBool
-+ [ ] modelOptimalityProven :: MonadIO m => Model -> Ptr CBool -> m CBool
-+ [ ] modelSymbols :: MonadIO m => Model -> ShowFlag -> Ptr Symbol -> CSize 
-+ [ ] modelSymbolsSize :: MonadIO m => Model -> ShowFlag -> Ptr CSize -> m CBool
-+ [ ] modelType :: MonadIO m => Model -> ModelType -> m CBool
-+ [ ] solveControlAddClause :: MonadIO m => SolveControl -> Ptr SymbolicLiteral 
-+ [ ] solveControlThreadId :: MonadIO m => SolveControl -> Ptr Identifier 
++ [X] 2016-10-27 modelContains :: MonadIO m => Model -> Symbol -> Ptr CBool -> m CBool
++ [X] 2016-10-27 modelContext :: MonadIO m => Model -> Ptr SolveControl -> m CBool
++ [X] 2016-10-27 modelCost :: MonadIO m => Model -> Ptr Int64 -> CSize -> m CBool
++ [X] 2016-10-27 modelCostSize :: MonadIO m => Model -> Ptr CSize -> m CBool
++ [X] 2016-10-27 modelNumber :: MonadIO m => Model -> Ptr Word64 -> m CBool
++ [X] 2016-10-27 modelOptimalityProven :: MonadIO m => Model -> Ptr CBool -> m CBool
++ [X] 2016-10-27 modelSymbols :: MonadIO m => Model -> ShowFlag -> Ptr Symbol -> CSize 
++ [X] 2016-10-27 modelSymbolsSize :: MonadIO m => Model -> ShowFlag -> Ptr CSize -> m CBool
++ [X] 2016-10-27 modelType :: MonadIO m => Model -> ModelType -> m CBool
++ [X] 2016-10-27 solveControlAddClause :: MonadIO m => SolveControl -> Ptr SymbolicLiteral 
++ [X] 2016-10-27 solveControlThreadId :: MonadIO m => SolveControl -> Ptr Identifier 
 
 Raw.ProgramBuilding
 ===================

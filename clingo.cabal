@@ -23,6 +23,7 @@ library
                        Clingo.Symbol
                        Clingo.Statistics
                        Clingo.Asynchronous
+                       Clingo.Model
                        Clingo.Iterative
                        Clingo.Raw
                        Clingo.Raw.AST

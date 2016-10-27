@@ -22,6 +22,7 @@ module Clingo.Internal.Types
     AsyncSolver (..),
     IterSolver (..),
     Model (..),
+    ModelType (..),
     Location (..),
     rawLocation,
     fromRawLocation,
@@ -37,7 +38,9 @@ module Clingo.Internal.Types
     ConfigurationType (..),
     Backend (..),
     SymbolicAtoms (..),
-    TheoryAtoms (..)
+    TheoryAtoms (..),
+    SymbolSelection (..),
+    rawSymbolSelection
 )
 where
 
@@ -144,6 +147,8 @@ newtype IterSolver s = IterSolver Raw.IterSolver
 
 newtype Model s = Model Raw.Model
 
+newtype ModelType = ModelType Raw.ModelType
+
 data Location = Location
     { locBeginFile :: FilePath
     , locEndFile   :: FilePath
@@ -206,3 +211,24 @@ newtype Backend s = Backend Raw.Backend
 newtype SymbolicAtoms s = SymbolicAtoms Raw.SymbolicAtoms
 
 newtype TheoryAtoms s = TheoryAtoms Raw.TheoryAtoms
+
+data SymbolSelection = SymbolSelection 
+    { selectCSP     :: Bool
+    , selectShown   :: Bool
+    , selectAtoms   :: Bool
+    , selectTerms   :: Bool
+    , selectExtra   :: Bool
+    , useComplement :: Bool }
+    deriving (Eq, Show, Ord)
+
+selectAll :: SymbolSelection
+selectAll = SymbolSelection True True True True True False
+
+rawSymbolSelection :: SymbolSelection -> Raw.ShowFlag
+rawSymbolSelection s = foldr1 (.|.) . map fst . filter snd $
+    [ (Raw.ShowCSP, selectCSP s)
+    , (Raw.ShowShown, selectShown s)
+    , (Raw.ShowAtoms, selectAtoms s)
+    , (Raw.ShowTerms, selectTerms s)
+    , (Raw.ShowExtra, selectExtra s)
+    , (Raw.ShowComplement, useComplement s) ]

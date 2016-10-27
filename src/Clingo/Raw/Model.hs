@@ -25,7 +25,7 @@ import Clingo.Raw.Types
 import Clingo.Raw.Enums
 
 foreign import ccall "clingo.h clingo_model_type" modelTypeFFI ::
-    Model -> ModelType -> IO CBool
+    Model -> Ptr ModelType -> IO CBool
 foreign import ccall "clingo.h clingo_model_number" modelNumberFFI ::
     Model -> Ptr Word64 -> IO CBool
 foreign import ccall "clingo.h clingo_model_symbols_size" modelSymbolsSizeFFI ::
@@ -50,7 +50,7 @@ foreign import ccall "clingo.h clingo_solve_control_add_clause"
     solveControlAddClauseFFI ::
     SolveControl -> Ptr SymbolicLiteral -> CSize -> IO CBool
 
-modelType :: MonadIO m => Model -> ModelType -> m CBool
+modelType :: MonadIO m => Model -> Ptr ModelType -> m CBool
 modelType a b = liftIO $ modelTypeFFI a b
 
 modelNumber :: MonadIO m => Model -> Ptr Word64 -> m CBool
