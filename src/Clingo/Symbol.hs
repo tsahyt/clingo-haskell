@@ -57,7 +57,7 @@ parseTerm :: (MonadIO m, MonadThrow m)
           -> m (Symbol s)
 parseTerm _ t logger limit = Symbol <$> marshall1 go
     where go x = withCString (unpack t) $ \cstr -> do
-                     logCB <- maybe (return nullFunPtr) wrapCBLogger logger
+                     logCB <- maybe (pure nullFunPtr) wrapCBLogger logger
                      Raw.parseTerm cstr logCB nullPtr (fromIntegral limit) x
 
 signatureName :: Signature s -> Text

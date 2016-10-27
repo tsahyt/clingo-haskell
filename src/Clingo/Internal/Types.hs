@@ -34,6 +34,7 @@ module Clingo.Internal.Types
     StatisticsType (..),
     ProgramBuilder (..),
     Configuration (..),
+    ConfigurationType (..),
     Backend (..),
     SymbolicAtoms (..),
     TheoryAtoms (..)
@@ -197,6 +198,8 @@ newtype StatisticsType = StatisticsType Raw.StatisticsType
 newtype ProgramBuilder s = ProgramBuilder Raw.ProgramBuilder
 
 newtype Configuration s = Configuration Raw.Configuration
+
+newtype ConfigurationType = ConfigurationType Raw.ConfigurationType
 
 newtype Backend s = Backend Raw.Backend
 

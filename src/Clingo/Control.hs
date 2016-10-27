@@ -2,6 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Clingo.Control
 (
+    Clingo,
     withClingo,
 
     loadProgram,
@@ -26,7 +27,7 @@ where
 
 import Control.Monad.IO.Class
 import Control.Monad.Catch
-import Data.Text (Text, pack)
+import Data.Text (Text, pack, unpack)
 
 import Foreign
 import Foreign.C
@@ -50,16 +51,22 @@ loadProgram (Clingo ctrl) path =
 
 addProgram :: (MonadIO m, MonadThrow m) 
            => Clingo s -> Text -> [Text] -> Text -> m ()
-addProgram (Clingo ctrl) name params code = marshall0 undefined
+addProgram (Clingo ctrl) name params code = marshall0 $ 
+    withCString (unpack name) $ \n ->
+        withCString (unpack code) $ \c -> do
+            ptrs <- mapM (newCString . unpack) params
+            withArrayLen ptrs $ \s ps ->
+                Raw.controlAdd ctrl n ps (fromIntegral s) c
 
 ground :: (MonadIO m, MonadThrow m) 
        => Clingo s 
        -> [Part s] 
-       -> (Location -> Text -> [Symbol s] -> ([Symbol s] -> IO ()) -> IO ())
+       -> Maybe 
+          (Location -> Text -> [Symbol s] -> ([Symbol s] -> IO ()) -> IO ())
        -> m ()
 ground (Clingo ctrl) parts extFun = marshall0 $
     withArrayLen (map rawPart parts) $ \len arr -> do
-        groundCB <- wrapCBGround extFun
+        groundCB <- maybe (pure nullFunPtr) wrapCBGround extFun
         Raw.controlGround ctrl arr (fromIntegral len) groundCB nullPtr
 
 wrapCBGround :: MonadIO m
@@ -87,12 +94,12 @@ cleanup (Clingo ctrl) = marshall0 (Raw.controlCleanup ctrl)
 
 solve :: (MonadIO m, MonadThrow m) 
       => Clingo s 
-      -> (Model s -> IO Bool)
+      -> Maybe (Model s -> IO Bool)
       -> [SymbolicLiteral s] 
       -> m SolveResult
 solve (Clingo ctrl) onModel assumptions = fromRawSolveResult <$> marshall1 go
     where go x = withArrayLen (map rawSymLit assumptions) $ \len arr -> do
-                     modelCB <- wrapCBModel onModel
+                     modelCB <- maybe (pure nullFunPtr) wrapCBModel onModel
                      Raw.controlSolve ctrl modelCB nullPtr 
                                       arr (fromIntegral len) x
 

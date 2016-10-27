@@ -32,7 +32,7 @@ Raw.Configuration
 
 Raw.Control
 ===========
-+ [o] controlAdd :: MonadIO m => Control -> CString -> Ptr CString -> CSize 
++ [X] 2016-10-27 controlAdd :: MonadIO m => Control -> CString -> Ptr CString -> CSize 
 + [ ] controlAssignExternal :: MonadIO m => Control -> Symbol -> TruthValue 
 + [X] 2016-10-26 controlBackend :: MonadIO m => Control -> Ptr Backend -> m CBool
 + [ ] controlClaspFacade :: MonadIO m => Control -> Ptr (Ptr ()) -> m CBool

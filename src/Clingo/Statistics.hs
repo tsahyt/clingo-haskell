@@ -19,6 +19,7 @@ module Clingo.Statistics
 )
 where
 
+import Control.Monad
 import Control.Monad.Catch
 import Control.Monad.IO.Class
 import Data.Text (Text, pack, unpack)
