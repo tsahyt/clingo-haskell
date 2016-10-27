@@ -43,6 +43,10 @@ module Clingo.Internal.Types
     SymbolSelection (..),
     selectAll,
     rawSymbolSelection,
+    TruthValue (..),
+    pattern TruthFree,
+    pattern TruthFalse,
+    pattern TruthTrue
 )
 where
 
@@ -241,3 +245,9 @@ rawSymbolSelection s = foldr ((.|.) . fst) zeroBits . filter snd $
     , (Raw.ShowTerms, selectTerms s)
     , (Raw.ShowExtra, selectExtra s)
     , (Raw.ShowComplement, useComplement s) ]
+
+newtype TruthValue = TruthValue { rawTruthValue :: Raw.TruthValue }
+
+pattern TruthFree = TruthValue Raw.TruthFree
+pattern TruthFalse = TruthValue Raw.TruthFalse
+pattern TruthTrue = TruthValue Raw.TruthTrue

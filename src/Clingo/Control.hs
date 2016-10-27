@@ -24,6 +24,12 @@ module Clingo.Control
     symbolicAtoms,
     theoryAtoms,
 
+    assignExternal,
+    releaseExternal,
+    getConst,
+    hasConst,
+    useEnumAssumption,
+
     version
 )
 where
@@ -176,6 +182,30 @@ symbolicAtoms (Clingo ctrl) = SymbolicAtoms <$>
 theoryAtoms :: (MonadIO m, MonadThrow m) => Clingo s -> m (TheoryAtoms s)
 theoryAtoms (Clingo ctrl) = TheoryAtoms <$> 
     marshall1 (Raw.controlTheoryAtoms ctrl)
+
+useEnumAssumption :: (MonadIO m, MonadThrow m) => Clingo s -> Bool -> m ()
+useEnumAssumption (Clingo ctrl) b = marshall0 $
+    Raw.controlUseEnumAssumption ctrl (fromBool b)
+
+assignExternal :: (MonadIO m, MonadThrow m) 
+               => Clingo s -> Symbol s -> TruthValue -> m ()
+assignExternal (Clingo ctrl) s t = marshall0 $
+    Raw.controlAssignExternal ctrl (rawSymbol s) (rawTruthValue t)
+
+releaseExternal :: (MonadIO m, MonadThrow m) 
+                => Clingo s -> Symbol s -> m ()
+releaseExternal (Clingo ctrl) s = marshall0 $
+    Raw.controlReleaseExternal ctrl (rawSymbol s)
+
+getConst :: (MonadIO m, MonadThrow m) => Clingo s -> Text -> m (Symbol s)
+getConst (Clingo ctrl) name = Symbol <$> marshall1 go
+    where go x = withCString (unpack name) $ \cstr -> 
+                     Raw.controlGetConst ctrl cstr x
+
+hasConst :: (MonadIO m, MonadThrow m) => Clingo s -> Text -> m Bool
+hasConst (Clingo ctrl) name = toBool <$> marshall1 go
+    where go x = withCString (unpack name) $ \cstr ->
+                     Raw.controlHasConst ctrl cstr x
 
 version :: MonadIO m => m (Int, Int, Int)
 version = do 

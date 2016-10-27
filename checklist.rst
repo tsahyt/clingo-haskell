@@ -33,29 +33,29 @@ Raw.Configuration
 Raw.Control
 ===========
 + [X] 2016-10-27 controlAdd :: MonadIO m => Control -> CString -> Ptr CString -> CSize 
-+ [ ] controlAssignExternal :: MonadIO m => Control -> Symbol -> TruthValue 
++ [X] 2016-10-27 controlAssignExternal :: MonadIO m => Control -> Symbol -> TruthValue 
 + [X] 2016-10-26 controlBackend :: MonadIO m => Control -> Ptr Backend -> m CBool
 + [ ] controlClaspFacade :: MonadIO m => Control -> Ptr (Ptr ()) -> m CBool
 + [X] 2016-10-26 controlCleanup :: MonadIO m => Control -> m CBool
 + [X] 2016-10-26 controlConfiguration :: MonadIO m => Control -> Ptr Configuration
 + [X] 2016-10-25 controlFree :: MonadIO m => Control -> m ()
-+ [ ] controlGetConst :: MonadIO m => Control -> CString -> Ptr Symbol -> m CBool
++ [X] 2016-10-27 controlGetConst :: MonadIO m => Control -> CString -> Ptr Symbol -> m CBool
 + [X] 2016-10-26 controlGround :: MonadIO m => Control -> Ptr Part -> CSize 
-+ [ ] controlHasConst :: MonadIO m => Control -> CString -> Ptr CBool -> m CBool
++ [X] 2016-10-27 controlHasConst :: MonadIO m => Control -> CString -> Ptr CBool -> m CBool
 + [X] 2016-10-26 controlInterrupt :: MonadIO m => Control -> m ()
 + [X] 2016-10-25 controlLoad :: MonadIO m => Control -> CString -> m CBool
 + [X] 2016-10-25 controlNew :: MonadIO m => Ptr CString -> CSize -> FunPtr (Logger a) 
 + [X] 2016-10-26 controlProgramBuilder :: MonadIO m => Control -> Ptr ProgramBuilder
 + [ ] controlRegisterObserver :: MonadIO m => Control 
 + [ ] controlRegisterPropagator :: MonadIO m => Control -> Ptr (Propagator a) 
-+ [ ] controlReleaseExternal :: MonadIO m => Control -> Symbol -> m CBool
++ [X] 2016-10-27 controlReleaseExternal :: MonadIO m => Control -> Symbol -> m CBool
 + [X] 2016-10-26 controlSolve :: MonadIO m => Control -> FunPtr (CallbackModel a) -> Ptr a 
 + [X] 2016-10-26 controlSolveAsync :: MonadIO m => Control -> FunPtr (CallbackModel a) 
 + [X] 2016-10-26 controlSolveIter :: MonadIO m => Control -> Ptr SymbolicLiteral -> CSize 
 + [X] 2016-10-26 controlStatistics :: MonadIO m => Control -> Ptr Statistics -> m CBool
 + [X] 2016-10-26 controlSymbolicAtoms :: MonadIO m => Control -> Ptr SymbolicAtoms
 + [X] 2016-10-26 controlTheoryAtoms :: MonadIO m => Control -> Ptr TheoryAtoms
-+ [ ] controlUseEnumAssumption :: MonadIO m => Control -> CBool -> m CBool
++ [X] 2016-10-27 controlUseEnumAssumption :: MonadIO m => Control -> CBool -> m CBool
 
 Raw.Iterative
 =============
