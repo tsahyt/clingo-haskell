@@ -1,5 +1,10 @@
 module Clingo.Model
 (
+    Model,
+    SymbolSelection (..),
+    selectAll,
+    selectNone,
+
     modelType,
     modelNumber,
     modelSymbols,
@@ -25,6 +30,9 @@ import Clingo.Internal.Types
 import Clingo.Internal.Utils
 
 newtype SolveControl s = SolveControl Raw.SolveControl
+
+selectNone :: SymbolSelection
+selectNone = SymbolSelection False False False False False False
 
 modelType :: (MonadIO m, MonadThrow m) => Model s -> m ModelType
 modelType (Model m) = ModelType <$> marshall1 (Raw.modelType m)

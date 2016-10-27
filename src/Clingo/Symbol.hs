@@ -1,6 +1,7 @@
 module Clingo.Symbol
 (
     Symbol,
+    Location,
 
     signatureCreate,
     prettySymbol,
@@ -136,9 +137,9 @@ symbolArguments s = map Symbol <$>
 
 prettySymbol :: (MonadIO m, MonadThrow m) => Symbol s -> m Text
 prettySymbol s = do
-    len <- marshall1 (Raw.symbolSymbolToStringSize (rawSymbol s))
+    len <- marshall1 (Raw.symbolToStringSize (rawSymbol s))
     str <- liftIO $ alloca $ \ptr -> do
-        b <- Raw.symbolSymbolToString (rawSymbol s) ptr len
+        b <- Raw.symbolToString (rawSymbol s) ptr len
         x <- peekCString ptr
         checkAndThrow b
         return x

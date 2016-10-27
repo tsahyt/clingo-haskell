@@ -30,8 +30,8 @@ module Clingo.Raw.Symbol
     symbolIsNegative,
     symbolArguments,
     symbolType,
-    symbolSymbolToStringSize,
-    symbolSymbolToString,
+    symbolToStringSize,
+    symbolToString,
 
     -- * Symbol comparison
     symbolIsEqualTo,
@@ -93,10 +93,10 @@ foreign import ccall "clingo.h clingo_symbol_arguments" symbolArgumentsFFI ::
     Symbol -> Ptr (Ptr Symbol) -> Ptr CSize -> IO CBool
 foreign import ccall "clingo.h clingo_symbol_type" symbolTypeFFI ::
     Symbol -> SymbolType
-foreign import ccall "clingo.h clingo_symbol_symbol_to_string_size" 
-    symbolSymbolToStringSizeFFI :: Symbol -> Ptr CSize -> IO CBool
-foreign import ccall "clingo.h clingo_symbol_symbol_to_string" 
-    symbolSymbolToStringFFI :: Symbol -> Ptr CChar -> CSize -> IO CBool
+foreign import ccall "clingo.h clingo_symbol_to_string_size" 
+    symbolToStringSizeFFI :: Symbol -> Ptr CSize -> IO CBool
+foreign import ccall "clingo.h clingo_symbol_to_string" 
+    symbolToStringFFI :: Symbol -> Ptr CChar -> CSize -> IO CBool
 foreign import ccall "clingo.h clingo_symbol_is_equal_to" symbolIsEqualToFFI ::
     Symbol -> Symbol -> CBool
 foreign import ccall "clingo.h clingo_symbol_is_less_than" 
@@ -177,11 +177,11 @@ symbolArguments a b c = liftIO $ symbolArgumentsFFI a b c
 symbolType :: Symbol -> SymbolType
 symbolType = symbolTypeFFI
 
-symbolSymbolToStringSize :: MonadIO m => Symbol -> Ptr CSize -> m CBool
-symbolSymbolToStringSize a b = liftIO $ symbolSymbolToStringSizeFFI a b
+symbolToStringSize :: MonadIO m => Symbol -> Ptr CSize -> m CBool
+symbolToStringSize a b = liftIO $ symbolToStringSizeFFI a b
 
-symbolSymbolToString :: MonadIO m => Symbol -> Ptr CChar -> CSize -> m CBool
-symbolSymbolToString a b c = liftIO $ symbolSymbolToStringFFI a b c
+symbolToString :: MonadIO m => Symbol -> Ptr CChar -> CSize -> m CBool
+symbolToString a b c = liftIO $ symbolToStringFFI a b c
 
 symbolIsEqualTo :: Symbol -> Symbol -> CBool
 symbolIsEqualTo = symbolIsEqualToFFI

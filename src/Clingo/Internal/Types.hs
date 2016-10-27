@@ -40,7 +40,8 @@ module Clingo.Internal.Types
     SymbolicAtoms (..),
     TheoryAtoms (..),
     SymbolSelection (..),
-    rawSymbolSelection
+    selectAll,
+    rawSymbolSelection,
 )
 where
 
@@ -225,7 +226,7 @@ selectAll :: SymbolSelection
 selectAll = SymbolSelection True True True True True False
 
 rawSymbolSelection :: SymbolSelection -> Raw.ShowFlag
-rawSymbolSelection s = foldr1 (.|.) . map fst . filter snd $
+rawSymbolSelection s = foldr ((.|.) . fst) zeroBits . filter snd $
     [ (Raw.ShowCSP, selectCSP s)
     , (Raw.ShowShown, selectShown s)
     , (Raw.ShowAtoms, selectAtoms s)

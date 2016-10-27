@@ -65,7 +65,7 @@ executable version
 
 executable control
   if flag(examples)
-      build-depends:   base, clingo
+      build-depends:   base, clingo, text
   else 
       buildable:       False
 
