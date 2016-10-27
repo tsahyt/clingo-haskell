@@ -11,13 +11,13 @@ import qualified Data.Text.IO as T
 
 onModel :: Model s -> IO Bool
 onModel m = do
-    syms <- modelSymbols m (selectNone { selectShown = True }) 
-            >>= mapM prettySymbol
-    print syms
+    syms <- mapM prettySymbol
+        =<< modelSymbols m (selectNone { selectShown = True }) 
+    putStr "Model: " >> print syms
     return True
     
 main :: IO ()
 main = withClingo $ \ctrl -> do
     addProgram ctrl "base" [] "a :- not b. b :- not a."
-    ground ctrl [] Nothing
+    ground ctrl [Part "base" []] Nothing
     void $ solve ctrl (Just onModel) []

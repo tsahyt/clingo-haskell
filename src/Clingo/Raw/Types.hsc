@@ -53,7 +53,7 @@ module Clingo.Raw.Types
 
     -- * Control
     Control (..),
-    Part,
+    Part (..),
     CallbackSymbol,
     mkCallbackSymbol,
     getCallbackSymbol,
@@ -287,7 +287,7 @@ instance Storable (GroundProgramObserver a) where
 newtype Control = Control (Ptr Control) deriving Storable
 
 data Part = Part
-    { partName   :: Ptr CChar
+    { partName   :: CString
     , partParams :: Ptr Symbol
     , partSize   :: CSize
     }

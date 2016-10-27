@@ -16,6 +16,7 @@ module Clingo.Internal.Types
     functionSymbol,
     Part (..),
     rawPart,
+    freeRawPart,
     SymbolicLiteral (..),
     rawSymLit,
     Signature (..),
@@ -46,7 +47,7 @@ module Clingo.Internal.Types
 where
 
 import Control.Monad.IO.Class
-import Data.Text (Text, pack)
+import Data.Text (Text, pack, unpack)
 import Data.Bits
 import Foreign
 import Foreign.C
@@ -107,8 +108,15 @@ data Part s = Part
     { partName   :: Text
     , partParams :: [Symbol s] }
 
-rawPart :: Part s -> Raw.Part
-rawPart = undefined
+rawPart :: Part s -> IO Raw.Part
+rawPart p = Raw.Part <$> newCString (unpack (partName p))
+                     <*> newArray (map rawSymbol . partParams $ p)
+                     <*> pure (fromIntegral (length . partParams $ p))
+
+freeRawPart :: Raw.Part -> IO ()
+freeRawPart p = do
+    free (Raw.partName p)
+    free (Raw.partParams p)
 
 data SymbolicLiteral s 
     = SLPositive (Symbol s)

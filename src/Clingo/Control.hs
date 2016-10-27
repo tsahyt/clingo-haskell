@@ -4,6 +4,8 @@ module Clingo.Control
 (
     Clingo,
     withClingo,
+    
+    Part (..),
 
     loadProgram,
     addProgram,
@@ -64,10 +66,13 @@ ground :: (MonadIO m, MonadThrow m)
        -> Maybe 
           (Location -> Text -> [Symbol s] -> ([Symbol s] -> IO ()) -> IO ())
        -> m ()
-ground (Clingo ctrl) parts extFun = marshall0 $
-    withArrayLen (map rawPart parts) $ \len arr -> do
+ground (Clingo ctrl) parts extFun = marshall0 $ do
+    rparts <- mapM rawPart parts
+    res <- withArrayLen rparts $ \len arr -> do
         groundCB <- maybe (pure nullFunPtr) wrapCBGround extFun
         Raw.controlGround ctrl arr (fromIntegral len) groundCB nullPtr
+    mapM_ freeRawPart rparts
+    return res
 
 wrapCBGround :: MonadIO m
              => (Location -> Text -> [Symbol s] 
