@@ -94,15 +94,15 @@ Raw.ProgramBuilding
 
 Raw.Propagation
 ===============
-+ [ ] assignmentDecision :: MonadIO m => Assignment -> Word32 -> Ptr Literal -> m CBool
-+ [ ] assignmentDecisionLevel :: MonadIO m => Assignment -> m Word32
-+ [ ] assignmentHasConflict :: MonadIO m => Assignment -> m CBool
-+ [ ] assignmentHasLiteral :: MonadIO m => Assignment -> Literal -> m CBool
-+ [ ] assignmentIsFalse :: MonadIO m => Assignment -> Literal -> Ptr CBool -> m CBool
-+ [ ] assignmentIsFixed :: MonadIO m => Assignment -> Literal -> Ptr CBool -> m CBool
-+ [ ] assignmentIsTrue :: MonadIO m => Assignment -> Literal -> Ptr CBool -> m CBool
-+ [ ] assignmentLevel :: MonadIO m => Assignment -> Literal -> Ptr Word32 -> m CBool
-+ [ ] assignmentTruthValue :: MonadIO m => Assignment -> Literal -> Ptr TruthValue -> m CBool
++ [X] 2016-10-28 assignmentDecision :: MonadIO m => Assignment -> Word32 -> Ptr Literal -> m CBool
++ [X] 2016-10-28 assignmentDecisionLevel :: MonadIO m => Assignment -> m Word32
++ [X] 2016-10-28 assignmentHasConflict :: MonadIO m => Assignment -> m CBool
++ [X] 2016-10-28 assignmentHasLiteral :: MonadIO m => Assignment -> Literal -> m CBool
++ [X] 2016-10-28 assignmentIsFalse :: MonadIO m => Assignment -> Literal -> Ptr CBool -> m CBool
++ [X] 2016-10-28 assignmentIsFixed :: MonadIO m => Assignment -> Literal -> Ptr CBool -> m CBool
++ [X] 2016-10-28 assignmentIsTrue :: MonadIO m => Assignment -> Literal -> Ptr CBool -> m CBool
++ [X] 2016-10-28 assignmentLevel :: MonadIO m => Assignment -> Literal -> Ptr Word32 -> m CBool
++ [X] 2016-10-28 assignmentTruthValue :: MonadIO m => Assignment -> Literal -> Ptr TruthValue -> m CBool
 + [ ] propagateControlAddClause :: MonadIO m => PropagateControl -> Ptr Literal -> CSize -> ClauseType -> Ptr CBool -> m CBool
 + [ ] propagateControlAddLiteral :: MonadIO m => PropagateControl -> Ptr Literal -> m CBool
 + [ ] propagateControlAddWatch :: MonadIO m => PropagateControl -> Literal -> m CBool

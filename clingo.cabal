@@ -23,6 +23,7 @@ library
                        Clingo.Symbol
                        Clingo.Statistics
                        Clingo.Asynchronous
+                       Clingo.Propagation
                        Clingo.Model
                        Clingo.Iterative
                        Clingo.ProgramBuilding

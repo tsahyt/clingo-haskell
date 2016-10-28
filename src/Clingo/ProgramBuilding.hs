@@ -1,7 +1,6 @@
 module Clingo.ProgramBuilding
 (
     Node,
-
 )
 where
 

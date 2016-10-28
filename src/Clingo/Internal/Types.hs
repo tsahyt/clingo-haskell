@@ -45,6 +45,7 @@ module Clingo.Internal.Types
     SymbolicAtoms (..),
     TheoryAtoms (..),
     SymbolSelection (..),
+    Assignment (..),
     selectAll,
     rawSymbolSelection,
     TruthValue (..),
@@ -238,6 +239,8 @@ newtype Backend s = Backend Raw.Backend
 newtype SymbolicAtoms s = SymbolicAtoms Raw.SymbolicAtoms
 
 newtype TheoryAtoms s = TheoryAtoms Raw.TheoryAtoms
+
+newtype Assignment s = Assignment Raw.Assignment
 
 data SymbolSelection = SymbolSelection 
     { selectCSP     :: Bool
