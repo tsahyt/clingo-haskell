@@ -79,18 +79,18 @@ Raw.Model
 
 Raw.ProgramBuilding
 ===================
-+ [ ] backendAcycEdge :: MonadIO m => Backend -> CInt -> CInt -> Ptr Literal -> CSize -> m CBool
-+ [ ] backendAddAtom :: MonadIO m => Backend -> Ptr Atom -> m CBool
-+ [ ] backendAssume :: MonadIO m => Backend -> Ptr Literal -> CSize -> m CBool
++ [X] 2016-10-28 backendAcycEdge :: MonadIO m => Backend -> CInt -> CInt -> Ptr Literal -> CSize -> m CBool
++ [X] 2016-10-28 backendAddAtom :: MonadIO m => Backend -> Ptr Atom -> m CBool
++ [X] 2016-10-28 backendAssume :: MonadIO m => Backend -> Ptr Literal -> CSize -> m CBool
 + [ ] backendBuilderAdd :: MonadIO m => ProgramBuilder -> Ptr AstStatement -> m CBool
 + [ ] backendBuilderBegin :: MonadIO m => ProgramBuilder -> m CBool
 + [ ] backendBuilderEnd :: MonadIO m => ProgramBuilder -> m CBool
-+ [ ] backendExternal :: MonadIO m => Backend -> Atom -> ExternalType -> m CBool
-+ [ ] backendHeuristic :: MonadIO m => Backend -> Atom -> HeuristicType -> CInt -> CUInt -> Ptr Literal -> CSize -> m CBool
-+ [ ] backendMinimize :: MonadIO m => Backend -> Weight -> Ptr WeightedLiteral -> CSize -> m CBool
-+ [ ] backendProject :: MonadIO m => Backend -> Ptr Atom -> CSize -> m CBool
-+ [ ] backendRule :: MonadIO m => Backend -> CBool -> Ptr Atom -> CSize -> Ptr Literal -> CSize -> m CBool
-+ [ ] backendWeightRule :: MonadIO m => Backend -> CBool -> Ptr Atom -> CSize -> Weight -> Ptr WeightedLiteral -> CSize -> m CBool
++ [X] 2016-10-28 backendExternal :: MonadIO m => Backend -> Atom -> ExternalType -> m CBool
++ [X] 2016-10-28 backendHeuristic :: MonadIO m => Backend -> Atom -> HeuristicType -> CInt -> CUInt -> Ptr Literal -> CSize -> m CBool
++ [X] 2016-10-28 backendMinimize :: MonadIO m => Backend -> Weight -> Ptr WeightedLiteral -> CSize -> m CBool
++ [X] 2016-10-28 backendProject :: MonadIO m => Backend -> Ptr Atom -> CSize -> m CBool
++ [X] 2016-10-28 backendRule :: MonadIO m => Backend -> CBool -> Ptr Atom -> CSize -> Ptr Literal -> CSize -> m CBool
++ [X] 2016-10-28 backendWeightRule :: MonadIO m => Backend -> CBool -> Ptr Atom -> CSize -> Weight -> Ptr WeightedLiteral -> CSize -> m CBool
 
 Raw.Propagation
 ===============

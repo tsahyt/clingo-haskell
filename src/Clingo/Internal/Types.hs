@@ -19,6 +19,10 @@ module Clingo.Internal.Types
     freeRawPart,
     SymbolicLiteral (..),
     rawSymLit,
+    Literal (..),
+    WeightedLiteral (..),
+    rawWeightedLiteral,
+    Atom (..),
     Signature (..),
     AsyncSolver (..),
     IterSolver (..),
@@ -141,6 +145,16 @@ rawSymLit :: SymbolicLiteral s -> Raw.SymbolicLiteral
 rawSymLit sl = Raw.SymbolicLiteral
     { Raw.slitSymbol   = rawSymbol (symLitSymbol sl)
     , Raw.slitPositive = fromBool (symLitPositive sl) }
+
+newtype Literal s = Literal { rawLiteral :: Raw.Literal }
+
+data WeightedLiteral s = WeightedLiteral (Literal s) Integer
+
+rawWeightedLiteral :: WeightedLiteral s -> Raw.WeightedLiteral
+rawWeightedLiteral (WeightedLiteral l w) = 
+    Raw.WeightedLiteral (rawLiteral l) (fromIntegral w)
+
+newtype Atom s = Atom { rawAtom :: Raw.Atom }
 
 newtype Signature s = Signature { rawSignature :: Raw.Signature }
 
