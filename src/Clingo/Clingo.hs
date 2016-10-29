@@ -1,4 +1,0 @@
-module Clingo.Clingo
-(
-)
-where

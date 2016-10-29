@@ -21,9 +21,9 @@ library
   hs-source-dirs:      src
   exposed-modules:     Clingo.Control
                        Clingo.Symbol
+                       Clingo.Configuration
                        Clingo.Statistics
                        Clingo.Asynchronous
-                       Clingo.Propagation
                        Clingo.Model
                        Clingo.Iterative
                        Clingo.ProgramBuilding

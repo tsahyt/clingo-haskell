@@ -37,7 +37,7 @@ foreign import ccall "clingo.h clingo_configuration_type" configurationTypeFFI :
 foreign import ccall "clingo.h clingo_configuration_description" configurationDescriptionFFI ::
     Configuration -> Identifier -> Ptr CString -> IO CBool
 foreign import ccall "clingo.h clingo_configuration_array_size" configurationArraySizeFFI ::
-    Configuration -> Identifier -> Word64 -> Ptr CSize -> IO CBool
+    Configuration -> Word64 -> Ptr CSize -> IO CBool
 foreign import ccall "clingo.h clingo_configuration_array_at" configurationArrayAtFFI ::
     Configuration -> Identifier -> CSize -> Ptr Identifier -> IO CBool
 foreign import ccall "clingo.h clingo_configuration_map_size" configurationMapSizeFFI ::
@@ -64,8 +64,8 @@ configurationType a b c = liftIO $ configurationTypeFFI a b c
 configurationDescription :: MonadIO m => Configuration -> Identifier -> Ptr CString -> m CBool
 configurationDescription a b c = liftIO $ configurationDescriptionFFI a b c
 
-configurationArraySize :: MonadIO m => Configuration -> Identifier -> Word64 -> Ptr CSize -> m CBool
-configurationArraySize a b c d = liftIO $ configurationArraySizeFFI a b c d
+configurationArraySize :: MonadIO m => Configuration -> Word64 -> Ptr CSize -> m CBool
+configurationArraySize a b c = liftIO $ configurationArraySizeFFI a b c
 
 configurationArrayAt :: MonadIO m => Configuration -> Identifier -> CSize -> Ptr Identifier -> m CBool
 configurationArrayAt a b c d = liftIO $ configurationArrayAtFFI a b c d

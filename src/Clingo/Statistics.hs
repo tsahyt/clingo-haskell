@@ -1,6 +1,7 @@
 module Clingo.Statistics
 (
     -- * Direct Interface
+    SKey,
     statisticsRoot,
     statisticsType,
 

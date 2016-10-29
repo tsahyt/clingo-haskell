@@ -17,18 +17,18 @@ Raw.Basic
 
 Raw.Configuration
 =================
-+ [ ] configurationArrayAt :: MonadIO m => Configuration -> Identifier -> CSize -> Ptr Identifier -> m CBool
-+ [ ] configurationArraySize :: MonadIO m => Configuration -> Identifier -> Word64 -> Ptr CSize -> m CBool
-+ [ ] configurationDescription :: MonadIO m => Configuration -> Identifier -> Ptr CString -> m CBool
-+ [ ] configurationMapAt :: MonadIO m => Configuration -> Identifier -> CString -> Ptr Identifier -> m CBool
-+ [ ] configurationMapSize :: MonadIO m => Configuration -> Identifier -> Ptr CSize -> m CBool
-+ [ ] configurationMapSubkeyName :: MonadIO m => Configuration -> Identifier -> CSize -> Ptr CString -> m CBool
-+ [ ] configurationRoot :: MonadIO m => Configuration -> Ptr Identifier -> m CBool
-+ [ ] configurationType :: MonadIO m => Configuration -> Identifier -> Ptr ConfigurationType -> m CBool
-+ [ ] configurationValueGet :: MonadIO m => Configuration -> Identifier -> CString -> CSize -> m CBool
-+ [ ] configurationValueGetSize :: MonadIO m => Configuration -> Identifier -> Ptr CSize -> m CBool
-+ [ ] configurationValueIsAssigned :: MonadIO m => Configuration -> Identifier -> Ptr CBool -> m CBool
-+ [ ] configurationValueSet :: MonadIO m => Configuration -> Identifier -> CString -> m CBool
++ [X] 2016-10-29 configurationArrayAt :: MonadIO m => Configuration -> Identifier -> CSize -> Ptr Identifier -> m CBool
++ [X] 2016-10-29 configurationArraySize :: MonadIO m => Configuration -> Identifier -> Word64 -> Ptr CSize -> m CBool
++ [X] 2016-10-29 configurationDescription :: MonadIO m => Configuration -> Identifier -> Ptr CString -> m CBool
++ [X] 2016-10-29 configurationMapAt :: MonadIO m => Configuration -> Identifier -> CString -> Ptr Identifier -> m CBool
++ [X] 2016-10-29 configurationMapSize :: MonadIO m => Configuration -> Identifier -> Ptr CSize -> m CBool
++ [X] 2016-10-29 configurationMapSubkeyName :: MonadIO m => Configuration -> Identifier -> CSize -> Ptr CString -> m CBool
++ [X] 2016-10-29 configurationRoot :: MonadIO m => Configuration -> Ptr Identifier -> m CBool
++ [X] 2016-10-29 configurationType :: MonadIO m => Configuration -> Identifier -> Ptr ConfigurationType -> m CBool
++ [X] 2016-10-29 configurationValueGet :: MonadIO m => Configuration -> Identifier -> CString -> CSize -> m CBool
++ [X] 2016-10-29 configurationValueGetSize :: MonadIO m => Configuration -> Identifier -> Ptr CSize -> m CBool
++ [X] 2016-10-29 configurationValueIsAssigned :: MonadIO m => Configuration -> Identifier -> Ptr CBool -> m CBool
++ [X] 2016-10-29 configurationValueSet :: MonadIO m => Configuration -> Identifier -> CString -> m CBool
 
 Raw.Control
 ===========
