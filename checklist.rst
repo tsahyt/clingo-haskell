@@ -35,7 +35,7 @@ Raw.Control
 + [X] 2016-10-27 controlAdd :: MonadIO m => Control -> CString -> Ptr CString -> CSize 
 + [X] 2016-10-27 controlAssignExternal :: MonadIO m => Control -> Symbol -> TruthValue 
 + [X] 2016-10-26 controlBackend :: MonadIO m => Control -> Ptr Backend -> m CBool
-+ [ ] controlClaspFacade :: MonadIO m => Control -> Ptr (Ptr ()) -> m CBool
++ [X] 2016-10-31 controlClaspFacade :: MonadIO m => Control -> Ptr (Ptr ()) -> m CBool
 + [X] 2016-10-26 controlCleanup :: MonadIO m => Control -> m CBool
 + [X] 2016-10-26 controlConfiguration :: MonadIO m => Control -> Ptr Configuration
 + [X] 2016-10-25 controlFree :: MonadIO m => Control -> m ()
@@ -47,7 +47,7 @@ Raw.Control
 + [X] 2016-10-25 controlNew :: MonadIO m => Ptr CString -> CSize -> FunPtr (Logger a) 
 + [X] 2016-10-26 controlProgramBuilder :: MonadIO m => Control -> Ptr ProgramBuilder
 + [ ] controlRegisterObserver :: MonadIO m => Control 
-+ [ ] controlRegisterPropagator :: MonadIO m => Control -> Ptr (Propagator a) 
++ [X] 2016-10-31 controlRegisterPropagator :: MonadIO m => Control -> Ptr (Propagator a) 
 + [X] 2016-10-27 controlReleaseExternal :: MonadIO m => Control -> Symbol -> m CBool
 + [X] 2016-10-26 controlSolve :: MonadIO m => Control -> FunPtr (CallbackModel a) -> Ptr a 
 + [X] 2016-10-26 controlSolveAsync :: MonadIO m => Control -> FunPtr (CallbackModel a) 

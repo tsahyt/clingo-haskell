@@ -12,6 +12,7 @@ module Clingo.Control
     ground,
     interrupt,
     cleanup,
+    registerPropagator,
     Continue (..),
     solve,
     solveAsync,
@@ -206,6 +207,14 @@ hasConst :: (MonadIO m, MonadThrow m) => Clingo s -> Text -> m Bool
 hasConst (Clingo ctrl) name = toBool <$> marshall1 go
     where go x = withCString (unpack name) $ \cstr ->
                      Raw.controlHasConst ctrl cstr x
+
+registerPropagator :: (MonadIO m, MonadThrow m) 
+                   => Clingo s -> Propagator s -> Bool -> m ()
+registerPropagator (Clingo ctrl) prop sequ = do
+    prop' <- rawPropagator prop
+    res <- liftIO $ with prop' $ \ptr ->
+               Raw.controlRegisterPropagator ctrl ptr nullPtr (fromBool sequ)
+    checkAndThrow res
 
 version :: MonadIO m => m (Int, Int, Int)
 version = do 
