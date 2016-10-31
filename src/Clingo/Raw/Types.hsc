@@ -34,9 +34,13 @@ module Clingo.Raw.Types
     Assignment (..),
     PropagateControl (..),
     CallbackPropagatorInit,
+    mkCallbackPropagatorInit,
     CallbackPropagatorPropagate,
+    mkCallbackPropagatorPropagate,
     CallbackPropagatorUndo,
+    mkCallbackPropagatorUndo,
     CallbackPropagatorCheck,
+    mkCallbackPropagatorCheck,
     Propagator (..),
 
     -- * Program Builder
@@ -150,12 +154,27 @@ newtype PropagateControl = PropagateControl (Ptr PropagateControl)
 
 type CallbackPropagatorInit a = 
     PropagateInit -> Ptr a -> IO (CBool)
+
+foreign import ccall "wrapper" mkCallbackPropagatorInit ::
+    CallbackPropagatorInit a -> IO (FunPtr (CallbackPropagatorInit a))
+
 type CallbackPropagatorPropagate a = 
     PropagateControl -> Ptr Literal -> CSize -> Ptr a -> IO CBool
+
+foreign import ccall "wrapper" mkCallbackPropagatorPropagate ::
+    CallbackPropagatorPropagate a -> IO (FunPtr (CallbackPropagatorPropagate a))
+
 type CallbackPropagatorUndo a = 
     PropagateControl -> Ptr Literal -> CSize -> Ptr a -> IO CBool
+
+foreign import ccall "wrapper" mkCallbackPropagatorUndo ::
+    CallbackPropagatorUndo a -> IO (FunPtr (CallbackPropagatorUndo a))
+
 type CallbackPropagatorCheck a = 
     PropagateControl -> Ptr a -> IO CBool
+
+foreign import ccall "wrapper" mkCallbackPropagatorCheck ::
+    CallbackPropagatorCheck a -> IO (FunPtr (CallbackPropagatorCheck a))
 
 data Propagator a = Propagator
     { propagatorInit      :: FunPtr (CallbackPropagatorInit a)

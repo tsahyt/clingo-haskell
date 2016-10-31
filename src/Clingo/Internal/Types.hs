@@ -51,11 +51,17 @@ module Clingo.Internal.Types
     TruthValue (..),
     pattern TruthFree,
     pattern TruthFalse,
-    pattern TruthTrue
+    pattern TruthTrue,
+    Propagator (..),
+    rawPropagator,
+    PropagateCtrl (..),
+    PropagateInit (..),
+    ClauseType (..)
 )
 where
 
 import Control.Monad.IO.Class
+import Control.Monad.Catch
 import Data.Text (Text, pack, unpack)
 import Data.Bits
 import Foreign
@@ -268,3 +274,55 @@ newtype TruthValue = TruthValue { rawTruthValue :: Raw.TruthValue }
 pattern TruthFree = TruthValue Raw.TruthFree
 pattern TruthFalse = TruthValue Raw.TruthFalse
 pattern TruthTrue = TruthValue Raw.TruthTrue
+
+data Propagator s = Propagator
+    { propagatorInit      :: Maybe (PropagateInit s -> IO ())
+    , propagatorPropagate :: Maybe (PropagateCtrl s -> [Literal s] -> IO ())
+    , propagatorUndo      :: Maybe (PropagateCtrl s -> [Literal s] -> IO ())
+    , propagatorCheck     :: Maybe (PropagateCtrl s -> IO ())
+    }
+
+rawPropagator :: MonadIO m => Propagator s -> m (Raw.Propagator ())
+rawPropagator p = Raw.Propagator <$> wrapCBInit (propagatorInit p)
+                                 <*> wrapCBProp (propagatorPropagate p)
+                                 <*> wrapCBUndo (propagatorUndo p)
+                                 <*> wrapCBCheck (propagatorCheck p)
+
+wrapCBInit :: MonadIO m
+           => Maybe (PropagateInit s -> IO ())
+           -> m (FunPtr (Raw.CallbackPropagatorInit ()))
+wrapCBInit Nothing  = pure nullFunPtr
+wrapCBInit (Just f) = liftIO $ Raw.mkCallbackPropagatorInit go
+    where go :: Raw.PropagateInit -> Ptr () -> IO Raw.CBool
+          go c _ = reraiseIO $ f (PropagateInit c)
+
+wrapCBProp :: MonadIO m
+           => Maybe (PropagateCtrl s -> [Literal s] -> IO ())
+           -> m (FunPtr (Raw.CallbackPropagatorPropagate ()))
+wrapCBProp Nothing  = pure nullFunPtr
+wrapCBProp (Just f) = liftIO $ Raw.mkCallbackPropagatorPropagate go
+    where go :: Raw.PropagateControl -> Ptr Raw.Literal -> CSize -> Ptr () 
+             -> IO Raw.CBool
+          go c lits len _ = 
+              reraiseIO $ do
+                  ls <- map Literal <$> peekArray (fromIntegral len) lits
+                  f (PropagateCtrl c) ls
+
+wrapCBUndo :: MonadIO m
+           => Maybe (PropagateCtrl s -> [Literal s] -> IO ())
+           -> m (FunPtr (Raw.CallbackPropagatorUndo ()))
+wrapCBUndo = wrapCBProp
+
+wrapCBCheck :: MonadIO m
+            => Maybe (PropagateCtrl s -> IO ())
+            -> m (FunPtr (Raw.CallbackPropagatorCheck ()))
+wrapCBCheck Nothing  = pure nullFunPtr
+wrapCBCheck (Just f) = liftIO $ Raw.mkCallbackPropagatorCheck go
+    where go :: Raw.PropagateControl -> Ptr () -> IO Raw.CBool
+          go c _ = reraiseIO $ f (PropagateCtrl c)
+
+newtype PropagateCtrl s = PropagateCtrl Raw.PropagateControl
+
+newtype PropagateInit s = PropagateInit Raw.PropagateInit
+
+newtype ClauseType = ClauseType { rawClauseType :: Raw.ClauseType }

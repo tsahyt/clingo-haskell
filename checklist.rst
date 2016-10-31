@@ -103,19 +103,19 @@ Raw.Propagation
 + [X] 2016-10-28 assignmentIsTrue :: MonadIO m => Assignment -> Literal -> Ptr CBool -> m CBool
 + [X] 2016-10-28 assignmentLevel :: MonadIO m => Assignment -> Literal -> Ptr Word32 -> m CBool
 + [X] 2016-10-28 assignmentTruthValue :: MonadIO m => Assignment -> Literal -> Ptr TruthValue -> m CBool
-+ [ ] propagateControlAddClause :: MonadIO m => PropagateControl -> Ptr Literal -> CSize -> ClauseType -> Ptr CBool -> m CBool
-+ [ ] propagateControlAddLiteral :: MonadIO m => PropagateControl -> Ptr Literal -> m CBool
-+ [ ] propagateControlAddWatch :: MonadIO m => PropagateControl -> Literal -> m CBool
-+ [ ] propagateControlAssignment :: MonadIO m => PropagateControl -> m Assignment
-+ [ ] propagateControlHasWatch :: MonadIO m => PropagateControl -> Literal -> m CBool
-+ [ ] propagateControlPropagate :: MonadIO m => PropagateControl -> Ptr CBool -> m CBool
-+ [ ] propagateControlRemoveWatch :: MonadIO m => PropagateControl -> Literal -> m ()
-+ [ ] propagateControlThreadId :: MonadIO m => PropagateControl -> m Identifier
-+ [ ] propagateInitAddWatch :: MonadIO m => PropagateInit -> Literal -> m CBool
-+ [ ] propagateInitNumberOfThreads :: MonadIO m => PropagateInit -> m CInt
-+ [ ] propagateInitSolverLiteral :: MonadIO m => PropagateInit -> Literal -> Ptr Literal -> m CBool
-+ [ ] propagateInitSymbolicAtoms :: MonadIO m => PropagateInit -> Ptr SymbolicAtoms -> m CBool
-+ [ ] propagateInitTheoryAtoms :: MonadIO m => PropagateInit -> Ptr TheoryAtoms -> m CBool
++ [X] 2016-10-31 propagateControlAddClause :: MonadIO m => PropagateControl -> Ptr Literal -> CSize -> ClauseType -> Ptr CBool -> m CBool
++ [X] 2016-10-31 propagateControlAddLiteral :: MonadIO m => PropagateControl -> Ptr Literal -> m CBool
++ [X] 2016-10-31 propagateControlAddWatch :: MonadIO m => PropagateControl -> Literal -> m CBool
++ [X] 2016-10-31 propagateControlAssignment :: MonadIO m => PropagateControl -> m Assignment
++ [X] 2016-10-31 propagateControlHasWatch :: MonadIO m => PropagateControl -> Literal -> m CBool
++ [X] 2016-10-31 propagateControlPropagate :: MonadIO m => PropagateControl -> Ptr CBool -> m CBool
++ [X] 2016-10-31 propagateControlRemoveWatch :: MonadIO m => PropagateControl -> Literal -> m ()
++ [X] 2016-10-31 propagateControlThreadId :: MonadIO m => PropagateControl -> m Identifier
++ [X] 2016-10-31 propagateInitAddWatch :: MonadIO m => PropagateInit -> Literal -> m CBool
++ [X] 2016-10-31 propagateInitNumberOfThreads :: MonadIO m => PropagateInit -> m CInt
++ [X] 2016-10-31 propagateInitSolverLiteral :: MonadIO m => PropagateInit -> Literal -> Ptr Literal -> m CBool
++ [X] 2016-10-31 propagateInitSymbolicAtoms :: MonadIO m => PropagateInit -> Ptr SymbolicAtoms -> m CBool
++ [X] 2016-10-31 propagateInitTheoryAtoms :: MonadIO m => PropagateInit -> Ptr TheoryAtoms -> m CBool
 
 Raw.Statistics
 ==============

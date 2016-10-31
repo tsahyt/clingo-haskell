@@ -27,6 +27,7 @@ library
                        Clingo.Model
                        Clingo.Iterative
                        Clingo.ProgramBuilding
+                       Clingo.Propagation
                        Clingo.Raw
                        Clingo.Raw.AST
                        Clingo.Raw.Asynchronous

@@ -1,5 +1,10 @@
 module Clingo.Propagation
 (
+    Assignment,
+    PropagateInit,
+    PropagateCtrl,
+    Propagator (..),
+
     -- * Assignment
     decisionLevel,
     hasConflict,
@@ -7,7 +12,24 @@ module Clingo.Propagation
     levelOf,
     decision,
     isFixed,
-    truthValue
+    truthValue,
+
+    -- * Propagation
+    assignment,
+    addClause,
+    addLiteral,
+    addWatch,
+    hasWatch,
+    removeWatch,
+    propagate,
+    getThreadId,
+
+    -- * Initialization
+    initAddWatch,
+    countThreads,
+    solverLiteral,
+    symbolicAtoms,
+    theoryAtoms
 )
 where
 
@@ -50,3 +72,71 @@ truthValue :: (MonadIO m, MonadThrow m)
            => Assignment s -> Literal s -> m TruthValue
 truthValue (Assignment a) lit = TruthValue <$> marshall1 go
     where go = Raw.assignmentTruthValue a (rawLiteral lit)
+
+data Clause s = Clause [Literal s] ClauseType
+
+data PropagationStop = Continue | Stop
+    deriving (Eq, Show, Ord, Read, Enum, Bounded)
+
+pstopFromBool :: Bool -> PropagationStop
+pstopFromBool True = Continue
+pstopFromBool False = Stop
+
+addClause :: (MonadIO m, MonadThrow m)
+          => PropagateCtrl s -> Clause s -> m PropagationStop
+addClause (PropagateCtrl c) (Clause ls t) = pstopFromBool . toBool <$> 
+    marshall1 go
+    where go x = withArrayLen (map rawLiteral ls) $ \len arr ->
+                     Raw.propagateControlAddClause c arr (fromIntegral len)
+                                                   (rawClauseType t) x
+
+addLiteral :: (MonadIO m, MonadThrow m)
+           => PropagateCtrl s -> m (Literal s)
+addLiteral (PropagateCtrl c) = Literal <$> marshall1 
+    (Raw.propagateControlAddLiteral c)
+
+getThreadId :: MonadIO m => PropagateCtrl s -> m Integer
+getThreadId (PropagateCtrl c) = fromIntegral <$> Raw.propagateControlThreadId c
+
+addWatch :: (MonadIO m, MonadThrow m) => PropagateCtrl s -> Literal s -> m ()
+addWatch (PropagateCtrl c) lit = 
+    marshall0 (Raw.propagateControlAddWatch c (rawLiteral lit))
+
+hasWatch :: (MonadIO m) => PropagateCtrl s -> Literal s -> m Bool
+hasWatch (PropagateCtrl c) lit = 
+    toBool <$> Raw.propagateControlHasWatch c (rawLiteral lit)
+
+removeWatch :: (MonadIO m) => PropagateCtrl s -> Literal s -> m ()
+removeWatch (PropagateCtrl c) lit =
+    Raw.propagateControlRemoveWatch c (rawLiteral lit)
+
+propagate :: (MonadIO m, MonadThrow m) => PropagateCtrl s -> m PropagationStop
+propagate (PropagateCtrl c) = pstopFromBool . toBool <$>
+    marshall1 (Raw.propagateControlPropagate c)
+
+assignment :: (MonadIO m) => PropagateCtrl s -> m (Assignment s)
+assignment (PropagateCtrl c) = Assignment <$> Raw.propagateControlAssignment c
+
+initAddWatch :: (MonadIO m, MonadThrow m) 
+             => PropagateInit s -> Literal s -> m ()
+initAddWatch (PropagateInit c) lit = 
+    marshall0 (Raw.propagateInitAddWatch c (rawLiteral lit))
+
+countThreads :: MonadIO m => PropagateInit s -> m Integer
+countThreads (PropagateInit c) = fromIntegral <$> 
+    Raw.propagateInitNumberOfThreads c
+
+solverLiteral :: (MonadIO m, MonadThrow m) 
+              => PropagateInit s -> Literal s -> m (Literal s)
+solverLiteral (PropagateInit c) lit = Literal <$> marshall1
+    (Raw.propagateInitSolverLiteral c (rawLiteral lit))
+
+symbolicAtoms :: (MonadIO m, MonadThrow m)
+              => PropagateInit s -> m (SymbolicAtoms s)
+symbolicAtoms (PropagateInit c) = SymbolicAtoms <$> marshall1
+    (Raw.propagateInitSymbolicAtoms c)
+
+theoryAtoms :: (MonadIO m, MonadThrow m)
+              => PropagateInit s -> m (TheoryAtoms s)
+theoryAtoms (PropagateInit c) = TheoryAtoms <$> marshall1
+    (Raw.propagateInitTheoryAtoms c)
