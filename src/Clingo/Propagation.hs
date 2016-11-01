@@ -1,3 +1,5 @@
+{-# LANGUAGE PatternSynonyms #-}
+{-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 module Clingo.Propagation
 (
     Assignment,
@@ -13,6 +15,14 @@ module Clingo.Propagation
     decision,
     isFixed,
     truthValue,
+
+    -- * Clauses
+    Clause (..),
+    ClauseType,
+    pattern ClauseLearnt,
+    pattern ClauseStatic,
+    pattern ClauseVolatile,
+    pattern ClauseVolatileStatic,
 
     -- * Propagation
     assignment,
@@ -45,6 +55,8 @@ import qualified Clingo.Raw as Raw
 import Clingo.Internal.Utils
 import Clingo.Internal.Types
 
+newtype Assignment s = Assignment Raw.Assignment
+
 decisionLevel :: (MonadIO m) => Assignment s -> m Natural
 decisionLevel (Assignment a) = fromIntegral <$> Raw.assignmentDecisionLevel a
 
@@ -74,6 +86,13 @@ truthValue (Assignment a) lit = TruthValue <$> marshall1 go
     where go = Raw.assignmentTruthValue a (rawLiteral lit)
 
 data Clause s = Clause [Literal s] ClauseType
+
+newtype ClauseType = ClauseType { rawClauseType :: Raw.ClauseType }
+
+pattern ClauseLearnt = ClauseType Raw.ClauseLearnt
+pattern ClauseStatic = ClauseType Raw.ClauseStatic
+pattern ClauseVolatile = ClauseType Raw.ClauseVolatile
+pattern ClauseVolatileStatic = ClauseType Raw.ClauseVolatileStatic
 
 data PropagationStop = Continue | Stop
     deriving (Eq, Show, Ord, Read, Enum, Bounded)

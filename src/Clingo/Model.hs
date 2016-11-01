@@ -1,7 +1,16 @@
+{-# LANGUAGE PatternSynonyms #-}
+{-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 module Clingo.Model
 (
     Model,
+    SymbolicLiteral,
     SymbolSelection (..),
+
+    ModelType,
+    pattern StableModel,
+    pattern BraveConsequences,
+    pattern CautiousConsequences,
+
     selectAll,
     selectNone,
 
@@ -30,6 +39,34 @@ import Clingo.Internal.Types
 import Clingo.Internal.Utils
 
 newtype SolveControl s = SolveControl Raw.SolveControl
+
+newtype ModelType = ModelType Raw.ModelType
+
+pattern StableModel = ModelType Raw.StableModel
+pattern BraveConsequences = ModelType Raw.BraveConsequences
+pattern CautiousConsequences = ModelType Raw.CautiousConsequences
+
+data SymbolSelection = SymbolSelection 
+    { selectCSP     :: Bool
+    , selectShown   :: Bool
+    , selectAtoms   :: Bool
+    , selectTerms   :: Bool
+    , selectExtra   :: Bool
+    , useComplement :: Bool }
+    deriving (Eq, Show, Ord)
+
+selectAll :: SymbolSelection
+selectAll = SymbolSelection True True True True True False
+
+rawSymbolSelection :: SymbolSelection -> Raw.ShowFlag
+rawSymbolSelection s = foldr ((.|.) . fst) zeroBits . filter snd $
+    [ (Raw.ShowCSP, selectCSP s)
+    , (Raw.ShowShown, selectShown s)
+    , (Raw.ShowAtoms, selectAtoms s)
+    , (Raw.ShowTerms, selectTerms s)
+    , (Raw.ShowExtra, selectExtra s)
+    , (Raw.ShowComplement, useComplement s) ]
+
 
 selectNone :: SymbolSelection
 selectNone = SymbolSelection False False False False False False

@@ -1,13 +1,30 @@
+{-# LANGUAGE PatternSynonyms #-}
+{-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 module Clingo.Symbol
 (
+    Clingo,
     Symbol,
     Location,
 
+    -- * Symbol types
+    SymbolType (..),
+    symbolType,
+    pattern SymInfimum,
+    pattern SymNumber,
+    pattern SymString,
+    pattern SymFunction,
+    pattern SymSupremum,
+
+    -- ** Function symbols
+    FunctionSymbol,
+    functionSymbol,
+
+    -- * Signature inspection
+    Signature,
     signatureCreate,
     prettySymbol,
     parseTerm,
 
-    -- * Signature inspection
     signatureArity,
     signatureHash,
     signatureName,
@@ -25,8 +42,7 @@ module Clingo.Symbol
     symbolHash,
     symbolName,
     symbolNumber,
-    symbolString,
-    symbolType
+    symbolString
 )
 where
 
@@ -44,11 +60,31 @@ import qualified Clingo.Raw as Raw
 
 import System.IO.Unsafe
 
-{-
- -addString :: (MonadIO m, MonadThrow m) 
- -          => Clingo s -> Text -> m (InternalizedString s)
- -addString = undefined
- -}
+newtype SymbolType = SymbolType Raw.SymbolType
+    deriving Eq
+
+pattern SymInfimum = SymbolType Raw.SymInfimum
+pattern SymNumber = SymbolType Raw.SymNumber
+pattern SymString = SymbolType Raw.SymString
+pattern SymFunction = SymbolType Raw.SymFunction
+pattern SymSupremum = SymbolType Raw.SymSupremum
+
+symbolType :: Symbol s -> SymbolType
+symbolType = SymbolType . Raw.symbolType . rawSymbol
+
+newtype FunctionSymbol s = FuncSym { unFuncSym :: Symbol s }
+    deriving (Eq, Ord)
+
+functionSymbol :: Symbol s -> Maybe (FunctionSymbol s)
+functionSymbol s = case symbolType s of
+    SymFunction -> Just $ FuncSym s
+    _ -> Nothing
+
+instance Signed (FunctionSymbol s) where
+    positive s = unsafePerformIO $ 
+        toBool <$> marshall1 (Raw.symbolIsPositive . rawSymbol . unFuncSym $ s)
+    negative s = unsafePerformIO $ 
+        toBool <$> marshall1 (Raw.symbolIsNegative . rawSymbol . unFuncSym $ s)
 
 parseTerm :: (MonadIO m, MonadThrow m)
           => Clingo s
@@ -60,6 +96,18 @@ parseTerm _ t logger limit = Symbol <$> marshall1 go
     where go x = withCString (unpack t) $ \cstr -> do
                      logCB <- maybe (pure nullFunPtr) wrapCBLogger logger
                      Raw.parseTerm cstr logCB nullPtr (fromIntegral limit) x
+
+newtype Signature s = Signature { rawSignature :: Raw.Signature }
+
+instance Eq (Signature s) where
+    (Signature a) == (Signature b) = toBool (Raw.signatureIsEqualTo a b)
+
+instance Ord (Signature s) where
+    (Signature a) <= (Signature b) = toBool (Raw.signatureIsLessThan a b)
+
+instance Signed (Signature s) where
+    positive = toBool . Raw.signatureIsPositive . rawSignature
+    negative = toBool . Raw.signatureIsNegative . rawSignature
 
 signatureName :: Signature s -> Text
 signatureName s = unsafePerformIO $

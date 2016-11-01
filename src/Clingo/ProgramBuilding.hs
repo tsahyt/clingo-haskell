@@ -22,6 +22,12 @@ newtype ExternalType = ExternalType { rawExtT :: Raw.ExternalType }
 
 newtype HeuristicType = HeuristicType { rawHeuT :: Raw.HeuristicType }
 
+data WeightedLiteral s = WeightedLiteral (Literal s) Integer
+
+rawWeightedLiteral :: WeightedLiteral s -> Raw.WeightedLiteral
+rawWeightedLiteral (WeightedLiteral l w) = 
+    Raw.WeightedLiteral (rawLiteral l) (fromIntegral w)
+
 acycEdge :: (MonadIO m, MonadThrow m)
          => Backend s -> Node -> Node -> [Literal s] -> m ()
 acycEdge (Backend h) a b lits = marshall0 $

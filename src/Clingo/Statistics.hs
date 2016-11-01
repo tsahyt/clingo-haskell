@@ -41,6 +41,8 @@ statisticsRoot :: (MonadIO m, MonadThrow m) => Statistics s -> m SKey
 statisticsRoot (Statistics s) = 
     SKey <$> marshall1 (Raw.statisticsRoot s)
 
+newtype StatisticsType = StatisticsType Raw.StatisticsType
+
 statisticsType :: (MonadIO m, MonadThrow m) 
                => Statistics s -> SKey -> m StatisticsType
 statisticsType (Statistics s) (SKey k) = 

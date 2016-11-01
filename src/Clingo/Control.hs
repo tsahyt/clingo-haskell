@@ -14,6 +14,7 @@ module Clingo.Control
     cleanup,
     registerPropagator,
     Continue (..),
+    SymbolicLiteral (..),
     solve,
     solveAsync,
     solveIterative,
@@ -67,6 +68,20 @@ addProgram (Clingo ctrl) name params code = marshall0 $
             ptrs <- mapM (newCString . unpack) params
             withArrayLen ptrs $ \s ps ->
                 Raw.controlAdd ctrl n ps (fromIntegral s) c
+
+data Part s = Part
+    { partName   :: Text
+    , partParams :: [Symbol s] }
+
+rawPart :: Part s -> IO Raw.Part
+rawPart p = Raw.Part <$> newCString (unpack (partName p))
+                     <*> newArray (map rawSymbol . partParams $ p)
+                     <*> pure (fromIntegral (length . partParams $ p))
+
+freeRawPart :: Raw.Part -> IO ()
+freeRawPart p = do
+    free (Raw.partName p)
+    free (Raw.partParams p)
 
 ground :: (MonadIO m, MonadThrow m) 
        => Clingo s 

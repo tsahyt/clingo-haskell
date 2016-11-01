@@ -43,6 +43,8 @@ configurationRoot :: (MonadIO m, MonadThrow m)
 configurationRoot (Configuration c) = 
     CKey . fromIntegral <$> marshall1 (Raw.configurationRoot c)
 
+newtype ConfigurationType = ConfigurationType Raw.ConfigurationType
+
 configurationType :: (MonadIO m, MonadThrow m) 
                => Configuration s -> CKey -> m ConfigurationType
 configurationType (Configuration s) (CKey k) = 

@@ -4,30 +4,15 @@
 module Clingo.Internal.Types
 (
     Clingo (..),
+    Signed (..),
     Symbol (..),
-    SymbolType (..),
-    symbolType,
-    pattern SymInfimum,
-    pattern SymNumber,
-    pattern SymString,
-    pattern SymFunction,
-    pattern SymSupremum,
-    FunctionSymbol,
-    functionSymbol,
-    Part (..),
-    rawPart,
-    freeRawPart,
     SymbolicLiteral (..),
     rawSymLit,
     Literal (..),
-    WeightedLiteral (..),
-    rawWeightedLiteral,
     Atom (..),
-    Signature (..),
     AsyncSolver (..),
     IterSolver (..),
     Model (..),
-    ModelType (..),
     Location (..),
     rawLocation,
     fromRawLocation,
@@ -37,17 +22,11 @@ module Clingo.Internal.Types
     exhausted,
     wrapCBLogger,
     Statistics (..),
-    StatisticsType (..),
     ProgramBuilder (..),
     Configuration (..),
-    ConfigurationType (..),
     Backend (..),
     SymbolicAtoms (..),
     TheoryAtoms (..),
-    SymbolSelection (..),
-    Assignment (..),
-    selectAll,
-    rawSymbolSelection,
     TruthValue (..),
     pattern TruthFree,
     pattern TruthFalse,
@@ -55,8 +34,7 @@ module Clingo.Internal.Types
     Propagator (..),
     rawPropagator,
     PropagateCtrl (..),
-    PropagateInit (..),
-    ClauseType (..)
+    PropagateInit (..)
 )
 where
 
@@ -83,26 +61,6 @@ instance Eq (Symbol s) where
 instance Ord (Symbol s) where
     (Symbol a) <= (Symbol b) = toBool (Raw.symbolIsLessThan a b)
 
-newtype SymbolType = SymbolType Raw.SymbolType
-    deriving Eq
-
-pattern SymInfimum = SymbolType Raw.SymInfimum
-pattern SymNumber = SymbolType Raw.SymNumber
-pattern SymString = SymbolType Raw.SymString
-pattern SymFunction = SymbolType Raw.SymFunction
-pattern SymSupremum = SymbolType Raw.SymSupremum
-
-symbolType :: Symbol s -> SymbolType
-symbolType = SymbolType . Raw.symbolType . rawSymbol
-
-newtype FunctionSymbol s = FuncSym { unFuncSym :: Symbol s }
-    deriving (Eq, Ord)
-
-functionSymbol :: Symbol s -> Maybe (FunctionSymbol s)
-functionSymbol s = case symbolType s of
-    SymFunction -> Just $ FuncSym s
-    _ -> Nothing
-
 class Signed a where
     positive :: a -> Bool
     positive = not . negative
@@ -112,26 +70,6 @@ class Signed a where
 
 instance Signed Bool where
     positive x = x
-
-instance Signed (FunctionSymbol s) where
-    positive s = unsafePerformIO $ 
-        toBool <$> marshall1 (Raw.symbolIsPositive . rawSymbol . unFuncSym $ s)
-    negative s = unsafePerformIO $ 
-        toBool <$> marshall1 (Raw.symbolIsNegative . rawSymbol . unFuncSym $ s)
-
-data Part s = Part
-    { partName   :: Text
-    , partParams :: [Symbol s] }
-
-rawPart :: Part s -> IO Raw.Part
-rawPart p = Raw.Part <$> newCString (unpack (partName p))
-                     <*> newArray (map rawSymbol . partParams $ p)
-                     <*> pure (fromIntegral (length . partParams $ p))
-
-freeRawPart :: Raw.Part -> IO ()
-freeRawPart p = do
-    free (Raw.partName p)
-    free (Raw.partParams p)
 
 data SymbolicLiteral s 
     = SLPositive (Symbol s)
@@ -155,33 +93,13 @@ rawSymLit sl = Raw.SymbolicLiteral
 
 newtype Literal s = Literal { rawLiteral :: Raw.Literal }
 
-data WeightedLiteral s = WeightedLiteral (Literal s) Integer
-
-rawWeightedLiteral :: WeightedLiteral s -> Raw.WeightedLiteral
-rawWeightedLiteral (WeightedLiteral l w) = 
-    Raw.WeightedLiteral (rawLiteral l) (fromIntegral w)
-
 newtype Atom s = Atom { rawAtom :: Raw.Atom }
-
-newtype Signature s = Signature { rawSignature :: Raw.Signature }
-
-instance Eq (Signature s) where
-    (Signature a) == (Signature b) = toBool (Raw.signatureIsEqualTo a b)
-
-instance Ord (Signature s) where
-    (Signature a) <= (Signature b) = toBool (Raw.signatureIsLessThan a b)
-
-instance Signed (Signature s) where
-    positive = toBool . Raw.signatureIsPositive . rawSignature
-    negative = toBool . Raw.signatureIsNegative . rawSignature
 
 newtype AsyncSolver s = AsyncSolver Raw.AsyncSolver
 
 newtype IterSolver s = IterSolver Raw.IterSolver
 
 newtype Model s = Model Raw.Model
-
-newtype ModelType = ModelType Raw.ModelType
 
 data Location = Location
     { locBeginFile :: FilePath
@@ -232,42 +150,15 @@ wrapCBLogger f = liftIO $ Raw.mkCallbackLogger go
 
 newtype Statistics s = Statistics Raw.Statistics
 
-newtype StatisticsType = StatisticsType Raw.StatisticsType
-
 newtype ProgramBuilder s = ProgramBuilder Raw.ProgramBuilder
 
 newtype Configuration s = Configuration Raw.Configuration
-
-newtype ConfigurationType = ConfigurationType Raw.ConfigurationType
 
 newtype Backend s = Backend Raw.Backend
 
 newtype SymbolicAtoms s = SymbolicAtoms Raw.SymbolicAtoms
 
 newtype TheoryAtoms s = TheoryAtoms Raw.TheoryAtoms
-
-newtype Assignment s = Assignment Raw.Assignment
-
-data SymbolSelection = SymbolSelection 
-    { selectCSP     :: Bool
-    , selectShown   :: Bool
-    , selectAtoms   :: Bool
-    , selectTerms   :: Bool
-    , selectExtra   :: Bool
-    , useComplement :: Bool }
-    deriving (Eq, Show, Ord)
-
-selectAll :: SymbolSelection
-selectAll = SymbolSelection True True True True True False
-
-rawSymbolSelection :: SymbolSelection -> Raw.ShowFlag
-rawSymbolSelection s = foldr ((.|.) . fst) zeroBits . filter snd $
-    [ (Raw.ShowCSP, selectCSP s)
-    , (Raw.ShowShown, selectShown s)
-    , (Raw.ShowAtoms, selectAtoms s)
-    , (Raw.ShowTerms, selectTerms s)
-    , (Raw.ShowExtra, selectExtra s)
-    , (Raw.ShowComplement, useComplement s) ]
 
 newtype TruthValue = TruthValue { rawTruthValue :: Raw.TruthValue }
 
@@ -324,5 +215,3 @@ wrapCBCheck (Just f) = liftIO $ Raw.mkCallbackPropagatorCheck go
 newtype PropagateCtrl s = PropagateCtrl Raw.PropagateControl
 
 newtype PropagateInit s = PropagateInit Raw.PropagateInit
-
-newtype ClauseType = ClauseType { rawClauseType :: Raw.ClauseType }
