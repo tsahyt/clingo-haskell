@@ -97,18 +97,6 @@ parseTerm _ t logger limit = Symbol <$> marshall1 go
                      logCB <- maybe (pure nullFunPtr) wrapCBLogger logger
                      Raw.parseTerm cstr logCB nullPtr (fromIntegral limit) x
 
-newtype Signature s = Signature { rawSignature :: Raw.Signature }
-
-instance Eq (Signature s) where
-    (Signature a) == (Signature b) = toBool (Raw.signatureIsEqualTo a b)
-
-instance Ord (Signature s) where
-    (Signature a) <= (Signature b) = toBool (Raw.signatureIsLessThan a b)
-
-instance Signed (Signature s) where
-    positive = toBool . Raw.signatureIsPositive . rawSignature
-    negative = toBool . Raw.signatureIsNegative . rawSignature
-
 signatureName :: Signature s -> Text
 signatureName s = unsafePerformIO $
     pack <$> (peekCString . Raw.signatureName . rawSignature $ s)

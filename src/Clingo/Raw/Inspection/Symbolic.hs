@@ -12,8 +12,8 @@ module Clingo.Raw.Inspection.Symbolic
     symbolicAtomsLiteral,
     symbolicAtomsSignaturesSize,
     symbolicAtomsSignatures,
-    symbolicAtomsAtomsNext,
-    symbolicAtomsAtomsIsValid
+    symbolicAtomsNext,
+    symbolicAtomsIsValid
 )
 where
 
@@ -43,10 +43,10 @@ foreign import ccall "clingo.h clingo_symbolic_atoms_literal" symbolicAtomsLiter
 foreign import ccall "clingo.h clingo_symbolic_atoms_signatures_size" symbolicAtomsSignaturesSizeFFI ::
     SymbolicAtoms -> Ptr CSize -> IO CBool
 foreign import ccall "clingo.h clingo_symbolic_atoms_signatures" symbolicAtomsSignaturesFFI ::
-    SymbolicAtoms -> Ptr Signature -> IO CBool
-foreign import ccall "clingo.h clingo_symbolic_atoms_atoms_next" symbolicAtomsAtomsNextFFI ::
+    SymbolicAtoms -> Ptr Signature -> CSize -> IO CBool
+foreign import ccall "clingo.h clingo_symbolic_atoms_next" symbolicAtomsNextFFI ::
     SymbolicAtoms -> SymbolicAtomIterator -> Ptr SymbolicAtomIterator -> IO CBool
-foreign import ccall "clingo.h clingo_symbolic_atoms_atoms_is_valid" symbolicAtomsAtomsIsValidFFI ::
+foreign import ccall "clingo.h clingo_symbolic_atoms_is_valid" symbolicAtomsIsValidFFI ::
     SymbolicAtoms -> SymbolicAtomIterator -> Ptr CBool -> IO CBool
 
 symbolicAtomsSize :: MonadIO m => SymbolicAtoms -> Ptr CSize -> m CBool 
@@ -79,11 +79,11 @@ symbolicAtomsLiteral a b c = liftIO $ symbolicAtomsLiteralFFI a b c
 symbolicAtomsSignaturesSize :: MonadIO m => SymbolicAtoms -> Ptr CSize -> m CBool
 symbolicAtomsSignaturesSize a b = liftIO $ symbolicAtomsSignaturesSizeFFI a b
 
-symbolicAtomsSignatures :: MonadIO m => SymbolicAtoms -> Ptr Signature -> m CBool
-symbolicAtomsSignatures a b = liftIO $ symbolicAtomsSignaturesFFI a b
+symbolicAtomsSignatures :: MonadIO m => SymbolicAtoms -> Ptr Signature -> CSize -> m CBool
+symbolicAtomsSignatures a b c = liftIO $ symbolicAtomsSignaturesFFI a b c
 
-symbolicAtomsAtomsNext :: MonadIO m => SymbolicAtoms -> SymbolicAtomIterator -> Ptr SymbolicAtomIterator -> m CBool
-symbolicAtomsAtomsNext a b c = liftIO $ symbolicAtomsAtomsNextFFI a b c
+symbolicAtomsNext :: MonadIO m => SymbolicAtoms -> SymbolicAtomIterator -> Ptr SymbolicAtomIterator -> m CBool
+symbolicAtomsNext a b c = liftIO $ symbolicAtomsNextFFI a b c
 
-symbolicAtomsAtomsIsValid :: MonadIO m => SymbolicAtoms -> SymbolicAtomIterator -> Ptr CBool -> m CBool
-symbolicAtomsAtomsIsValid a b c = liftIO $ symbolicAtomsAtomsIsValidFFI a b c
+symbolicAtomsIsValid :: MonadIO m => SymbolicAtoms -> SymbolicAtomIterator -> Ptr CBool -> m CBool
+symbolicAtomsIsValid a b c = liftIO $ symbolicAtomsIsValidFFI a b c

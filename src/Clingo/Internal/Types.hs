@@ -6,6 +6,7 @@ module Clingo.Internal.Types
     Clingo (..),
     Signed (..),
     Symbol (..),
+    Signature (..),
     SymbolicLiteral (..),
     rawSymLit,
     Literal (..),
@@ -90,6 +91,18 @@ rawSymLit :: SymbolicLiteral s -> Raw.SymbolicLiteral
 rawSymLit sl = Raw.SymbolicLiteral
     { Raw.slitSymbol   = rawSymbol (symLitSymbol sl)
     , Raw.slitPositive = fromBool (symLitPositive sl) }
+
+newtype Signature s = Signature { rawSignature :: Raw.Signature }
+
+instance Eq (Signature s) where
+    (Signature a) == (Signature b) = toBool (Raw.signatureIsEqualTo a b)
+
+instance Ord (Signature s) where
+    (Signature a) <= (Signature b) = toBool (Raw.signatureIsLessThan a b)
+
+instance Signed (Signature s) where
+    positive = toBool . Raw.signatureIsPositive . rawSignature
+    negative = toBool . Raw.signatureIsNegative . rawSignature
 
 newtype Literal s = Literal { rawLiteral :: Raw.Literal }
 
