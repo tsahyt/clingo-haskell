@@ -1,5 +1,7 @@
 module Clingo.Iterative
 (
+    IterSolver,
+    SolveResult (..),
     iterativelyNext,
     iterativelyGet,
     iterativelyClose

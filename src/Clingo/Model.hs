@@ -3,6 +3,7 @@
 module Clingo.Model
 (
     Model,
+    SolveControl,
     SymbolicLiteral,
     SymbolSelection (..),
 

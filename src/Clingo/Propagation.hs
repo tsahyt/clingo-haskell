@@ -3,9 +3,18 @@
 module Clingo.Propagation
 (
     Assignment,
+    Literal,
+
+    -- * Propagation Handles and Types
     PropagateInit,
     PropagateCtrl,
     Propagator (..),
+
+    -- * Truth values
+    TruthValue,
+    pattern TruthFree,
+    pattern TruthFalse,
+    pattern TruthTrue,
 
     -- * Assignment
     decisionLevel,

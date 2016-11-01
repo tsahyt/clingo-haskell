@@ -1,5 +1,7 @@
 module Clingo.Asynchronous
 (
+    AsyncSolver,
+    SolveResult (..),
     asyncGet,
     asyncWait,
     asyncCancel

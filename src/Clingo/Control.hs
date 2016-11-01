@@ -15,6 +15,7 @@ module Clingo.Control
     registerPropagator,
     Continue (..),
     SymbolicLiteral (..),
+    SolveResult (..),
     solve,
     solveAsync,
     solveIterative,

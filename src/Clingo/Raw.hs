@@ -11,36 +11,22 @@
 -- consider using qualified imports, because they share multiple names.
 module Clingo.Raw
 (
-    module Clingo.Raw.AST,
-    module Clingo.Raw.Asynchronous,
-    module Clingo.Raw.Basic,
-    module Clingo.Raw.Configuration,
-    module Clingo.Raw.Control,
-    module Clingo.Raw.Enums,
-    module Clingo.Raw.Inspection.Symbolic,
-    module Clingo.Raw.Inspection.Theory,
-    module Clingo.Raw.Iterative,
-    module Clingo.Raw.Model,
-    module Clingo.Raw.ProgramBuilding,
-    module Clingo.Raw.Propagation,
-    module Clingo.Raw.Statistics,
-    module Clingo.Raw.Symbol,
-    module Clingo.Raw.Types
+    module X
 )
 where
 
-import Clingo.Raw.AST
-import Clingo.Raw.Asynchronous
-import Clingo.Raw.Basic
-import Clingo.Raw.Configuration
-import Clingo.Raw.Control
-import Clingo.Raw.Enums
-import Clingo.Raw.Inspection.Symbolic
-import Clingo.Raw.Inspection.Theory
-import Clingo.Raw.Iterative
-import Clingo.Raw.Model
-import Clingo.Raw.ProgramBuilding
-import Clingo.Raw.Propagation
-import Clingo.Raw.Statistics
-import Clingo.Raw.Symbol
-import Clingo.Raw.Types
+import Clingo.Raw.AST as X
+import Clingo.Raw.Asynchronous as X
+import Clingo.Raw.Basic as X
+import Clingo.Raw.Configuration as X
+import Clingo.Raw.Control as X
+import Clingo.Raw.Enums as X
+import Clingo.Raw.Inspection.Symbolic as X
+import Clingo.Raw.Inspection.Theory as X
+import Clingo.Raw.Iterative as X
+import Clingo.Raw.Model as X
+import Clingo.Raw.ProgramBuilding as X
+import Clingo.Raw.Propagation as X
+import Clingo.Raw.Statistics as X
+import Clingo.Raw.Symbol as X
+import Clingo.Raw.Types as X
