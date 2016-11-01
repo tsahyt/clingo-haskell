@@ -3,6 +3,9 @@
 module Clingo.Control
 (
     Clingo,
+    ClingoSetting (..),
+    defaultClingo,
+    withDefaultClingo,
     withClingo,
     
     Part (..),
@@ -45,18 +48,42 @@ import Data.Foldable
 import Foreign
 import Foreign.C
 
+import Numeric.Natural
+
 import qualified Clingo.Raw as Raw
 import Clingo.Internal.Utils
 import Clingo.Internal.Types
 
-withClingo :: (forall s. Clingo s -> IO r) -> IO r
-withClingo action = alloca $ \ctrlPtr -> do
-    allocRes <- Raw.controlNew nullPtr 0 nullFunPtr nullPtr 0 ctrlPtr
-    if toBool allocRes
-        then do
-            ctrl <- peek ctrlPtr
-            finally (action (Clingo ctrl)) (Raw.controlFree ctrl)
-        else error "Could not initialize clingo!"
+data ClingoSetting = ClingoSetting
+    { clingoArgs   :: [String]
+    , clingoLogger :: Maybe (ClingoWarning -> Text -> IO ())
+    , msgLimit     :: Natural }
+
+defaultClingo :: ClingoSetting
+defaultClingo = ClingoSetting [] Nothing 0
+
+withClingo :: (MonadIO m, MonadMask m) 
+           => ClingoSetting
+           -> (forall s. Clingo s -> m r) -> m r
+withClingo settings action = do
+    let argc = length (clingoArgs settings)
+    argv <- liftIO $ mapM newCString (clingoArgs settings)
+    ctrl <- marshall1 $ \x ->
+        withArray argv $ \argvArr -> do
+            logCB <- maybe (pure nullFunPtr) wrapCBLogger 
+                         (clingoLogger settings)
+            let argv' = case clingoArgs settings of
+                            [] -> nullPtr
+                            _  -> argvArr
+            Raw.controlNew argv' (fromIntegral argc)
+                           logCB nullPtr (fromIntegral . msgLimit $ settings) x
+    finally (action (Clingo ctrl)) $ do
+        Raw.controlFree ctrl
+        liftIO $ mapM_ free argv
+
+withDefaultClingo :: (MonadIO m, MonadMask m)
+                  => (forall s. Clingo s -> m r) -> m r
+withDefaultClingo = withClingo defaultClingo
 
 loadProgram :: (MonadIO m, MonadThrow m) => Clingo s -> FilePath -> m ()
 loadProgram (Clingo ctrl) path =

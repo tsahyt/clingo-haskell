@@ -17,7 +17,7 @@ onModel m = do
     return Continue
     
 main :: IO ()
-main = withClingo $ \ctrl -> do
+main = withDefaultClingo $ \ctrl -> do
     addProgram ctrl "base" [] "a :- not b. b :- not a."
     ground ctrl [Part "base" []] Nothing
     void $ solve ctrl (Just onModel) []
