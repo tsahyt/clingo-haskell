@@ -1,6 +1,13 @@
+{-# LANGUAGE PatternSynonyms #-}
+{-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 module Clingo.Configuration
 (
     -- * Direct interface
+    Configuration,
+    ConfigurationType,
+    pattern ConfigValue,
+    pattern ConfigArray,
+    pattern ConfigMap,
     CKey,
     configurationRoot,
     configurationType, 
@@ -44,6 +51,10 @@ configurationRoot (Configuration c) =
     CKey . fromIntegral <$> marshall1 (Raw.configurationRoot c)
 
 newtype ConfigurationType = ConfigurationType Raw.ConfigurationType
+
+pattern ConfigValue = ConfigurationType Raw.ConfigValue
+pattern ConfigArray = ConfigurationType Raw.ConfigArray
+pattern ConfigMap = ConfigurationType Raw.ConfigMap
 
 configurationType :: (MonadIO m, MonadThrow m) 
                => Configuration s -> CKey -> m ConfigurationType

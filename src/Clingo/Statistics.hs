@@ -1,7 +1,16 @@
+{-# LANGUAGE PatternSynonyms #-}
+{-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 module Clingo.Statistics
 (
     -- * Direct Interface
+    Statistics,
+    StatisticsType,
+    pattern StatsEmpty,
+    pattern StatsValue,
+    pattern StatsArray,
+    pattern StatsMap,
     SKey,
+
     statisticsRoot,
     statisticsType,
 
@@ -42,6 +51,11 @@ statisticsRoot (Statistics s) =
     SKey <$> marshall1 (Raw.statisticsRoot s)
 
 newtype StatisticsType = StatisticsType Raw.StatisticsType
+
+pattern StatsEmpty = StatisticsType Raw.StatsEmpty
+pattern StatsValue = StatisticsType Raw.StatsValue
+pattern StatsArray = StatisticsType Raw.StatsArray
+pattern StatsMap = StatisticsType Raw.StatsMap
 
 statisticsType :: (MonadIO m, MonadThrow m) 
                => Statistics s -> SKey -> m StatisticsType
