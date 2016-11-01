@@ -1,8 +1,6 @@
 module Clingo.Inspection.Symbolic
 (
     -- * Direct Iterator Access
-    
-    -- ** Symbolic Atoms
     SIterator,
     symbolicAtomsSize,
     symbolicAtomsBegin,

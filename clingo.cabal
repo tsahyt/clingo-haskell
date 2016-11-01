@@ -27,6 +27,7 @@ library
                        Clingo.Model
                        Clingo.Iterative
                        Clingo.Inspection.Symbolic
+                       Clingo.Inspection.Theory
                        Clingo.ProgramBuilding
                        Clingo.Propagation
                        Clingo.Raw
