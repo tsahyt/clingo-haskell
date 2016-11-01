@@ -6,6 +6,7 @@ where
 
 import Control.Monad.IO.Class
 import Control.Monad.Catch
+import Data.Foldable
 
 import Foreign
 import Foreign.C
@@ -28,20 +29,20 @@ rawWeightedLiteral :: WeightedLiteral s -> Raw.WeightedLiteral
 rawWeightedLiteral (WeightedLiteral l w) = 
     Raw.WeightedLiteral (rawLiteral l) (fromIntegral w)
 
-acycEdge :: (MonadIO m, MonadThrow m)
-         => Backend s -> Node -> Node -> [Literal s] -> m ()
+acycEdge :: (MonadIO m, MonadThrow m, Foldable t)
+         => Backend s -> Node -> Node -> t (Literal s) -> m ()
 acycEdge (Backend h) a b lits = marshall0 $
-    withArrayLen (map rawLiteral lits) $ \len arr ->
+    withArrayLen (map rawLiteral . toList $ lits) $ \len arr ->
         Raw.backendAcycEdge h (unNode a) (unNode b) arr (fromIntegral len)
 
 atom :: (MonadIO m, MonadThrow m)
      => Backend s -> m (Atom s)
 atom (Backend h) = Atom <$> marshall1 (Raw.backendAddAtom h)
 
-assume :: (MonadIO m, MonadThrow m)
-       => Backend s -> [Literal s] -> m ()
+assume :: (MonadIO m, MonadThrow m, Foldable t)
+       => Backend s -> t (Literal s) -> m ()
 assume (Backend h) lits = marshall0 $ 
-    withArrayLen (map rawLiteral lits) $ \len arr ->
+    withArrayLen (map rawLiteral . toList $ lits) $ \len arr ->
         Raw.backendAssume h arr (fromIntegral len)
 
 external :: (MonadIO m, MonadThrow m)
@@ -62,31 +63,32 @@ heuristic (Backend h) a t bias pri cs = marshall0 $
         Raw.backendHeuristic h (rawAtom a) (rawHeuT t) 
             (fromIntegral bias) (fromIntegral pri) arr (fromIntegral len)
 
-minimize :: (MonadIO m, MonadThrow m)
-         => Backend s -> Integer -> [WeightedLiteral s] -> m ()
+minimize :: (MonadIO m, MonadThrow m, Foldable t)
+         => Backend s -> Integer -> t (WeightedLiteral s) -> m ()
 minimize (Backend h) priority lits = marshall0 $
-    withArrayLen (map rawWeightedLiteral lits) $ \len arr ->
+    withArrayLen (map rawWeightedLiteral . toList $ lits) $ \len arr ->
         Raw.backendMinimize h (fromIntegral priority) arr (fromIntegral len)
 
-rule :: (MonadIO m, MonadThrow m)
-     => Backend s -> Bool -> [Atom s] -> [Literal s] -> m ()
+rule :: (MonadIO m, MonadThrow m, Foldable t)
+     => Backend s -> Bool -> t (Atom s) -> t (Literal s) -> m ()
 rule (Backend h) choice hd bd = marshall0 $
-    withArrayLen (map rawAtom hd) $ \hlen harr ->
-        withArrayLen (map rawLiteral bd) $ \blen barr ->
+    withArrayLen (map rawAtom . toList $ hd) $ \hlen harr ->
+        withArrayLen (map rawLiteral . toList $ bd) $ \blen barr ->
             Raw.backendRule h (fromBool choice) harr (fromIntegral hlen) 
                                                 barr (fromIntegral blen)
 
-weightedRule :: (MonadIO m, MonadThrow m)
+weightedRule :: (MonadIO m, MonadThrow m, Foldable t)
              => Backend s 
-             -> Bool -> [Atom s] -> Integer -> [WeightedLiteral s] -> m ()
+             -> Bool -> t (Atom s) -> Integer -> t (WeightedLiteral s) -> m ()
 weightedRule (Backend h) choice hd weight bd = marshall0 $
-    withArrayLen (map rawAtom hd) $ \hlen harr ->
-        withArrayLen (map rawWeightedLiteral bd) $ \blen barr ->
+    withArrayLen (map rawAtom . toList $ hd) $ \hlen harr ->
+        withArrayLen (map rawWeightedLiteral . toList $ bd) $ \blen barr ->
             Raw.backendWeightRule h (fromBool choice) harr (fromIntegral hlen) 
                                     (fromIntegral weight)
                                     barr (fromIntegral blen)
 
-project :: (MonadIO m, MonadThrow m) => Backend s -> [Atom s] -> m ()
+project :: (MonadIO m, MonadThrow m, Foldable t)
+        => Backend s -> t (Atom s) -> m ()
 project (Backend h) atoms = marshall0 $
-    withArrayLen (map rawAtom atoms) $ \len arr ->
+    withArrayLen (map rawAtom . toList $ atoms) $ \len arr ->
         Raw.backendProject h arr (fromIntegral len)

@@ -40,6 +40,7 @@ where
 import Control.Monad.IO.Class
 import Control.Monad.Catch
 import Data.Text (Text, pack, unpack)
+import Data.Foldable
 
 import Foreign
 import Foreign.C
@@ -61,12 +62,12 @@ loadProgram :: (MonadIO m, MonadThrow m) => Clingo s -> FilePath -> m ()
 loadProgram (Clingo ctrl) path =
     marshall0 (withCString path (Raw.controlLoad ctrl))
 
-addProgram :: (MonadIO m, MonadThrow m) 
-           => Clingo s -> Text -> [Text] -> Text -> m ()
+addProgram :: (MonadIO m, MonadThrow m, Foldable t)
+           => Clingo s -> Text -> t Text -> Text -> m ()
 addProgram (Clingo ctrl) name params code = marshall0 $ 
     withCString (unpack name) $ \n ->
         withCString (unpack code) $ \c -> do
-            ptrs <- mapM (newCString . unpack) params
+            ptrs <- mapM (newCString . unpack) (toList params)
             withArrayLen ptrs $ \s ps ->
                 Raw.controlAdd ctrl n ps (fromIntegral s) c
 

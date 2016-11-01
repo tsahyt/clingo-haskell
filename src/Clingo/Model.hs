@@ -31,6 +31,7 @@ where
 
 import Control.Monad.IO.Class
 import Control.Monad.Catch
+import Data.Foldable
 import Foreign
 
 import Numeric.Natural
@@ -108,8 +109,8 @@ threadID :: (MonadIO m, MonadThrow m) => SolveControl s -> m Integer
 threadID (SolveControl s) = fromIntegral <$>
     marshall1 (Raw.solveControlThreadId s)
 
-addClause :: (MonadIO m, MonadThrow m) 
-          => SolveControl s -> [SymbolicLiteral s] -> m ()
+addClause :: (MonadIO m, MonadThrow m, Foldable t)
+          => SolveControl s -> t (SymbolicLiteral s) -> m ()
 addClause (SolveControl s) lits = marshall0 $ 
-    withArrayLen (map rawSymLit lits) $ \len arr ->
+    withArrayLen (map rawSymLit . toList $ lits) $ \len arr ->
         Raw.solveControlAddClause s arr (fromIntegral len)
