@@ -3,6 +3,8 @@
 module Clingo.Control
 (
     Clingo,
+    ClingoWarning,
+    warningString,
     ClingoSetting (..),
     defaultClingo,
     withDefaultClingo,

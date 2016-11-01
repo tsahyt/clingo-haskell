@@ -3,6 +3,8 @@
 module Clingo.Symbol
 (
     Clingo,
+    ClingoWarning,
+    warningString,
     Symbol,
     Location,
 
