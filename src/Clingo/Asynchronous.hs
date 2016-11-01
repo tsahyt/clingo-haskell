@@ -2,6 +2,7 @@ module Clingo.Asynchronous
 (
     AsyncSolver,
     SolveResult (..),
+    exhausted,
     asyncGet,
     asyncWait,
     asyncCancel

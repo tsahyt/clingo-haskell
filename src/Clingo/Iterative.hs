@@ -2,6 +2,7 @@ module Clingo.Iterative
 (
     IterSolver,
     SolveResult (..),
+    exhausted,
     iterativelyNext,
     iterativelyGet,
     iterativelyClose

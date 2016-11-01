@@ -19,6 +19,7 @@ module Clingo.Control
     Continue (..),
     SymbolicLiteral (..),
     SolveResult (..),
+    exhausted,
     solve,
     solveAsync,
     solveIterative,
