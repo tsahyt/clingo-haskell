@@ -1,170 +1,112 @@
-{-# LANGUAGE PatternSynonyms #-}
-{-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Clingo.Propagation
 (
+    Propagation,
     Assignment,
-    Literal,
-
-    -- * Propagation Handles and Types
-    PropagateInit,
-    PropagateCtrl,
-    Propagator (..),
-
-    -- * Truth values
-    TruthValue,
-    pattern TruthFree,
-    pattern TruthFalse,
-    pattern TruthTrue,
-
-    -- * Assignment
-    decisionLevel,
-    hasConflict,
-    hasLiteral,
-    levelOf,
-    decision,
-    isFixed,
-    truthValue,
-
-    -- * Clauses
-    Clause (..),
-    ClauseType,
-    pattern ClauseLearnt,
-    pattern ClauseStatic,
-    pattern ClauseVolatile,
-    pattern ClauseVolatileStatic,
-
-    -- * Propagation
-    assignment,
-    addClause,
-    addLiteral,
     addWatch,
-    hasWatch,
-    removeWatch,
-    propagate,
-    getThreadId,
 
     -- * Initialization
-    initAddWatch,
     countThreads,
     solverLiteral,
     symbolicAtoms,
-    theoryAtoms
+    theoryAtoms,
+
+    -- * Actions During Solving
+    hasWatch,
+    removeWatch,
+    getThreadId,
+    newLiteral,
+    assignment
 )
 where
 
 import Control.Monad.IO.Class
 import Control.Monad.Catch
+import Control.Monad.Reader
 
 import Numeric.Natural
 
-import Foreign
-import Foreign.C
-
-import qualified Clingo.Raw as Raw
-import Clingo.Internal.Utils
 import Clingo.Internal.Types
+import qualified Clingo.Internal.Propagation as P
+import Clingo.Internal.Propagation (Assignment)
 
-newtype Assignment s = Assignment Raw.Assignment
+data PropagationPhase = Init | Solving
 
-decisionLevel :: (MonadIO m) => Assignment s -> m Natural
-decisionLevel (Assignment a) = fromIntegral <$> Raw.assignmentDecisionLevel a
+type family PhaseHandle (k :: PropagationPhase) s where
+    PhaseHandle 'Init s = PropagateInit s
+    PhaseHandle 'Solving s = PropagateCtrl s
 
-hasConflict :: (MonadIO m) => Assignment s -> m Bool
-hasConflict (Assignment a) = toBool <$> Raw.assignmentHasConflict a
+newtype Propagation (phase :: PropagationPhase) s a
+    = Propagation { runPropagator :: ReaderT (PhaseHandle phase s) IO a }
+        deriving ( Functor, Monad, Applicative
+                 , MonadIO, MonadThrow )
 
-hasLiteral :: (MonadIO m) => Assignment s -> Literal s -> m Bool
-hasLiteral (Assignment a) lit = toBool <$> Raw.assignmentHasLiteral a 
-                                           (rawLiteral lit)
+instance MonadReader (PropagateInit s) (Propagation 'Init s) where
+    ask = Propagation ask
+    local f (Propagation x) = Propagation (local f x)
+    reader = Propagation . reader
 
-levelOf :: (MonadIO m, MonadThrow m) => Assignment s -> Literal s -> m Natural
-levelOf (Assignment a) lit = fromIntegral <$> marshall1 go
-    where go = Raw.assignmentLevel a (rawLiteral lit)
+instance MonadReader (PropagateCtrl s) (Propagation 'Solving s) where
+    ask = Propagation ask
+    local f (Propagation x) = Propagation (local f x)
+    reader = Propagation . reader
 
-decision :: (MonadIO m, MonadThrow m) 
-         => Assignment s -> Natural -> m (Literal s)
-decision (Assignment a) level = Literal <$> marshall1 go
-    where go = Raw.assignmentDecision a (fromIntegral level)
+-- Operations that are always available
+-- ------------------------------------
+class CanAddWatch (phase :: PropagationPhase) where
+    mAddWatch :: Literal s -> Propagation phase s ()
 
-isFixed :: (MonadIO m, MonadThrow m) => Assignment s -> Literal s -> m Bool
-isFixed (Assignment a) lit = toBool <$> marshall1 go
-    where go = Raw.assignmentIsFixed a (rawLiteral lit)
+instance CanAddWatch 'Init where
+    mAddWatch l = ask >>= flip P.initAddWatch l
 
-truthValue :: (MonadIO m, MonadThrow m) 
-           => Assignment s -> Literal s -> m TruthValue
-truthValue (Assignment a) lit = TruthValue <$> marshall1 go
-    where go = Raw.assignmentTruthValue a (rawLiteral lit)
+instance CanAddWatch 'Solving where
+    mAddWatch l = ask >>= flip P.addWatch l
 
-data Clause s = Clause [Literal s] ClauseType
+addWatch :: CanAddWatch phase => Literal s -> Propagation phase s ()
+addWatch = mAddWatch
 
-newtype ClauseType = ClauseType { rawClauseType :: Raw.ClauseType }
+-- Actions during initialization
+-- -----------------------------
 
-pattern ClauseLearnt = ClauseType Raw.ClauseLearnt
-pattern ClauseStatic = ClauseType Raw.ClauseStatic
-pattern ClauseVolatile = ClauseType Raw.ClauseVolatile
-pattern ClauseVolatileStatic = ClauseType Raw.ClauseVolatileStatic
+countThreads :: Propagation 'Init s Integer
+countThreads = ask >>= P.countThreads
 
-data PropagationStop = Continue | Stop
-    deriving (Eq, Show, Ord, Read, Enum, Bounded)
+solverLiteral :: Literal s -> Propagation 'Init s (Literal s)
+solverLiteral l = ask >>= flip P.solverLiteral l
 
-pstopFromBool :: Bool -> PropagationStop
-pstopFromBool True = Continue
-pstopFromBool False = Stop
+symbolicAtoms :: Propagation 'Init s (SymbolicAtoms s)
+symbolicAtoms = ask >>= P.symbolicAtoms
 
-addClause :: (MonadIO m, MonadThrow m)
-          => PropagateCtrl s -> Clause s -> m PropagationStop
-addClause (PropagateCtrl c) (Clause ls t) = pstopFromBool . toBool <$> 
-    marshall1 go
-    where go x = withArrayLen (map rawLiteral ls) $ \len arr ->
-                     Raw.propagateControlAddClause c arr (fromIntegral len)
-                                                   (rawClauseType t) x
+theoryAtoms :: Propagation 'Init s (TheoryAtoms s)
+theoryAtoms = ask >>= P.theoryAtoms
 
-addLiteral :: (MonadIO m, MonadThrow m)
-           => PropagateCtrl s -> m (Literal s)
-addLiteral (PropagateCtrl c) = Literal <$> marshall1 
-    (Raw.propagateControlAddLiteral c)
+-- Actions during Solving
+-- ----------------------
 
-getThreadId :: MonadIO m => PropagateCtrl s -> m Integer
-getThreadId (PropagateCtrl c) = fromIntegral <$> Raw.propagateControlThreadId c
+hasWatch :: Literal s -> Propagation 'Solving s Bool
+hasWatch l = ask >>= flip P.hasWatch l
 
-addWatch :: (MonadIO m, MonadThrow m) => PropagateCtrl s -> Literal s -> m ()
-addWatch (PropagateCtrl c) lit = 
-    marshall0 (Raw.propagateControlAddWatch c (rawLiteral lit))
+removeWatch :: Literal s -> Propagation 'Solving s ()
+removeWatch l = ask >>= flip P.removeWatch l
 
-hasWatch :: (MonadIO m) => PropagateCtrl s -> Literal s -> m Bool
-hasWatch (PropagateCtrl c) lit = 
-    toBool <$> Raw.propagateControlHasWatch c (rawLiteral lit)
+getThreadId :: Propagation 'Solving s Integer
+getThreadId = ask >>= P.getThreadId
 
-removeWatch :: (MonadIO m) => PropagateCtrl s -> Literal s -> m ()
-removeWatch (PropagateCtrl c) lit =
-    Raw.propagateControlRemoveWatch c (rawLiteral lit)
+newLiteral :: Propagation 'Solving s (Literal s)
+newLiteral = ask >>= P.addLiteral
 
-propagate :: (MonadIO m, MonadThrow m) => PropagateCtrl s -> m PropagationStop
-propagate (PropagateCtrl c) = pstopFromBool . toBool <$>
-    marshall1 (Raw.propagateControlPropagate c)
+-- TODO: propagate method
+-- TODO: addClause
 
-assignment :: (MonadIO m) => PropagateCtrl s -> m (Assignment s)
-assignment (PropagateCtrl c) = Assignment <$> Raw.propagateControlAssignment c
+assignment :: Propagation 'Solving s (Assignment s)
+assignment = ask >>= P.assignment
 
-initAddWatch :: (MonadIO m, MonadThrow m) 
-             => PropagateInit s -> Literal s -> m ()
-initAddWatch (PropagateInit c) lit = 
-    marshall0 (Raw.propagateInitAddWatch c (rawLiteral lit))
-
-countThreads :: MonadIO m => PropagateInit s -> m Integer
-countThreads (PropagateInit c) = fromIntegral <$> 
-    Raw.propagateInitNumberOfThreads c
-
-solverLiteral :: (MonadIO m, MonadThrow m) 
-              => PropagateInit s -> Literal s -> m (Literal s)
-solverLiteral (PropagateInit c) lit = Literal <$> marshall1
-    (Raw.propagateInitSolverLiteral c (rawLiteral lit))
-
-symbolicAtoms :: (MonadIO m, MonadThrow m)
-              => PropagateInit s -> m (SymbolicAtoms s)
-symbolicAtoms (PropagateInit c) = SymbolicAtoms <$> marshall1
-    (Raw.propagateInitSymbolicAtoms c)
-
-theoryAtoms :: (MonadIO m, MonadThrow m)
-              => PropagateInit s -> m (TheoryAtoms s)
-theoryAtoms (PropagateInit c) = TheoryAtoms <$> marshall1
-    (Raw.propagateInitTheoryAtoms c)
+-- Operations on Assignment
+-- ------------------------
+--
+-- TODO

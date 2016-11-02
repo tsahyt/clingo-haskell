@@ -31,6 +31,7 @@ library
                        Clingo.ProgramBuilding
                        Clingo.Propagation
                        Clingo.Internal.Statistics
+                       Clingo.Internal.Propagation
                        Clingo.Internal.Configuration
                        Clingo.Raw
                        Clingo.Raw.AST
