@@ -1,5 +1,4 @@
 {-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 module Clingo.Internal.Types
 (
@@ -35,7 +34,8 @@ module Clingo.Internal.Types
     Propagator (..),
     rawPropagator,
     PropagateCtrl (..),
-    PropagateInit (..)
+    PropagateInit (..),
+    AMVTree (..)
 )
 where
 
@@ -228,3 +228,8 @@ wrapCBCheck (Just f) = liftIO $ Raw.mkCallbackPropagatorCheck go
 newtype PropagateCtrl s = PropagateCtrl Raw.PropagateControl
 
 newtype PropagateInit s = PropagateInit Raw.PropagateInit
+
+class AMVTree t where
+    atArray :: Int -> t v -> Maybe (t v)
+    atMap   :: Text -> t v -> Maybe (t v)
+    value   :: t v -> Maybe v

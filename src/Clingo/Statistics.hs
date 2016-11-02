@@ -1,7 +1,18 @@
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 module Clingo.Statistics
 (
+    -- * Tree Interface
+    StatsTree (..),
+    (>=>),
+    fromTree,
+    fromTreeMany,
+    subTree,
+
     -- * Direct Interface
     Statistics,
     StatisticsType,
@@ -32,17 +43,80 @@ where
 import Control.Monad
 import Control.Monad.Catch
 import Control.Monad.IO.Class
+import Control.DeepSeq
 import Data.Text (Text, pack, unpack)
 
 import Numeric.Natural
 
 import Foreign
 import Foreign.C
+import GHC.Generics
 
 import qualified Clingo.Raw as Raw
 import Clingo.Internal.Types
 import Clingo.Internal.Utils
 
+import System.IO.Unsafe
+
+data StatsTree v
+    = SValue v
+    | SEmpty
+    | SMap [(Text, StatsTree v)]
+    | SArray [(Int, StatsTree v)]
+    deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
+
+instance NFData v => NFData (StatsTree v)
+
+getTree :: (MonadIO m, MonadThrow m) => Statistics s -> m (StatsTree Double)
+getTree s = statisticsRoot s >>= liftIO . go
+    where go k = unsafeInterleaveIO $ do
+              t <- statisticsType s k
+              case t of
+                  StatsArray -> do
+                      len <- statisticsArraySize s k
+                      let offsets = [0..pred len]
+                      cs  <- mapM (go <=< statisticsArrayAt s k) offsets
+                      return $ SArray (zip (map fromIntegral offsets) cs)
+                  StatsMap   -> do
+                      len <- statisticsMapSize s k
+                      let offsets = [0..pred len]
+                      nms <- mapM (statisticsMapSubkeyName s k) offsets
+                      cs  <- mapM (go <=< statisticsMapAt s k) nms
+                      return $ SMap (zip nms cs)
+                  StatsValue -> SValue <$> statisticsValueGet s k
+                  _ -> error "Encountered empty statistics node"
+
+instance AMVTree StatsTree where
+    atArray i (SArray a) = lookup i a
+    atArray _ _ = Nothing
+
+    atMap i (SMap m) = lookup i m
+    atMap _ _ = Nothing
+
+    value (SValue v) = Just v
+    value _          = Nothing
+
+-- | Get a statistics value from the tree. If any lookup fails, the result will
+-- be 'Nothing'. The tree will be traversed lazily, but the result is evaluated
+-- before returning!
+fromTree :: (MonadIO m, MonadThrow m, NFData w) 
+         => Statistics s -> (StatsTree Double -> Maybe w) -> m (Maybe w)
+fromTree s f = head <$> fromTreeMany s [f]
+
+-- | Like 'fromTree' but supporting multiple paths.
+fromTreeMany :: (MonadIO m, MonadThrow m, NFData w)
+             => Statistics s -> [StatsTree Double -> Maybe w] -> m [Maybe w]
+fromTreeMany s fs = getTree s >>= \t -> return (force (fs <*> [t]))
+
+-- | Get an entire subtree from the statistics. The entire subtree will be
+-- evaluated before returning!
+subTree :: (MonadIO m, MonadThrow m, NFData w)
+        => Statistics s -> (StatsTree Double -> Maybe (StatsTree w))
+        -> m (Maybe (StatsTree w))
+subTree s f = force . f <$> getTree s
+
+-- Direct Interface 
+-- ----------------
 newtype SKey = SKey Word64
     deriving (Show, Eq, Ord)
 

@@ -52,7 +52,8 @@ library
   build-depends:       base >= 4.7 && < 5,
                        mtl,
                        exceptions,
-                       text
+                       text,
+                       deepseq
   extra-libraries:     clingo
   include-dirs:        include
   ghc-options:         -Wall
