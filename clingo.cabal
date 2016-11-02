@@ -30,6 +30,8 @@ library
                        Clingo.Inspection.Theory
                        Clingo.ProgramBuilding
                        Clingo.Propagation
+                       Clingo.Internal.Statistics
+                       Clingo.Internal.Configuration
                        Clingo.Raw
                        Clingo.Raw.AST
                        Clingo.Raw.Asynchronous
