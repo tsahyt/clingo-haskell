@@ -3,8 +3,11 @@ module Main where
 
 import Clingo.Symbol
 import Clingo.Control
+import Clingo.Configuration
 import Clingo.Model
 import Clingo.Statistics
+
+import Data.StateVar
 
 import Data.Text.Lazy (fromStrict)
 import Text.PrettyPrint.Leijen.Text
@@ -25,6 +28,12 @@ onModel m = do
 
 main :: IO ()
 main = withDefaultClingo $ \ctrl -> do
+    -- Set configuration to put out more stats
+    Just sconfig <- flip fromConfig (atMap "stats" >=> value) 
+                =<< configuration ctrl
+    sconfig $= "1"
+
+    -- Ground and solve a simple program
     addProgram ctrl "base" [] "a :- not b. b :- not a."
     ground ctrl [Part "base" []] Nothing
     _ <- solve ctrl (Just onModel) []
@@ -32,16 +41,16 @@ main = withDefaultClingo $ \ctrl -> do
 
     -- Print whole stats tree
     putStrLn "\nStatistics"
-    fullTree <- subTree stats pure
+    fullTree <- subStats stats pure
     putDoc (pretty fullTree <> line)
 
     -- Print just the solving subtree
     putStrLn "\nSelected solving.solver statistics"
-    solving <- subTree stats (atMap "solving" >=> atMap "solvers")
+    solving <- subStats stats (atMap "solving" >=> atMap "solvers")
     putDoc (pretty solving <> line)
 
     -- Selecting only number of equations
     putStrLn "\nNumber of equations"
-    eqs <- fromTree stats (atMap "problem" >=> atMap "lp" >=> atMap "eqs"
-                           >=> value)
+    eqs <- fromStats stats (atMap "problem" >=> atMap "lp" >=> atMap "eqs"
+                            >=> value)
     putDoc (pretty eqs <> line)

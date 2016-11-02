@@ -53,7 +53,8 @@ library
                        mtl,
                        exceptions,
                        text,
-                       deepseq
+                       deepseq,
+                       StateVar
   extra-libraries:     clingo
   include-dirs:        include
   ghc-options:         -Wall
@@ -81,7 +82,7 @@ executable control
 
 executable statistics
   if flag(examples)
-      build-depends:   base, clingo, text, wl-pprint-text
+      build-depends:   base, clingo, text, wl-pprint-text, StateVar
   else 
       buildable:       False
 

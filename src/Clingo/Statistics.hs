@@ -10,9 +10,9 @@ module Clingo.Statistics
     StatsTree (..),
     AMVTree (..),
     (>=>),
-    fromTree,
-    fromTreeMany,
-    subTree,
+    fromStats,
+    fromStatsMany,
+    subStats,
 
     -- * Direct Interface
     Statistics,
@@ -61,7 +61,6 @@ import System.IO.Unsafe
 
 data StatsTree v
     = SValue v
-    | SEmpty
     | SMap [(Text, StatsTree v)]
     | SArray [(Int, StatsTree v)]
     deriving (Eq, Ord, Show, Functor, Foldable, Traversable, Generic)
@@ -100,21 +99,21 @@ instance AMVTree StatsTree where
 -- | Get a statistics value from the tree. If any lookup fails, the result will
 -- be 'Nothing'. The tree will be traversed lazily, but the result is evaluated
 -- before returning!
-fromTree :: (MonadIO m, MonadThrow m, NFData w) 
-         => Statistics s -> (StatsTree Double -> Maybe w) -> m (Maybe w)
-fromTree s f = head <$> fromTreeMany s [f]
+fromStats :: (MonadIO m, MonadThrow m, NFData w) 
+          => Statistics s -> (StatsTree Double -> Maybe w) -> m (Maybe w)
+fromStats s f = head <$> fromStatsMany s [f]
 
 -- | Like 'fromTree' but supporting multiple paths.
-fromTreeMany :: (MonadIO m, MonadThrow m, NFData w)
-             => Statistics s -> [StatsTree Double -> Maybe w] -> m [Maybe w]
-fromTreeMany s fs = getTree s >>= \t -> return (force (fs <*> [t]))
+fromStatsMany :: (MonadIO m, MonadThrow m, NFData w)
+              => Statistics s -> [StatsTree Double -> Maybe w] -> m [Maybe w]
+fromStatsMany s fs = getTree s >>= \t -> return (force (fs <*> [t]))
 
 -- | Get an entire subtree from the statistics. The entire subtree will be
 -- evaluated before returning!
-subTree :: (MonadIO m, MonadThrow m, NFData w)
-        => Statistics s -> (StatsTree Double -> Maybe (StatsTree w))
-        -> m (Maybe (StatsTree w))
-subTree s f = force . f <$> getTree s
+subStats :: (MonadIO m, MonadThrow m, NFData w)
+         => Statistics s -> (StatsTree Double -> Maybe (StatsTree w))
+         -> m (Maybe (StatsTree w))
+subStats s f = force . f <$> getTree s
 
 -- Direct Interface 
 -- ----------------

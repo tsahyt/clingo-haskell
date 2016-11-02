@@ -55,7 +55,7 @@ data SymbolSelection = SymbolSelection
     , selectTerms   :: Bool
     , selectExtra   :: Bool
     , useComplement :: Bool }
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Read, Ord)
 
 selectAll :: SymbolSelection
 selectAll = SymbolSelection True True True True True False
@@ -68,7 +68,6 @@ rawSymbolSelection s = foldr ((.|.) . fst) zeroBits . filter snd $
     , (Raw.ShowTerms, selectTerms s)
     , (Raw.ShowExtra, selectExtra s)
     , (Raw.ShowComplement, useComplement s) ]
-
 
 selectNone :: SymbolSelection
 selectNone = SymbolSelection False False False False False False
