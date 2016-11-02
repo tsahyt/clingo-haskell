@@ -28,5 +28,20 @@ main = withDefaultClingo $ \ctrl -> do
     addProgram ctrl "base" [] "a :- not b. b :- not a."
     ground ctrl [Part "base" []] Nothing
     _ <- solve ctrl (Just onModel) []
-    Just stree <- flip subTree pure =<< statistics ctrl
-    putDoc (pretty stree <> line)
+    stats <- statistics ctrl
+
+    -- Print whole stats tree
+    putStrLn "\nStatistics"
+    fullTree <- subTree stats pure
+    putDoc (pretty fullTree <> line)
+
+    -- Print just the solving subtree
+    putStrLn "\nSelected solving.solver statistics"
+    solving <- subTree stats (atMap "solving" >=> atMap "solvers")
+    putDoc (pretty solving <> line)
+
+    -- Selecting only number of equations
+    putStrLn "\nNumber of equations"
+    eqs <- fromTree stats (atMap "problem" >=> atMap "lp" >=> atMap "eqs"
+                           >=> value)
+    putDoc (pretty eqs <> line)
