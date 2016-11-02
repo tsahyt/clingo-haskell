@@ -8,6 +8,7 @@ module Clingo.Statistics
 (
     -- * Tree Interface
     StatsTree (..),
+    AMVTree (..),
     (>=>),
     fromTree,
     fromTreeMany,
@@ -74,12 +75,12 @@ getTree s = statisticsRoot s >>= liftIO . go
               case t of
                   StatsArray -> do
                       len <- statisticsArraySize s k
-                      let offsets = [0..pred len]
+                      let offsets = take (fromIntegral len) [0..]
                       cs  <- mapM (go <=< statisticsArrayAt s k) offsets
                       return $ SArray (zip (map fromIntegral offsets) cs)
                   StatsMap   -> do
                       len <- statisticsMapSize s k
-                      let offsets = [0..pred len]
+                      let offsets = take (fromIntegral len) [0..]
                       nms <- mapM (statisticsMapSubkeyName s k) offsets
                       cs  <- mapM (go <=< statisticsMapAt s k) nms
                       return $ SMap (zip nms cs)
