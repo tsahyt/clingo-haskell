@@ -19,8 +19,8 @@ module Clingo.Propagation
     -- * Initialization
     countThreads,
     solverLiteral,
-    symbolicAtoms,
-    theoryAtoms,
+    propSymbolicAtoms,
+    propTheoryAtoms,
 
     -- * Actions During Solving
     addClause,
@@ -126,11 +126,11 @@ countThreads = ask >>= P.countThreads
 solverLiteral :: Literal s -> Propagation 'Init s (Literal s)
 solverLiteral l = ask >>= flip P.solverLiteral l
 
-symbolicAtoms :: Propagation 'Init s (SymbolicAtoms s)
-symbolicAtoms = ask >>= P.symbolicAtoms
+propSymbolicAtoms :: Propagation 'Init s (SymbolicAtoms s)
+propSymbolicAtoms = ask >>= P.symbolicAtoms
 
-theoryAtoms :: Propagation 'Init s (TheoryAtoms s)
-theoryAtoms = ask >>= P.theoryAtoms
+propTheoryAtoms :: Propagation 'Init s (TheoryAtoms s)
+propTheoryAtoms = ask >>= P.theoryAtoms
 
 -- Actions during Solving
 -- ----------------------

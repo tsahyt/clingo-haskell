@@ -1,4 +1,5 @@
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 module Clingo.Internal.Types
 (
@@ -39,6 +40,7 @@ module Clingo.Internal.Types
 )
 where
 
+import Control.DeepSeq
 import Control.Monad.IO.Class
 import Control.Monad.Catch
 import Data.Text (Text, pack, unpack)
@@ -55,6 +57,7 @@ import System.IO.Unsafe
 newtype Clingo s = Clingo Raw.Control
 
 newtype Symbol s = Symbol { rawSymbol :: Raw.Symbol }
+    deriving (NFData)
 
 instance Eq (Symbol s) where
     (Symbol a) == (Symbol b) = toBool (Raw.symbolIsEqualTo a b)
@@ -105,6 +108,7 @@ instance Signed (Signature s) where
     negative = toBool . Raw.signatureIsNegative . rawSignature
 
 newtype Literal s = Literal { rawLiteral :: Raw.Literal }
+    deriving (NFData)
 
 newtype Atom s = Atom { rawAtom :: Raw.Atom }
 

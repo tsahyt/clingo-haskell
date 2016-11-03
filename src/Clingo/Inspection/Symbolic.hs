@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric #-}
 module Clingo.Inspection.Symbolic
 (
     SymbolicAtom (..),
@@ -10,6 +11,8 @@ import Control.DeepSeq
 import Control.Monad.IO.Class
 import Control.Monad.Catch
 
+import GHC.Generics
+
 import Clingo.Internal.Types
 import qualified Clingo.Internal.Inspection.Symbolic as S
 
@@ -21,6 +24,9 @@ data SymbolicAtom s = SymbolicAtom
     , symbol   :: Symbol s
     , fact     :: Bool
     }
+    deriving (Generic)
+
+instance NFData (SymbolicAtom s)
 
 fromSymbolicAtoms :: (MonadIO m, MonadThrow m, NFData a)
                   => SymbolicAtoms s 
