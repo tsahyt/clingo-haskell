@@ -31,7 +31,7 @@ module Clingo.Internal.Types
     pattern TruthFree,
     pattern TruthFalse,
     pattern TruthTrue,
-    Propagator (..),
+    IOPropagator (..),
     rawPropagator,
     PropagateCtrl (..),
     PropagateInit (..),
@@ -179,14 +179,14 @@ pattern TruthFree = TruthValue Raw.TruthFree
 pattern TruthFalse = TruthValue Raw.TruthFalse
 pattern TruthTrue = TruthValue Raw.TruthTrue
 
-data Propagator s = Propagator
+data IOPropagator s = IOPropagator
     { propagatorInit      :: Maybe (PropagateInit s -> IO ())
     , propagatorPropagate :: Maybe (PropagateCtrl s -> [Literal s] -> IO ())
     , propagatorUndo      :: Maybe (PropagateCtrl s -> [Literal s] -> IO ())
     , propagatorCheck     :: Maybe (PropagateCtrl s -> IO ())
     }
 
-rawPropagator :: MonadIO m => Propagator s -> m (Raw.Propagator ())
+rawPropagator :: MonadIO m => IOPropagator s -> m (Raw.Propagator ())
 rawPropagator p = Raw.Propagator <$> wrapCBInit (propagatorInit p)
                                  <*> wrapCBProp (propagatorPropagate p)
                                  <*> wrapCBUndo (propagatorUndo p)

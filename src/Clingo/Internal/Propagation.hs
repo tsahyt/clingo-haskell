@@ -8,7 +8,8 @@ module Clingo.Internal.Propagation
     -- * Propagation Handles and Types
     PropagateInit,
     PropagateCtrl,
-    Propagator (..),
+    IOPropagator (..),
+    PropagationStop (..),
 
     -- * Truth values
     TruthValue,

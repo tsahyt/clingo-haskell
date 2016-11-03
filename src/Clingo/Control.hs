@@ -18,6 +18,7 @@ module Clingo.Control
     interrupt,
     cleanup,
     registerPropagator,
+    registerUnsafePropagator,
     Continue (..),
     SymbolicLiteral (..),
     SolveResult (..),
@@ -56,6 +57,7 @@ import Numeric.Natural
 import qualified Clingo.Raw as Raw
 import Clingo.Internal.Utils
 import Clingo.Internal.Types
+import Clingo.Propagation (Propagator, propagatorToIO)
 
 data ClingoSetting = ClingoSetting
     { clingoArgs   :: [String]
@@ -258,6 +260,14 @@ hasConst (Clingo ctrl) name = toBool <$> marshall1 go
 registerPropagator :: (MonadIO m, MonadThrow m) 
                    => Clingo s -> Propagator s -> Bool -> m ()
 registerPropagator (Clingo ctrl) prop sequ = do
+    prop' <- rawPropagator . propagatorToIO $ prop
+    res <- liftIO $ with prop' $ \ptr ->
+               Raw.controlRegisterPropagator ctrl ptr nullPtr (fromBool sequ)
+    checkAndThrow res
+
+registerUnsafePropagator :: (MonadIO m, MonadThrow m) 
+                         => Clingo s -> IOPropagator s -> Bool -> m ()
+registerUnsafePropagator (Clingo ctrl) prop sequ = do
     prop' <- rawPropagator prop
     res <- liftIO $ with prop' $ \ptr ->
                Raw.controlRegisterPropagator ctrl ptr nullPtr (fromBool sequ)
