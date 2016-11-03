@@ -7,8 +7,11 @@
 module Clingo.Propagation
 (
     Propagation,
+    PropagationPhase (..),
     Assignment,
+    Literal,
     Propagator (..),
+    emptyPropagator,
     propagatorToIO,
 
     addWatch,
@@ -87,6 +90,9 @@ data Propagator s = Propagator
     , propUndo      :: Maybe ([Literal s] -> Propagation 'Solving s ())
     , propCheck     :: Maybe (Propagation 'Solving s ())
     }
+    
+emptyPropagator :: Propagator s
+emptyPropagator = Propagator Nothing Nothing Nothing Nothing
 
 propagatorToIO :: Propagator s -> IOPropagator s
 propagatorToIO prop = IOPropagator

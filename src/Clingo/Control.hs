@@ -258,16 +258,16 @@ hasConst (Clingo ctrl) name = toBool <$> marshall1 go
                      Raw.controlHasConst ctrl cstr x
 
 registerPropagator :: (MonadIO m, MonadThrow m) 
-                   => Clingo s -> Propagator s -> Bool -> m ()
-registerPropagator (Clingo ctrl) prop sequ = do
+                   => Clingo s -> Bool -> Propagator s -> m ()
+registerPropagator (Clingo ctrl) sequ prop = do
     prop' <- rawPropagator . propagatorToIO $ prop
     res <- liftIO $ with prop' $ \ptr ->
                Raw.controlRegisterPropagator ctrl ptr nullPtr (fromBool sequ)
     checkAndThrow res
 
 registerUnsafePropagator :: (MonadIO m, MonadThrow m) 
-                         => Clingo s -> IOPropagator s -> Bool -> m ()
-registerUnsafePropagator (Clingo ctrl) prop sequ = do
+                         => Clingo s -> Bool -> IOPropagator s -> m ()
+registerUnsafePropagator (Clingo ctrl) sequ prop = do
     prop' <- rawPropagator prop
     res <- liftIO $ with prop' $ \ptr ->
                Raw.controlRegisterPropagator ctrl ptr nullPtr (fromBool sequ)
