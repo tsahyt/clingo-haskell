@@ -74,6 +74,16 @@ executable version
   main-is:             Version.hs
   default-language:    Haskell2010
 
+executable dot-propagator
+  if flag(examples)
+      build-depends:   base, clingo, text
+  else 
+      buildable:       False
+
+  hs-source-dirs:      examples
+  main-is:             DotPropagator.hs
+  default-language:    Haskell2010
+
 executable control
   if flag(examples)
       build-depends:   base, clingo, text
