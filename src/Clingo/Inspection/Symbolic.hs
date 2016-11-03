@@ -1,7 +1,8 @@
 module Clingo.Inspection.Symbolic
 (
     SymbolicAtom (..),
-    fromSymbolicAtoms
+    fromSymbolicAtoms,
+    S.symbolicAtomsSignatures
 )
 where
 
