@@ -61,7 +61,7 @@ type family PhaseHandle (k :: PropagationPhase) s where
 newtype Propagation (phase :: PropagationPhase) s a
     = Propagation { runPropagator :: MaybeT 
                                          (ReaderT (PhaseHandle phase s) IO) a }
-        deriving ( Functor, Monad, Applicative, Alternative
+        deriving ( Functor, Monad, Applicative
                  , MonadIO, MonadThrow )
 
 getIOAction :: Propagation phase s () -> PhaseHandle phase s -> IO ()
@@ -79,7 +79,7 @@ instance MonadReader (PropagateCtrl s) (Propagation 'Solving s) where
 
 handleStop :: P.PropagationStop -> Propagation phase s ()
 handleStop P.Continue = return ()
-handleStop P.Stop = empty
+handleStop P.Stop = Propagation empty
 
 -- Propagator and wrapping
 -- -----------------------
