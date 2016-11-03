@@ -26,6 +26,7 @@ library
                        Clingo.Asynchronous
                        Clingo.Model
                        Clingo.Iterative
+                       Clingo.Internal.Inspection.Symbolic
                        Clingo.Inspection.Symbolic
                        Clingo.Inspection.Theory
                        Clingo.ProgramBuilding
