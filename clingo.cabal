@@ -96,6 +96,17 @@ executable control
   main-is:             Control.hs
   default-language:    Haskell2010
 
+executable configuration
+  if flag(examples)
+      build-depends:   base, clingo, text, StateVar
+  else 
+      buildable:       False
+
+  hs-source-dirs:      examples
+  ghc-options:         -Wall
+  main-is:             Configuration.hs
+  default-language:    Haskell2010
+
 executable theory-atoms
   if flag(examples)
       build-depends:   base, clingo, text
