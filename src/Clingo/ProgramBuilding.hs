@@ -1,6 +1,20 @@
 module Clingo.ProgramBuilding
 (
     Node,
+    Literal,
+    ExternalType,
+    HeuristicType,
+
+    assume,
+
+    acycEdge,
+    atom,
+    external,
+    heuristic,
+    minimize,
+    rule,
+    weightedRule,
+    project
 )
 where
 

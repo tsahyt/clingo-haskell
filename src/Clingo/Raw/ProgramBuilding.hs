@@ -25,29 +25,29 @@ import Clingo.Raw.AST
 import Clingo.Raw.Types
 import Clingo.Raw.Enums
 
-foreign import ccall "clingo.h backend_rule" backendRuleFFI ::
+foreign import ccall "clingo.h clingo_backend_rule" backendRuleFFI ::
     Backend -> CBool -> Ptr Atom -> CSize -> Ptr Literal -> CSize -> IO CBool
-foreign import ccall "clingo.h backend_weight_rule" backendWeightRuleFFI ::
+foreign import ccall "clingo.h clingo_backend_weight_rule" backendWeightRuleFFI ::
     Backend -> CBool -> Ptr Atom -> CSize -> Weight -> Ptr WeightedLiteral -> CSize -> IO CBool
-foreign import ccall "clingo.h backend_minimize" backendMinimizeFFI ::
+foreign import ccall "clingo.h clingo_backend_minimize" backendMinimizeFFI ::
     Backend -> Weight -> Ptr WeightedLiteral -> CSize -> IO CBool
-foreign import ccall "clingo.h backend_project" backendProjectFFI ::
+foreign import ccall "clingo.h clingo_backend_project" backendProjectFFI ::
     Backend -> Ptr Atom -> CSize -> IO CBool
-foreign import ccall "clingo.h backend_external" backendExternalFFI ::
+foreign import ccall "clingo.h clingo_backend_external" backendExternalFFI ::
     Backend -> Atom -> ExternalType -> IO CBool
-foreign import ccall "clingo.h backend_assume" backendAssumeFFI ::
+foreign import ccall "clingo.h clingo_backend_assume" backendAssumeFFI ::
     Backend -> Ptr Literal -> CSize -> IO CBool
-foreign import ccall "clingo.h backend_heuristic" backendHeuristicFFI ::
+foreign import ccall "clingo.h clingo_backend_heuristic" backendHeuristicFFI ::
     Backend -> Atom -> HeuristicType -> CInt -> CUInt -> Ptr Literal -> CSize -> IO CBool
-foreign import ccall "clingo.h backend_acyc_edge" backendAcycEdgeFFI ::
+foreign import ccall "clingo.h clingo_backend_acyc_edge" backendAcycEdgeFFI ::
     Backend -> CInt -> CInt -> Ptr Literal -> CSize -> IO CBool
-foreign import ccall "clingo.h backend_add_atom" backendAddAtomFFI ::
+foreign import ccall "clingo.h clingo_backend_add_atom" backendAddAtomFFI ::
     Backend -> Ptr Atom -> IO CBool
-foreign import ccall "clingo.h backend_builder_begin" backendBuilderBeginFFI ::
+foreign import ccall "clingo.h clingo_backend_builder_begin" backendBuilderBeginFFI ::
     ProgramBuilder -> IO CBool
-foreign import ccall "clingo.h backend_builder_add" backendBuilderAddFFI ::
+foreign import ccall "clingo.h clingo_backend_builder_add" backendBuilderAddFFI ::
     ProgramBuilder -> Ptr AstStatement -> IO CBool
-foreign import ccall "clingo.h backend_builder_end" backendBuilderEndFFI ::
+foreign import ccall "clingo.h clingo_backend_builder_end" backendBuilderEndFFI ::
     ProgramBuilder -> IO CBool
 
 backendRule :: MonadIO m => Backend -> CBool -> Ptr Atom -> CSize -> Ptr Literal -> CSize -> m CBool
