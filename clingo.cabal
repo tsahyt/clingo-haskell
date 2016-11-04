@@ -27,6 +27,7 @@ library
                        Clingo.Model
                        Clingo.Iterative
                        Clingo.Internal.Inspection.Symbolic
+                       Clingo.Internal.Inspection.Theory
                        Clingo.Inspection.Symbolic
                        Clingo.Inspection.Theory
                        Clingo.ProgramBuilding
@@ -93,6 +94,16 @@ executable control
 
   hs-source-dirs:      examples
   main-is:             Control.hs
+  default-language:    Haskell2010
+
+executable theory-atoms
+  if flag(examples)
+      build-depends:   base, clingo, text
+  else 
+      buildable:       False
+
+  hs-source-dirs:      examples
+  main-is:             TheoryAtoms.hs
   default-language:    Haskell2010
 
 executable statistics

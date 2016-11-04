@@ -1,143 +1,138 @@
+{-# LANGUAGE DeriveGeneric #-}
 module Clingo.Inspection.Theory
 (
-    -- * Direct access
-    TermId,
-    ElementId,
-    AtomId,
-    TheoryTermType,
+    TheoryAtoms,
 
-    theoryAtomsSize,
-    theoryAtomsId,
-    theoryAtomsTermType,
-    theoryAtomsTermNumber,
-    theoryAtomsTermName,
-    theoryAtomsTermArguments,
-    theoryAtomsTermToString,
-    theoryAtomsElementTuple,
-    theoryAtomsElementCondition,
-    theoryAtomsElementConditionId,
-    theoryAtomsElementToString,
-    theoryAtomsAtomTerm,
-    theoryAtomsAtomElements,
-    theoryAtomsAtomHasGuard,
-    theoryAtomsAtomGuard,
-    theoryAtomsAtomLiteral,
-    theoryAtomsAtomToString
+    Guard (..),
+    Element (..),
+    GroundTheoryAtom (..),
+    GroundTheoryTerm (..),
+    renderTerm,
+    termName,
+
+    fromTheoryAtoms
 )
 where
 
+import Control.DeepSeq
 import Control.Monad.IO.Class
 import Control.Monad.Catch
-import Data.Text (Text, pack)
-import Data.Bifunctor
+import Data.Maybe
 
-import Numeric.Natural
-import Foreign
-import Foreign.C
+import Data.Text (Text)
+import GHC.Generics
 
-import qualified Clingo.Raw as Raw
+import qualified Clingo.Internal.Inspection.Theory as I
 import Clingo.Internal.Types
-import Clingo.Internal.Utils
 
-newtype TermId = TermId Raw.Identifier
-newtype ElementId = ElementId Raw.Identifier
-newtype AtomId = AtomId Raw.Identifier
+import System.IO.Unsafe
 
-newtype TheoryTermType = TheoryTermType Raw.TheoryTermType
+data Guard s = Guard Text (GroundTheoryTerm s)
+    deriving (Generic)
 
-theoryAtomsTermType :: (MonadIO m, MonadThrow m) 
-                    => TheoryAtoms s -> TermId -> m TheoryTermType
-theoryAtomsTermType (TheoryAtoms h) (TermId k) = TheoryTermType <$>
-    marshall1 (Raw.theoryAtomsTermType h k)
+instance NFData (Guard s)
 
-theoryAtomsTermNumber :: (MonadIO m, MonadThrow m) 
-                      => TheoryAtoms s -> TermId -> m Integer
-theoryAtomsTermNumber (TheoryAtoms h) (TermId k) = fromIntegral <$>
-    marshall1 (Raw.theoryAtomsTermNumber h k)
+data Element s = Element
+    { elementTuple       :: [GroundTheoryTerm s]
+    , elementCondition   :: [Literal s]
+    , elementConditionId :: Literal s
+    , renderElement      :: Text
+    }
+    deriving (Generic)
 
-theoryAtomsTermName :: (MonadIO m, MonadThrow m) 
-                    => TheoryAtoms s -> TermId -> m Text
-theoryAtomsTermName (TheoryAtoms h) (TermId k) = pack <$> 
-    (liftIO . peekCString =<< marshall1 (Raw.theoryAtomsTermName h k))
+instance NFData (Element s)
 
-theoryAtomsTermArguments :: (MonadIO m, MonadThrow m) 
-                         => TheoryAtoms s -> TermId -> m [TermId]
-theoryAtomsTermArguments (TheoryAtoms h) (TermId k) = map TermId <$> marshall1A
-    (Raw.theoryAtomsTermArguments h k)
+data GroundTheoryAtom s = GroundTheoryAtom 
+    { atomGuard    :: Maybe (Guard s)
+    , atomTerm     :: GroundTheoryTerm s
+    , atomElements :: [Element s]
+    , atomLiteral  :: Literal s
+    , renderAtom   :: Text
+    }
+    deriving (Generic)
 
-theoryAtomsTermToString :: (MonadIO m, MonadThrow m) 
-                        => TheoryAtoms s -> TermId -> m Text
-theoryAtomsTermToString (TheoryAtoms h) (TermId k) = do
-    len <- marshall1 (Raw.theoryAtomsTermToStringSize h k)
-    liftIO $ allocaArray (fromIntegral len) $ \arr -> do
-        marshall0 (Raw.theoryAtomsTermToString h k arr len)
-        pack <$> peekCStringLen (arr, fromIntegral len)
+instance NFData (GroundTheoryAtom s)
 
-theoryAtomsElementTuple :: (MonadIO m, MonadThrow m) 
-                        => TheoryAtoms s -> ElementId -> m [TermId]
-theoryAtomsElementTuple (TheoryAtoms h) (ElementId k) = 
-    map TermId <$> marshall1A (Raw.theoryAtomsElementTuple h k)
+data GroundTheoryTerm s
+    = SymbolTerm Text Text
+    | FunctionTerm Text Text [GroundTheoryTerm s]
+    | NumberTerm Text Integer
+    | TupleTerm Text [Element s]
+    | ListTerm Text [Element s]
+    | SetTerm Text [Element s]
+    deriving (Generic)
 
-theoryAtomsElementCondition :: (MonadIO m, MonadThrow m) 
-                            => TheoryAtoms s -> ElementId -> m [Literal s]
-theoryAtomsElementCondition (TheoryAtoms h) (ElementId k) = 
-    map Literal <$> marshall1A (Raw.theoryAtomsElementCondition h k)
+instance NFData (GroundTheoryTerm s)
 
-theoryAtomsElementConditionId :: (MonadIO m, MonadThrow m) 
-                              => TheoryAtoms s -> ElementId -> m (Literal s)
-theoryAtomsElementConditionId (TheoryAtoms h) (ElementId k) = Literal <$>
-    marshall1 (Raw.theoryAtomsElementConditionId h k)
+renderTerm :: GroundTheoryTerm s -> Text
+renderTerm (SymbolTerm r _) = r
+renderTerm (FunctionTerm r _ _) = r
+renderTerm (NumberTerm r _) = r
+renderTerm (TupleTerm r _) = r
+renderTerm (ListTerm r _) = r
+renderTerm (SetTerm r _) = r
 
-theoryAtomsElementToString :: (MonadIO m, MonadThrow m) 
-                           => TheoryAtoms s -> ElementId -> m Text
-theoryAtomsElementToString (TheoryAtoms h) (ElementId k) = do
-    len <- marshall1 (Raw.theoryAtomsElementToStringSize h k)
-    liftIO $ allocaArray (fromIntegral len) $ \arr -> do
-        marshall0 (Raw.theoryAtomsElementToString h k arr len)
-        pack <$> peekCStringLen (arr, fromIntegral len)
+termName :: GroundTheoryTerm s -> Maybe Text
+termName (SymbolTerm _ n) = Just n
+termName (FunctionTerm _ n _) = Just n
+termName _ = Nothing
 
-theoryAtomsSize :: (MonadIO m, MonadThrow m) => TheoryAtoms s -> m Natural
-theoryAtomsSize (TheoryAtoms h) = 
-    fromIntegral <$> marshall1 (Raw.theoryAtomsSize h)
+fromTheoryAtoms :: (MonadIO m, MonadThrow m, NFData w)
+                => TheoryAtoms s -> ([GroundTheoryAtom s] -> w) -> m w
+fromTheoryAtoms t f = do
+    size <- I.theoryAtomsSize t
+    ids  <- mapM (I.theoryAtomsId t) (take (fromIntegral size) [0..])
+    atoms <- mapM (buildAtom t) (catMaybes ids)
+    return . force $ f atoms
 
-theoryAtomsId :: (MonadIO m, MonadThrow m) 
-              => TheoryAtoms s -> Natural -> m (Maybe AtomId)
-theoryAtomsId h x = do
-    lim <- theoryAtomsSize h
-    return $ if x <= lim then Just (AtomId (fromIntegral x)) else Nothing
+buildTerm :: MonadIO m
+          => TheoryAtoms s -> I.TermId -> m (GroundTheoryTerm s)
+buildTerm t i = liftIO . unsafeInterleaveIO $ do
+    typ <- I.theoryAtomsTermType t i
+    case typ of
+        I.TheorySymbol -> SymbolTerm
+            <$> I.theoryAtomsTermToString t i
+            <*> I.theoryAtomsTermName t i
+        I.TheoryFunction -> FunctionTerm
+            <$> I.theoryAtomsTermToString t i
+            <*> I.theoryAtomsTermName t i
+            <*> (mapM (buildTerm t) =<< I.theoryAtomsTermArguments t i)
+        I.TheoryNumber -> NumberTerm
+            <$> I.theoryAtomsTermToString t i
+            <*> I.theoryAtomsTermNumber t i
+        I.TheoryList -> ListTerm
+            <$> I.theoryAtomsTermToString t i
+            <*> pure []
+        I.TheorySet -> SetTerm
+            <$> I.theoryAtomsTermToString t i
+            <*> pure []
+        I.TheoryTuple -> TupleTerm
+            <$> I.theoryAtomsTermToString t i
+            <*> pure []
+        _ -> error "Invalid theory term type"
 
-theoryAtomsAtomTerm :: (MonadIO m, MonadThrow m) 
-                    => TheoryAtoms s -> AtomId -> m TermId
-theoryAtomsAtomTerm (TheoryAtoms h) (AtomId k) = TermId <$> marshall1
-    (Raw.theoryAtomsAtomTerm h k)
+buildElement :: MonadIO m
+             => TheoryAtoms s -> I.ElementId -> m (Element s)
+buildElement t i = liftIO . unsafeInterleaveIO $ Element 
+    <$> (mapM (buildTerm t) =<< I.theoryAtomsElementTuple t i)
+    <*> I.theoryAtomsElementCondition t i
+    <*> I.theoryAtomsElementConditionId t i
+    <*> I.theoryAtomsElementToString t i
 
-theoryAtomsAtomElements :: (MonadIO m, MonadThrow m) 
-                        => TheoryAtoms s -> AtomId -> m [ElementId]
-theoryAtomsAtomElements (TheoryAtoms h) (AtomId k) = 
-    map ElementId <$> marshall1A (Raw.theoryAtomsAtomElements h k)
+buildAtom :: MonadIO m
+          => TheoryAtoms s -> I.AtomId -> m (GroundTheoryAtom s)
+buildAtom t i = liftIO . unsafeInterleaveIO $ GroundTheoryAtom
+    <$> buildGuard
+    <*> (buildTerm t =<< I.theoryAtomsAtomTerm t i)
+    <*> (mapM (buildElement t) =<< I.theoryAtomsAtomElements t i)
+    <*> I.theoryAtomsAtomLiteral t i
+    <*> I.theoryAtomsAtomToString t i
 
-theoryAtomsAtomHasGuard :: (MonadIO m, MonadThrow m) 
-                        => TheoryAtoms s -> AtomId -> m Bool
-theoryAtomsAtomHasGuard (TheoryAtoms h) (AtomId k) = toBool <$> marshall1
-    (Raw.theoryAtomsAtomHasGuard h k)
-
-theoryAtomsAtomGuard :: (MonadIO m, MonadThrow m) 
-                     => TheoryAtoms s -> AtomId -> m (Text, TermId)
-theoryAtomsAtomGuard (TheoryAtoms h) (AtomId k) = bimap pack TermId <$> go
-    where go = do
-              (x,y) <- marshall2 $ Raw.theoryAtomsAtomGuard h k
-              x' <- liftIO $ peekCString x
-              return (x',y)
-
-theoryAtomsAtomLiteral :: (MonadIO m, MonadThrow m) 
-                       => TheoryAtoms s -> AtomId -> m (Literal s)
-theoryAtomsAtomLiteral (TheoryAtoms h) (AtomId k) = Literal <$> marshall1
-    (Raw.theoryAtomsAtomLiteral h k)
-
-theoryAtomsAtomToString :: (MonadIO m, MonadThrow m) 
-                        => TheoryAtoms s -> AtomId -> m Text
-theoryAtomsAtomToString (TheoryAtoms h) (AtomId k) = do
-    len <- marshall1 (Raw.theoryAtomsAtomToStringSize h k)
-    liftIO $ allocaArray (fromIntegral len) $ \arr -> do
-        marshall0 (Raw.theoryAtomsAtomToString h k arr len)
-        pack <$> peekCStringLen (arr, fromIntegral len)
+    where buildGuard = do
+              b <- I.theoryAtomsAtomHasGuard t i
+              if b 
+                  then do
+                       (x, tid) <- I.theoryAtomsAtomGuard t i
+                       term <- buildTerm t tid
+                       return $ Just (Guard x term)
+                  else return Nothing
