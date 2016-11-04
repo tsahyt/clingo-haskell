@@ -7,6 +7,7 @@ module Clingo.Inspection.Theory
     TheoryTermType,
 
     theoryAtomsSize,
+    theoryAtomsId,
     theoryAtomsTermType,
     theoryAtomsTermNumber,
     theoryAtomsTermName,
@@ -98,6 +99,12 @@ theoryAtomsElementToString (TheoryAtoms h) (ElementId k) = do
 theoryAtomsSize :: (MonadIO m, MonadThrow m) => TheoryAtoms s -> m Natural
 theoryAtomsSize (TheoryAtoms h) = 
     fromIntegral <$> marshall1 (Raw.theoryAtomsSize h)
+
+theoryAtomsId :: (MonadIO m, MonadThrow m) 
+              => TheoryAtoms s -> Natural -> m (Maybe AtomId)
+theoryAtomsId h x = do
+    lim <- theoryAtomsSize h
+    return $ if x <= lim then Just (AtomId (fromIntegral x)) else Nothing
 
 theoryAtomsAtomTerm :: (MonadIO m, MonadThrow m) 
                     => TheoryAtoms s -> AtomId -> m TermId
