@@ -6,6 +6,7 @@ import Data.Maybe
 import Clingo.Control
 import Clingo.Symbol
 import Clingo.Model
+import Clingo.ProgramBuilding
 
 import Text.Printf
 import qualified Data.Text as T
@@ -19,14 +20,22 @@ onModel m = do
     putStr "Model: " >> print syms
     return Continue
 
-theory :: TheoryAtoms s -> IO ()
+theory :: TheoryAtoms s -> IO (Literal s)
 theory t = do
+    -- obtain number of theory atoms via length
     size <- fromTheoryAtoms t length 
     putStrLn $ "number of grounded theory atoms: " ++ show size
 
-    names <- fromTheoryAtoms t (mapMaybe (termName . atomTerm))
-    forM_ names $ \n ->
-        putStrLn $ "atom: " ++ T.unpack n
+    -- find the atom b/1 and determine whether it has a guard
+    atomB <- fromTheoryAtoms t (head . filter (nameIs "b"))
+    putStrLn $ "theory atom b/1 has guard: " ++ 
+               show (isJust . atomGuard $ atomB)
+
+    return (atomLiteral atomB)
+
+    where nameIs a x = case termName (atomTerm x) of
+                           Nothing -> False
+                           Just b  -> a == b
     
 main :: IO ()
 main = withDefaultClingo $ \ctrl -> do
@@ -39,5 +48,6 @@ main = withDefaultClingo $ \ctrl -> do
         , "x :- &a { 1+2 }."
         , "y :- &b(3) { } = 17." ]
     ground ctrl [Part "base" []] Nothing
-    theoryAtoms ctrl >>= theory
+    lit <- theoryAtoms ctrl >>= theory
+    backend ctrl >>= flip assume [lit]
     void $ solve ctrl (Just onModel) []
