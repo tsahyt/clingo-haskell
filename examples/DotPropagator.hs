@@ -25,7 +25,7 @@ takeDots :: [Literal s] -> Propagation 'Solving s ()
 takeDots = mapIO (putStr "\b \b" >> hFlush stdout >> threadDelay sleepTime)
 
 watchAll :: Propagation 'Init s ()
-watchAll = mapM_ (addWatch . literal)
+watchAll = mapM_ ((addWatch =<<) . solverLiteral . literal)
            =<< flip fromSymbolicAtoms id =<< propSymbolicAtoms
 
 main :: IO ()
