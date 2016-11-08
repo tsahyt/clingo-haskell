@@ -20,7 +20,7 @@ onModel m = do
     putStr "Model: " >> print syms
     return Continue
 
-theory :: TheoryAtoms s -> IO (Literal s)
+theory :: TheoryAtoms s -> IO (AspifLiteral s)
 theory t = do
     -- obtain number of theory atoms via length
     size <- fromTheoryAtoms t length 

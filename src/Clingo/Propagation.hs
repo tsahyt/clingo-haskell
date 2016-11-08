@@ -123,7 +123,7 @@ addWatch = mAddWatch
 countThreads :: Propagation 'Init s Integer
 countThreads = ask >>= P.countThreads
 
-solverLiteral :: Literal s -> Propagation 'Init s (Literal s)
+solverLiteral :: AspifLiteral s -> Propagation 'Init s (Literal s)
 solverLiteral l = ask >>= flip P.solverLiteral l
 
 propSymbolicAtoms :: Propagation 'Init s (SymbolicAtoms s)

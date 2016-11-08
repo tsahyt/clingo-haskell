@@ -2,6 +2,7 @@
 module Clingo.Inspection.Theory
 (
     TheoryAtoms,
+    AspifLiteral,
 
     Guard (..),
     Element (..),
@@ -34,8 +35,8 @@ instance NFData (Guard s)
 
 data Element s = Element
     { elementTuple       :: [GroundTheoryTerm s]
-    , elementCondition   :: [Literal s]
-    , elementConditionId :: Literal s
+    , elementCondition   :: [AspifLiteral s]
+    , elementConditionId :: AspifLiteral s
     , renderElement      :: Text
     }
     deriving (Generic)
@@ -46,7 +47,7 @@ data GroundTheoryAtom s = GroundTheoryAtom
     { atomGuard    :: Maybe (Guard s)
     , atomTerm     :: GroundTheoryTerm s
     , atomElements :: [Element s]
-    , atomLiteral  :: Literal s
+    , atomLiteral  :: AspifLiteral s
     , renderAtom   :: Text
     }
     deriving (Generic)

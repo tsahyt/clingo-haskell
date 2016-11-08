@@ -79,9 +79,9 @@ symbolicAtomsIsExternal (SymbolicAtoms s) (SIterator i) =
     toBool <$> marshall1 (Raw.symbolicAtomsIsExternal s i)
 
 symbolicAtomsLiteral :: (MonadIO m, MonadThrow m)
-                     => SymbolicAtoms s -> SIterator s -> m (Literal s)
+                     => SymbolicAtoms s -> SIterator s -> m (AspifLiteral s)
 symbolicAtomsLiteral (SymbolicAtoms s) (SIterator i) =
-    Literal <$> marshall1 (Raw.symbolicAtomsLiteral s i)
+    AspifLiteral <$> marshall1 (Raw.symbolicAtomsLiteral s i)
 
 symbolicAtomsSignatures :: (MonadIO m, MonadThrow m)
                         => SymbolicAtoms s -> m [Signature s]

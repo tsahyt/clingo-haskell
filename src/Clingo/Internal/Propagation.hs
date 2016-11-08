@@ -156,9 +156,9 @@ countThreads (PropagateInit c) = fromIntegral <$>
     Raw.propagateInitNumberOfThreads c
 
 solverLiteral :: (MonadIO m, MonadThrow m) 
-              => PropagateInit s -> Literal s -> m (Literal s)
+              => PropagateInit s -> AspifLiteral s -> m (Literal s)
 solverLiteral (PropagateInit c) lit = Literal <$> marshall1
-    (Raw.propagateInitSolverLiteral c (rawLiteral lit))
+    (Raw.propagateInitSolverLiteral c (rawAspifLiteral lit))
 
 symbolicAtoms :: (MonadIO m, MonadThrow m)
               => PropagateInit s -> m (SymbolicAtoms s)

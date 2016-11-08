@@ -95,13 +95,14 @@ theoryAtomsElementTuple (TheoryAtoms h) (ElementId k) =
     map TermId <$> marshall1A (Raw.theoryAtomsElementTuple h k)
 
 theoryAtomsElementCondition :: (MonadIO m, MonadThrow m) 
-                            => TheoryAtoms s -> ElementId -> m [Literal s]
+                            => TheoryAtoms s -> ElementId -> m [AspifLiteral s]
 theoryAtomsElementCondition (TheoryAtoms h) (ElementId k) = 
-    map Literal <$> marshall1A (Raw.theoryAtomsElementCondition h k)
+    map AspifLiteral <$> marshall1A (Raw.theoryAtomsElementCondition h k)
 
 theoryAtomsElementConditionId :: (MonadIO m, MonadThrow m) 
-                              => TheoryAtoms s -> ElementId -> m (Literal s)
-theoryAtomsElementConditionId (TheoryAtoms h) (ElementId k) = Literal <$>
+                              => TheoryAtoms s -> ElementId 
+                              -> m (AspifLiteral s)
+theoryAtomsElementConditionId (TheoryAtoms h) (ElementId k) = AspifLiteral <$>
     marshall1 (Raw.theoryAtomsElementConditionId h k)
 
 theoryAtomsElementToString :: (MonadIO m, MonadThrow m) 
@@ -146,8 +147,8 @@ theoryAtomsAtomGuard (TheoryAtoms h) (AtomId k) = bimap pack TermId <$> go
               return (x',y)
 
 theoryAtomsAtomLiteral :: (MonadIO m, MonadThrow m) 
-                       => TheoryAtoms s -> AtomId -> m (Literal s)
-theoryAtomsAtomLiteral (TheoryAtoms h) (AtomId k) = Literal <$> marshall1
+                       => TheoryAtoms s -> AtomId -> m (AspifLiteral s)
+theoryAtomsAtomLiteral (TheoryAtoms h) (AtomId k) = AspifLiteral <$> marshall1
     (Raw.theoryAtomsAtomLiteral h k)
 
 theoryAtomsAtomToString :: (MonadIO m, MonadThrow m) 

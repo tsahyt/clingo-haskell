@@ -2,6 +2,7 @@
 module Clingo.Inspection.Symbolic
 (
     SymbolicAtom (..),
+    AspifLiteral,
     fromSymbolicAtoms,
     S.symbolicAtomsSignatures
 )
@@ -20,7 +21,7 @@ import System.IO.Unsafe
 
 data SymbolicAtom s = SymbolicAtom
     { external :: Bool
-    , literal  :: Literal s
+    , literal  :: AspifLiteral s
     , symbol   :: Symbol s
     , fact     :: Bool
     }

@@ -54,9 +54,9 @@ atom :: (MonadIO m, MonadThrow m)
 atom (Backend h) = Atom <$> marshall1 (Raw.backendAddAtom h)
 
 assume :: (MonadIO m, MonadThrow m, Foldable t)
-       => Backend s -> t (Literal s) -> m ()
+       => Backend s -> t (AspifLiteral s) -> m ()
 assume (Backend h) lits = marshall0 $ 
-    withArrayLen (map rawLiteral . toList $ lits) $ \len arr ->
+    withArrayLen (map rawAspifLiteral . toList $ lits) $ \len arr ->
         Raw.backendAssume h arr (fromIntegral len)
 
 external :: (MonadIO m, MonadThrow m)
@@ -70,10 +70,10 @@ heuristic :: (MonadIO m, MonadThrow m)
           -> HeuristicType 
           -> Int 
           -> Natural 
-          -> [Literal s]
+          -> [AspifLiteral s]
           -> m ()
 heuristic (Backend h) a t bias pri cs = marshall0 $
-    withArrayLen (map rawLiteral cs) $ \len arr ->
+    withArrayLen (map rawAspifLiteral cs) $ \len arr ->
         Raw.backendHeuristic h (rawAtom a) (rawHeuT t) 
             (fromIntegral bias) (fromIntegral pri) arr (fromIntegral len)
 
