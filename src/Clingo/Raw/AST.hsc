@@ -639,7 +639,7 @@ instance Storable AstAggregate where
         (#poke clingo_ast_aggregate_t, left_guard) p c
         (#poke clingo_ast_aggregate_t, right_guard) p d
     
-data AstBodyAggregateElement = AstBodyAggregateElement AstTerm CSize 
+data AstBodyAggregateElement = AstBodyAggregateElement (Ptr AstTerm) CSize 
                                (Ptr AstLiteral) CSize
     deriving (Eq, Show)
 
