@@ -20,6 +20,7 @@ flag examples
 library
   hs-source-dirs:      src
   exposed-modules:     Clingo.Control
+                       Clingo.AST
                        Clingo.Symbol
                        Clingo.Configuration
                        Clingo.Statistics

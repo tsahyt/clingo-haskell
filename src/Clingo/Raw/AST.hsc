@@ -356,6 +356,9 @@ instance Storable AstInterval where
 data AstFunction = AstFunction CString (Ptr AstTerm) CSize
     deriving (Eq, Show)
 
+freeAstFunction :: AstFunction -> IO ()
+freeAstFunction = undefined
+
 instance Storable AstFunction where
     sizeOf _ = #{size clingo_ast_function_t}
     alignment = sizeOf
