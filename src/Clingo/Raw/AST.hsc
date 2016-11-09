@@ -356,9 +356,6 @@ instance Storable AstInterval where
 data AstFunction = AstFunction CString (Ptr AstTerm) CSize
     deriving (Eq, Show)
 
-freeAstFunction :: AstFunction -> IO ()
-freeAstFunction = undefined
-
 instance Storable AstFunction where
     sizeOf _ = #{size clingo_ast_function_t}
     alignment = sizeOf
@@ -642,7 +639,7 @@ instance Storable AstAggregate where
         (#poke clingo_ast_aggregate_t, left_guard) p c
         (#poke clingo_ast_aggregate_t, right_guard) p d
     
-data AstBodyAggregateElement = AstBodyAggregateElement AstTerm CSize 
+data AstBodyAggregateElement = AstBodyAggregateElement (Ptr AstTerm) CSize 
                                (Ptr AstLiteral) CSize
     deriving (Eq, Show)
 

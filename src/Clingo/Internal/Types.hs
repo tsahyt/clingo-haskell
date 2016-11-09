@@ -16,6 +16,7 @@ module Clingo.Internal.Types
     Model (..),
     Location (..),
     rawLocation,
+    freeRawLocation,
     fromRawLocation,
     SolveResult (..),
     rawSolveResult,
@@ -127,8 +128,19 @@ data Location = Location
     , locEndCol    :: Natural }
     deriving (Eq, Show)
 
-rawLocation :: Location -> Raw.Location
-rawLocation = undefined
+rawLocation :: Location -> IO Raw.Location
+rawLocation l = Raw.Location 
+    <$> newCString (locBeginFile l)
+    <*> newCString (locEndFile l)
+    <*> pure (fromIntegral (locBeginLine l))
+    <*> pure (fromIntegral (locEndLine l))
+    <*> pure (fromIntegral (locBeginCol l))
+    <*> pure (fromIntegral (locEndCol l))
+
+freeRawLocation :: Raw.Location -> IO ()
+freeRawLocation l = do
+    free (Raw.locBeginFile l)
+    free (Raw.locEndFile l)
 
 fromRawLocation :: Raw.Location -> Location
 fromRawLocation = undefined
