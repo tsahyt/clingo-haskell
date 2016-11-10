@@ -138,7 +138,7 @@ wrapCBGround :: MonadIO m
 wrapCBGround f = liftIO $ Raw.mkCallbackGround go
     where go :: Raw.CallbackGround ()
           go loc name arg args _ cbSym _ = reraiseIO $ do
-              loc'  <- fromRawLocation <$> peek loc
+              loc'  <- fromRawLocation =<< peek loc
               name' <- pack <$> peekCString name
               syms  <- map Symbol <$> peekArray (fromIntegral args) arg
               f loc' name' syms (unwrapCBSymbol $ Raw.getCallbackSymbol cbSym)

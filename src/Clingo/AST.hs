@@ -1,7 +1,7 @@
 module Clingo.AST where
 
 import Control.Monad
-import Data.Text (Text, unpack)
+import Data.Text (Text, unpack, pack)
 import Numeric.Natural
 import Foreign hiding (Pool, freePool)
 import Foreign.C
@@ -22,7 +22,11 @@ freeIndirection p f = unless (p == nullPtr) $ do
     f p'
     free p
 
--- TODOs
+peekMaybe :: Storable a => Ptr a -> IO (Maybe a)
+peekMaybe p
+    | p == nullPtr = return Nothing
+    | otherwise    = Just <$> peek p
+
 data Sign = NoSign | NegationSign | DoubleNegationSign
 
 rawSign :: Sign -> AstSign
@@ -38,6 +42,7 @@ fromRawSign s = case s of
     AstSignDoubleNegation -> DoubleNegationSign
     _ -> error "Invalid clingo_ast_sign_t"
 
+-- TODOs
 data Signature
 data Symbol
 
@@ -51,7 +56,9 @@ freeUnaryOperation :: AstUnaryOperation -> IO ()
 freeUnaryOperation (AstUnaryOperation _ t) = freeTerm t
 
 fromRawUnaryOperation :: AstUnaryOperation -> IO UnaryOperation
-fromRawUnaryOperation = undefined
+fromRawUnaryOperation (AstUnaryOperation o t) = UnaryOperation
+    <$> pure (fromRawUnaryOperator o)
+    <*> fromRawTerm t
 
 data UnaryOperator = UnaryMinus | Negation | Absolute
 
@@ -78,8 +85,9 @@ rawBinaryOperation (BinaryOperation o l r) =
 freeBinaryOperation :: AstBinaryOperation -> IO ()
 freeBinaryOperation (AstBinaryOperation _ a b) = freeTerm a >> freeTerm b
 
-fromRawBinaryOperation :: BinaryOperation -> AstBinaryOperation
-fromRawBinaryOperation = undefined
+fromRawBinaryOperation :: AstBinaryOperation -> IO BinaryOperation
+fromRawBinaryOperation (AstBinaryOperation o a b) = BinaryOperation
+    <$> pure (fromRawBinaryOperator o) <*> fromRawTerm a <*> fromRawTerm b
 
 data BinaryOperator = Xor | Or | And | Plus | Minus | Mult | Div | Mod
 
@@ -114,8 +122,8 @@ rawInterval (Interval a b) = AstInterval <$> rawTerm a <*> rawTerm b
 freeInterval :: AstInterval -> IO ()
 freeInterval (AstInterval a b) = freeTerm a >> freeTerm b
 
-fromRawInterval :: Interval -> AstInterval
-fromRawInterval = undefined
+fromRawInterval :: AstInterval -> IO Interval
+fromRawInterval (AstInterval a b) = Interval <$> fromRawTerm a <*> fromRawTerm b
 
 data Function = Function Text [Term]
 
@@ -130,8 +138,10 @@ freeFunction (AstFunction s ts n) = do
     free s 
     freeArray ts n freeTerm
 
-fromRawFunction :: Function -> AstFunction
-fromRawFunction = undefined
+fromRawFunction :: AstFunction -> IO Function
+fromRawFunction (AstFunction s ts n) = Function
+    <$> fmap pack (peekCString s)
+    <*> (mapM fromRawTerm =<< peekArray (fromIntegral n) ts)
 
 data Pool = Pool [Term]
 
@@ -143,8 +153,9 @@ rawPool (Pool ts) = do
 freePool :: AstPool -> IO ()
 freePool (AstPool ts n) = freeArray ts n freeTerm
 
-fromRawPool :: Pool -> AstPool
-fromRawPool = undefined
+fromRawPool :: AstPool -> IO Pool
+fromRawPool (AstPool ts n) = Pool
+    <$> (mapM fromRawTerm =<< peekArray (fromIntegral n) ts)
 
 data Term 
     = TermSymbol Location Symbol
@@ -158,7 +169,8 @@ data Term
 
 rawTerm :: Term -> IO AstTerm
 rawTerm (TermSymbol l s) = AstTermSymbol <$> rawLocation l <*> undefined
-rawTerm (TermVariable l n) = AstTermVariable <$> rawLocation l <*> undefined
+rawTerm (TermVariable l n) = AstTermVariable <$> rawLocation l 
+                                             <*> newCString (unpack n)
 rawTerm (TermUOp l u) = AstTermUOp <$> rawLocation l <*> rawUnaryOperation u
 rawTerm (TermBOp l u) = AstTermBOp <$> rawLocation l <*> rawBinaryOperation u
 rawTerm (TermInterval l i) = AstTermInterval <$> rawLocation l <*> rawInterval i
@@ -177,8 +189,23 @@ freeTerm (AstTermFunction l f) = freeRawLocation l >> freeFunction f
 freeTerm (AstTermExtFunction l f) = freeRawLocation l >> freeFunction f
 freeTerm (AstTermPool l p) = freeRawLocation l >> freePool p
 
-fromRawTerm :: Term -> AstTerm
-fromRawTerm = undefined
+fromRawTerm :: AstTerm -> IO Term
+fromRawTerm (AstTermSymbol l _) = TermSymbol 
+    <$> fromRawLocation l <*> undefined
+fromRawTerm (AstTermVariable l _) = TermVariable 
+    <$> fromRawLocation l <*> undefined
+fromRawTerm (AstTermUOp l o) = TermUOp 
+    <$> fromRawLocation l <*> fromRawUnaryOperation o
+fromRawTerm (AstTermBOp l o) = TermBOp
+    <$> fromRawLocation l <*> fromRawBinaryOperation o
+fromRawTerm (AstTermInterval l i) = TermInterval
+    <$> fromRawLocation l <*> fromRawInterval i
+fromRawTerm (AstTermFunction l f) = TermFunction
+    <$> fromRawLocation l <*> fromRawFunction f
+fromRawTerm (AstTermExtFunction l f) = TermExtFunction
+    <$> fromRawLocation l <*> fromRawFunction f
+fromRawTerm (AstTermPool l p) = TermPool
+    <$> fromRawLocation l <*> fromRawPool p
 
 data CspProductTerm = CspProductTerm Location Term (Maybe Term)
 
@@ -194,8 +221,11 @@ freeCspProductTerm (AstCspProductTerm l t p) = do
     freeTerm t
     freeIndirection p freeTerm
 
-fromRawCspProductTerm :: CspProductTerm -> AstCspProductTerm
-fromRawCspProductTerm = undefined
+fromRawCspProductTerm :: AstCspProductTerm -> IO CspProductTerm
+fromRawCspProductTerm (AstCspProductTerm l t x) = CspProductTerm
+    <$> fromRawLocation l
+    <*> fromRawTerm t
+    <*> (mapM fromRawTerm =<< peekMaybe x)
 
 data CspSumTerm = CspSumTerm Location [CspProductTerm]
 
@@ -210,8 +240,10 @@ freeCspSumTerm (AstCspSumTerm l ts n) = do
     freeRawLocation l
     freeArray ts n freeCspProductTerm
 
-fromRawCspSumTerm :: CspSumTerm -> AstCspSumTerm
-fromRawCspSumTerm = undefined
+fromRawCspSumTerm :: AstCspSumTerm -> IO CspSumTerm
+fromRawCspSumTerm (AstCspSumTerm l ts n) = CspSumTerm
+    <$> fromRawLocation l
+    <*> (mapM fromRawCspProductTerm =<< peekArray (fromIntegral n) ts)
 
 data CspGuard = CspGuard ComparisonOperator CspSumTerm
 
@@ -222,8 +254,10 @@ rawCspGuard (CspGuard o t) = AstCspGuard
 freeCspGuard :: AstCspGuard -> IO ()
 freeCspGuard (AstCspGuard _ t) = freeCspSumTerm t
 
-fromRawCspGuard :: CspGuard -> AstCspGuard
-fromRawCspGuard = undefined
+fromRawCspGuard :: AstCspGuard -> IO CspGuard
+fromRawCspGuard (AstCspGuard o t) = CspGuard
+    <$> pure (fromRawComparisonOperator o)
+    <*> fromRawCspSumTerm t
 
 data ComparisonOperator = GreaterThan | LessThan | LessEqual | GreaterEqual
                         | NotEqual | Equal
@@ -237,8 +271,15 @@ rawComparisonOperator o = case o of
     NotEqual -> AstComparisonOperatorNotEqual
     Equal -> AstComparisonOperatorEqual
 
-fromRawComparisonOperator :: ComparisonOperator -> AstComparisonOperator
-fromRawComparisonOperator = undefined
+fromRawComparisonOperator :: AstComparisonOperator -> ComparisonOperator
+fromRawComparisonOperator o = case o of
+    AstComparisonOperatorGreaterThan -> GreaterThan
+    AstComparisonOperatorLessThan -> LessThan
+    AstComparisonOperatorLessEqual -> LessEqual
+    AstComparisonOperatorGreaterEqual -> GreaterEqual
+    AstComparisonOperatorNotEqual -> NotEqual
+    AstComparisonOperatorEqual -> Equal
+    _ -> error "Invalid clingo_ast_comparison_operator_type_t"
 
 data CspLiteral = CspLiteral CspSumTerm [CspGuard]
 
@@ -253,8 +294,10 @@ freeCspLiteral (AstCspLiteral t p n) = do
     freeCspSumTerm t
     freeArray p n freeCspGuard
 
-fromRawCspLiteral :: CspLiteral -> AstCspLiteral
-fromRawCspLiteral = undefined
+fromRawCspLiteral :: AstCspLiteral -> IO CspLiteral
+fromRawCspLiteral (AstCspLiteral t gs n) = CspLiteral
+    <$> fromRawCspSumTerm t
+    <*> (mapM fromRawCspGuard =<< peekArray (fromIntegral n) gs)
 
 data Identifier = Identifier Location Text
 
@@ -267,8 +310,10 @@ rawIdentifier (Identifier l t) = do
 freeIdentifier :: AstId -> IO ()
 freeIdentifier (AstId l t) = freeRawLocation l >> free t
 
-fromRawIdentifier :: Identifier -> AstId
-fromRawIdentifier = undefined
+fromRawIdentifier :: AstId -> IO Identifier
+fromRawIdentifier (AstId l n) = Identifier
+    <$> fromRawLocation l
+    <*> fmap pack (peekCString n)
 
 data Comparison = Comparison ComparisonOperator Term Term
 
@@ -279,8 +324,9 @@ rawComparison (Comparison o a b) = AstComparison
 freeComparison :: AstComparison -> IO ()
 freeComparison (AstComparison _ a b) = freeTerm a >> freeTerm b
 
-fromRawComparison :: Comparison -> AstComparison
-fromRawComparison = undefined
+fromRawComparison :: AstComparison -> IO Comparison
+fromRawComparison (AstComparison o a b) = Comparison
+    <$> pure (fromRawComparisonOperator o) <*> fromRawTerm a <*> fromRawTerm b
 
 data Literal
     = LiteralBool Location Sign Bool
@@ -304,8 +350,15 @@ freeLiteral (AstLiteralTerm l _ t) = freeRawLocation l >> freeTerm t
 freeLiteral (AstLiteralComp l _ c) = freeRawLocation l >> freeComparison c
 freeLiteral (AstLiteralCSPL l _ x) = freeRawLocation l >> freeCspLiteral x
 
-fromRawLiteral :: Literal -> AstLiteral
-fromRawLiteral = undefined
+fromRawLiteral :: AstLiteral -> IO Literal
+fromRawLiteral (AstLiteralBool l s b) = LiteralBool 
+    <$> fromRawLocation l <*> pure (fromRawSign s) <*> pure (toBool b)
+fromRawLiteral (AstLiteralTerm l s b) = LiteralTerm 
+    <$> fromRawLocation l <*> pure (fromRawSign s) <*> fromRawTerm b
+fromRawLiteral (AstLiteralComp l s b) = LiteralComp 
+    <$> fromRawLocation l <*> pure (fromRawSign s) <*> fromRawComparison b
+fromRawLiteral (AstLiteralCSPL l s b) = LiteralCSPL 
+    <$> fromRawLocation l <*> pure (fromRawSign s) <*> fromRawCspLiteral b
 
 data AggregateGuard = AggregateGuard ComparisonOperator Term
 
@@ -320,8 +373,9 @@ rawAggregateGuardM (Just g) = new =<< rawAggregateGuard g
 freeAggregateGuard :: AstAggregateGuard -> IO ()
 freeAggregateGuard (AstAggregateGuard _ t) = freeTerm t
 
-fromRawAggregateGuard :: AggregateGuard -> AstAggregateGuard
-fromRawAggregateGuard = undefined
+fromRawAggregateGuard :: AstAggregateGuard -> IO AggregateGuard
+fromRawAggregateGuard (AstAggregateGuard o t) = AggregateGuard
+    <$> pure (fromRawComparisonOperator o) <*> fromRawTerm t
 
 data ConditionalLiteral = ConditionalLiteral Literal [Literal]
 
@@ -336,8 +390,10 @@ freeConditionalLiteral (AstConditionalLiteral l ls n) = do
     freeLiteral l
     freeArray ls n freeLiteral
 
-fromRawConditionalLiteral :: ConditionalLiteral -> AstConditionalLiteral
-fromRawConditionalLiteral = undefined
+fromRawConditionalLiteral :: AstConditionalLiteral -> IO ConditionalLiteral
+fromRawConditionalLiteral (AstConditionalLiteral l ls n) = ConditionalLiteral
+    <$> fromRawLiteral l 
+    <*> (mapM fromRawLiteral =<< peekArray (fromIntegral n) ls)
 
 data Aggregate = Aggregate [ConditionalLiteral] 
                            (Maybe AggregateGuard) 
@@ -356,8 +412,11 @@ freeAggregate (AstAggregate ls n a b) = do
     freeIndirection b freeAggregateGuard
     freeArray ls n freeConditionalLiteral
 
-fromRawAggregate :: Aggregate -> AstAggregate
-fromRawAggregate = undefined
+fromRawAggregate :: AstAggregate -> IO Aggregate
+fromRawAggregate (AstAggregate ls n a b) = Aggregate
+    <$> (mapM fromRawConditionalLiteral =<< peekArray (fromIntegral n) ls)
+    <*> (mapM fromRawAggregateGuard =<< peekMaybe a)
+    <*> (mapM fromRawAggregateGuard =<< peekMaybe b)
 
 data BodyAggregateElement = BodyAggregateElement [Term] [Literal]
 
@@ -373,8 +432,12 @@ freeBodyAggregateElement (AstBodyAggregateElement ts nt ls nl) = do
     freeArray ts nt freeTerm
     freeArray ls nl freeLiteral
 
-fromRawBodyAggregateElement :: BodyAggregateElement -> AstBodyAggregateElement
-fromRawBodyAggregateElement = undefined
+fromRawBodyAggregateElement :: AstBodyAggregateElement 
+                            -> IO BodyAggregateElement
+fromRawBodyAggregateElement (AstBodyAggregateElement ts nt ls nl) = 
+    BodyAggregateElement
+    <$> (mapM fromRawTerm =<< peekArray (fromIntegral nt) ts)
+    <*> (mapM fromRawLiteral =<< peekArray (fromIntegral nl) ls)
 
 data BodyAggregate = BodyAggregate AggregateFunction [BodyAggregateElement] 
                                    (Maybe AggregateGuard) 
@@ -394,8 +457,12 @@ freeBodyAggregate (AstBodyAggregate _ es n a b) = do
     freeIndirection a freeAggregateGuard
     freeIndirection b freeAggregateGuard
 
-fromRawBodyAggregate :: BodyAggregate -> AstBodyAggregate
-fromRawBodyAggregate = undefined
+fromRawBodyAggregate :: AstBodyAggregate -> IO BodyAggregate
+fromRawBodyAggregate (AstBodyAggregate f es n a b) = BodyAggregate
+    <$> pure (fromRawAggregateFunction f)
+    <*> (mapM fromRawBodyAggregateElement =<< peekArray (fromIntegral n) es)
+    <*> (mapM fromRawAggregateGuard =<< peekMaybe a)
+    <*> (mapM fromRawAggregateGuard =<< peekMaybe b)
 
 data AggregateFunction = Count | Sum | Sump | Min | Max
 
@@ -429,8 +496,12 @@ freeHeadAggregateElement (AstHeadAggregateElement p n l) = do
     freeArray p n freeTerm
     freeConditionalLiteral l
 
-fromRawHeadAggregateElement :: HeadAggregateElement -> AstHeadAggregateElement
-fromRawHeadAggregateElement = undefined
+fromRawHeadAggregateElement :: AstHeadAggregateElement 
+                            -> IO HeadAggregateElement
+fromRawHeadAggregateElement (AstHeadAggregateElement ts n l) = 
+    HeadAggregateElement
+    <$> (mapM fromRawTerm =<< peekArray (fromIntegral n) ts)
+    <*> fromRawConditionalLiteral l
 
 data HeadAggregate = HeadAggregate AggregateFunction
                                    [HeadAggregateElement]
@@ -451,8 +522,12 @@ freeHeadAggregate (AstHeadAggregate _ es n a b) = do
     freeIndirection a freeAggregateGuard
     freeIndirection b freeAggregateGuard
 
-fromRawHeadAggregate :: HeadAggregate -> AstHeadAggregate
-fromRawHeadAggregate = undefined
+fromRawHeadAggregate :: AstHeadAggregate -> IO HeadAggregate
+fromRawHeadAggregate (AstHeadAggregate f es n a b) = HeadAggregate
+    <$> pure (fromRawAggregateFunction f)
+    <*> (mapM fromRawHeadAggregateElement =<< peekArray (fromIntegral n) es)
+    <*> (mapM fromRawAggregateGuard =<< peekMaybe a)
+    <*> (mapM fromRawAggregateGuard =<< peekMaybe b)
 
 data Disjunction = Disjunction [ConditionalLiteral]
 
@@ -464,8 +539,9 @@ rawDisjunction (Disjunction ls) = AstDisjunction
 freeDisjunction :: AstDisjunction -> IO ()
 freeDisjunction (AstDisjunction ls n) = freeArray ls n freeConditionalLiteral
 
-fromRawDisjunction :: Disjunction -> AstDisjunction
-fromRawDisjunction = undefined
+fromRawDisjunction :: AstDisjunction -> IO Disjunction
+fromRawDisjunction (AstDisjunction ls n) = Disjunction
+    <$> (mapM fromRawConditionalLiteral =<< peekArray (fromIntegral n) ls)
 
 data DisjointElement = DisjointElement Location [Term] CspSumTerm [Literal]
 
@@ -485,8 +561,12 @@ freeDisjointElement (AstDisjointElement l ts nt s ls nl) = do
     freeArray ts nt freeTerm
     freeArray ls nl freeLiteral
 
-fromRawDisjointElement :: DisjointElement -> AstDisjointElement
-fromRawDisjointElement = undefined
+fromRawDisjointElement :: AstDisjointElement -> IO DisjointElement
+fromRawDisjointElement (AstDisjointElement l ts nt s ls nl) = DisjointElement
+    <$> fromRawLocation l
+    <*> (mapM fromRawTerm =<< peekArray (fromIntegral nt) ts)
+    <*> fromRawCspSumTerm s
+    <*> (mapM fromRawLiteral =<< peekArray (fromIntegral nl) ls)
 
 data Disjoint = Disjoint [DisjointElement]
 
@@ -498,8 +578,9 @@ rawDisjoint (Disjoint es) = AstDisjoint
 freeDisjoint :: AstDisjoint -> IO ()
 freeDisjoint (AstDisjoint ls n) = freeArray ls n freeDisjointElement
 
-fromRawDisjoint :: Disjoint -> AstDisjoint
-fromRawDisjoint = undefined
+fromRawDisjoint :: AstDisjoint -> IO Disjoint
+fromRawDisjoint (AstDisjoint es n) = Disjoint
+    <$> (mapM fromRawDisjointElement =<< peekArray (fromIntegral n) es)
 
 data TheoryTermArray = TheoryTermArray [TheoryTerm]
 

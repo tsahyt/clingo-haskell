@@ -142,8 +142,14 @@ freeRawLocation l = do
     free (Raw.locBeginFile l)
     free (Raw.locEndFile l)
 
-fromRawLocation :: Raw.Location -> Location
-fromRawLocation = undefined
+fromRawLocation :: Raw.Location -> IO Location
+fromRawLocation l = Location
+    <$> peekCString (Raw.locBeginFile l)
+    <*> peekCString (Raw.locEndFile l)
+    <*> pure (fromIntegral . Raw.locBeginLine $ l)
+    <*> pure (fromIntegral . Raw.locEndLine $ l)
+    <*> pure (fromIntegral . Raw.locBeginCol $ l)
+    <*> pure (fromIntegral . Raw.locEndCol $ l)
 
 data SolveResult = Satisfiable Bool | Unsatisfiable Bool | Interrupted
     deriving (Eq, Show, Read)
