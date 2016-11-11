@@ -27,6 +27,9 @@ peekMaybe p
     | p == nullPtr = return Nothing
     | otherwise    = Just <$> peek p
 
+fromIndirect :: Storable a => Ptr a -> (a -> IO b) -> IO b
+fromIndirect p f = peek p >>= f
+
 data Sign = NoSign | NegationSign | DoubleNegationSign
 
 rawSign :: Sign -> AstSign
@@ -592,8 +595,9 @@ rawTheoryTermArray (TheoryTermArray ts) = AstTheoryTermArray
 freeTheoryTermArray :: AstTheoryTermArray -> IO ()
 freeTheoryTermArray (AstTheoryTermArray ts n) = freeArray ts n freeTheoryTerm
 
-fromRawTheoryTermArray :: TheoryTermArray -> AstTheoryTermArray
-fromRawTheoryTermArray = undefined
+fromRawTheoryTermArray :: AstTheoryTermArray -> IO TheoryTermArray
+fromRawTheoryTermArray (AstTheoryTermArray ts n) = TheoryTermArray
+    <$> (mapM fromRawTheoryTerm =<< peekArray (fromIntegral n) ts)
 
 data TheoryFunction = TheoryFunction Text [TheoryTerm]
 
@@ -608,8 +612,10 @@ freeTheoryFunction (AstTheoryFunction s p n) = do
     free s
     freeArray p n freeTheoryTerm
 
-fromRawTheoryFunction :: TheoryFunction -> AstTheoryFunction
-fromRawTheoryFunction = undefined
+fromRawTheoryFunction :: AstTheoryFunction -> IO TheoryFunction
+fromRawTheoryFunction (AstTheoryFunction s ts n) = TheoryFunction
+    <$> fmap pack (peekCString s)
+    <*> (mapM fromRawTheoryTerm =<< peekArray (fromIntegral n) ts)
 
 data TheoryUnparsedTermElement = TheoryUnparsedTermElement [Text] TheoryTerm
 
@@ -626,9 +632,12 @@ freeTheoryUnparsedTermElement (AstTheoryUnparsedTermElement ss n t) = do
     freeTheoryTerm t
     freeArray ss n free
 
-fromRawTheoryUnparsedTermElement :: TheoryUnparsedTermElement 
-                                 -> AstTheoryUnparsedTermElement
-fromRawTheoryUnparsedTermElement = undefined
+fromRawTheoryUnparsedTermElement :: AstTheoryUnparsedTermElement 
+                                 -> IO TheoryUnparsedTermElement
+fromRawTheoryUnparsedTermElement (AstTheoryUnparsedTermElement ns n t) = 
+    TheoryUnparsedTermElement
+    <$> (mapM (fmap pack . peekCString) =<< peekArray (fromIntegral n) ns)
+    <*> fromRawTheoryTerm t
 
 data TheoryUnparsedTerm = TheoryUnparsedTerm [TheoryUnparsedTermElement]
 
@@ -641,8 +650,10 @@ freeTheoryUnparsedTerm :: AstTheoryUnparsedTerm -> IO ()
 freeTheoryUnparsedTerm (AstTheoryUnparsedTerm es n) = 
     freeArray es n freeTheoryUnparsedTermElement
 
-fromRawTheoryUnparsedTerm :: TheoryUnparsedTerm -> AstTheoryUnparsedTerm
-fromRawTheoryUnparsedTerm = undefined
+fromRawTheoryUnparsedTerm :: AstTheoryUnparsedTerm -> IO TheoryUnparsedTerm
+fromRawTheoryUnparsedTerm (AstTheoryUnparsedTerm es n) = TheoryUnparsedTerm
+    <$> (mapM fromRawTheoryUnparsedTermElement 
+            =<< peekArray (fromIntegral n) es)
 
 data TheoryTerm
     = TheoryTermSymbol Location Symbol
@@ -689,8 +700,26 @@ freeTheoryTerm (AstTheoryTermUnparsed l t) = do
     freeRawLocation l 
     freeIndirection t freeTheoryUnparsedTerm
 
-fromRawTheoryTerm :: TheoryTerm -> AstTheoryTerm
-fromRawTheoryTerm = undefined
+fromRawTheoryTerm :: AstTheoryTerm -> IO TheoryTerm
+fromRawTheoryTerm (AstTheoryTermSymbol l _) = 
+    TheoryTermSymbol <$> fromRawLocation l <*> undefined
+fromRawTheoryTerm (AstTheoryTermVariable l _) =
+    TheoryTermVariable <$> fromRawLocation l <*> undefined
+fromRawTheoryTerm (AstTheoryTermTuple l a) = do
+    TheoryTermTuple <$> fromRawLocation l 
+                    <*> fromIndirect a fromRawTheoryTermArray
+fromRawTheoryTerm (AstTheoryTermList l a) = do
+    TheoryTermList <$> fromRawLocation l 
+                   <*> fromIndirect a fromRawTheoryTermArray
+fromRawTheoryTerm (AstTheoryTermSet l a) = do
+    TheoryTermSet <$> fromRawLocation l 
+                  <*> fromIndirect a fromRawTheoryTermArray
+fromRawTheoryTerm (AstTheoryTermFunction l f) = do
+    TheoryTermFunction <$> fromRawLocation l 
+                       <*> fromIndirect f fromRawTheoryFunction
+fromRawTheoryTerm (AstTheoryTermUnparsed l t) = do
+    TheoryTermUnparsed <$> fromRawLocation l 
+                       <*> fromIndirect t fromRawTheoryUnparsedTerm
 
 data TheoryAtomElement = TheoryAtomElement [TheoryTerm] [Literal]
 
@@ -706,8 +735,10 @@ freeTheoryAtomElement (AstTheoryAtomElement ts nt ls nl) = do
     freeArray ts nt freeTheoryTerm
     freeArray ls nl freeLiteral
 
-fromRawTheoryAtomElement :: TheoryAtomElement -> AstTheoryAtomElement
-fromRawTheoryAtomElement = undefined
+fromRawTheoryAtomElement :: AstTheoryAtomElement -> IO TheoryAtomElement
+fromRawTheoryAtomElement (AstTheoryAtomElement ts nt ls nl) = TheoryAtomElement
+    <$> (mapM fromRawTheoryTerm =<< peekArray (fromIntegral nt) ts)
+    <*> (mapM fromRawLiteral =<< peekArray (fromIntegral nl) ls)
 
 data TheoryGuard = TheoryGuard Text TheoryTerm
 
@@ -719,8 +750,10 @@ rawTheoryGuard (TheoryGuard s t) = AstTheoryGuard
 freeTheoryGuard :: AstTheoryGuard -> IO ()
 freeTheoryGuard (AstTheoryGuard s t) = free s >> freeTheoryTerm t
 
-fromRawTheoryGuard :: TheoryGuard -> AstTheoryGuard
-fromRawTheoryGuard = undefined
+fromRawTheoryGuard :: AstTheoryGuard -> IO TheoryGuard
+fromRawTheoryGuard (AstTheoryGuard n t) = TheoryGuard
+    <$> fmap pack (peekCString n)
+    <*> fromRawTheoryTerm t
 
 data TheoryAtom = TheoryAtom Term [TheoryAtomElement] TheoryGuard
 
@@ -737,8 +770,11 @@ freeTheoryAtom (AstTheoryAtom t es n g) = do
     freeTheoryGuard g
     freeArray es n freeTheoryAtomElement
 
-fromRawTheoryAtom :: TheoryAtom -> AstTheoryAtom
-fromRawTheoryAtom = undefined
+fromRawTheoryAtom :: AstTheoryAtom -> IO TheoryAtom
+fromRawTheoryAtom (AstTheoryAtom t es n g) = TheoryAtom
+    <$> fromRawTerm t
+    <*> (mapM fromRawTheoryAtomElement =<< peekArray (fromIntegral n) es)
+    <*> fromRawTheoryGuard g
 
 data HeadLiteral
     = HeadLiteral Location Literal
@@ -770,8 +806,15 @@ freeHeadLiteral (AstHeadTheoryAtom l x) = do
     freeRawLocation l
     freeIndirection x freeTheoryAtom
 
-fromRawHeadLiteral :: HeadLiteral -> AstHeadLiteral
-fromRawHeadLiteral = undefined
+fromRawHeadLiteral :: AstHeadLiteral -> IO HeadLiteral
+fromRawHeadLiteral (AstHeadLiteral l x) = HeadLiteral
+    <$> fromRawLocation l <*> fromIndirect x fromRawLiteral
+fromRawHeadLiteral (AstHeadDisjunction l x) = HeadDisjunction
+    <$> fromRawLocation l <*> fromIndirect x fromRawDisjunction
+fromRawHeadLiteral (AstHeadLitAggregate l x) = HeadLitAggregate
+    <$> fromRawLocation l <*> fromIndirect x fromRawAggregate
+fromRawHeadLiteral (AstHeadTheoryAtom l x) = HeadTheoryAtom
+    <$> fromRawLocation l <*> fromIndirect x fromRawTheoryAtom
 
 data BodyLiteral
     = BodyLiteral Location Sign Literal
@@ -814,8 +857,21 @@ freeBodyLiteral (AstBodyDisjoint l _ x) = do
     freeRawLocation l
     freeIndirection x freeDisjoint
 
-fromRawBodyLiteral :: BodyLiteral -> AstBodyLiteral
-fromRawBodyLiteral = undefined
+fromRawBodyLiteral :: AstBodyLiteral -> IO BodyLiteral
+fromRawBodyLiteral (AstBodyLiteral l s x) = BodyLiteral
+    <$> fromRawLocation l <*> pure (fromRawSign s) 
+    <*> fromIndirect x fromRawLiteral
+fromRawBodyLiteral (AstBodyConditional l x) = BodyConditional
+    <$> fromRawLocation l <*> fromIndirect x fromRawConditionalLiteral
+fromRawBodyLiteral (AstBodyLitAggregate l s x) = BodyLitAggregate
+    <$> fromRawLocation l <*> pure (fromRawSign s) 
+    <*> fromIndirect x fromRawAggregate
+fromRawBodyLiteral (AstBodyTheoryAtom l s x) = BodyTheoryAtom
+    <$> fromRawLocation l <*> pure (fromRawSign s) 
+    <*> fromIndirect x fromRawTheoryAtom
+fromRawBodyLiteral (AstBodyDisjoint l s x) = BodyDisjoint
+    <$> fromRawLocation l <*> pure (fromRawSign s) 
+    <*> fromIndirect x fromRawDisjoint
 
 data TheoryOperatorDefinition = 
     TheoryOperatorDefinition Location Text Natural TheoryOperatorType
@@ -833,8 +889,14 @@ freeTheoryOperatorDefinition :: AstTheoryOperatorDefinition -> IO ()
 freeTheoryOperatorDefinition (AstTheoryOperatorDefinition l s _ _) =
     freeRawLocation l >> free s
 
-fromRawTheoryOperatorDefinition :: TheoryOperatorDefinition -> AstTheoryOperatorDefinition
-fromRawTheoryOperatorDefinition = undefined
+fromRawTheoryOperatorDefinition :: AstTheoryOperatorDefinition 
+                                -> IO TheoryOperatorDefinition
+fromRawTheoryOperatorDefinition (AstTheoryOperatorDefinition l s i t) = 
+    TheoryOperatorDefinition
+    <$> fromRawLocation l
+    <*> fmap pack (peekCString s)
+    <*> pure (fromIntegral i)
+    <*> pure (fromRawTheoryOperatorType t)
 
 data TheoryOperatorType = Unary | BinLeft | BinRight
 
@@ -867,8 +929,13 @@ freeTheoryTermDefinition (AstTheoryTermDefinition l s xs n) = do
     free s
     freeArray xs n freeTheoryOperatorDefinition
 
-fromRawTheoryTermDefinition :: TheoryTermDefinition -> AstTheoryTermDefinition
-fromRawTheoryTermDefinition = undefined
+fromRawTheoryTermDefinition :: AstTheoryTermDefinition 
+                            -> IO TheoryTermDefinition
+fromRawTheoryTermDefinition (AstTheoryTermDefinition l s es n) =
+    TheoryTermDefinition
+    <$> fromRawLocation l
+    <*> fmap pack (peekCString s)
+    <*> (mapM fromRawTheoryOperatorDefinition =<< peekArray (fromIntegral n) es)
 
 data TheoryGuardDefinition =
     TheoryGuardDefinition Text [Text]
@@ -884,8 +951,12 @@ freeTheoryGuardDefinition (AstTheoryGuardDefinition s ss n) = do
     free s
     freeArray ss n free
 
-fromRawTheoryGuardDefinition :: TheoryGuardDefinition -> AstTheoryGuardDefinition
-fromRawTheoryGuardDefinition = undefined
+fromRawTheoryGuardDefinition :: AstTheoryGuardDefinition 
+                             -> IO TheoryGuardDefinition
+fromRawTheoryGuardDefinition (AstTheoryGuardDefinition t ts n) =
+    TheoryGuardDefinition
+    <$> fmap pack (peekCString t)
+    <*> (mapM (fmap pack . peekCString) =<< peekArray (fromIntegral n) ts)
 
 data TheoryAtomDefinition =
     TheoryAtomDefinition Location TheoryAtomDefinitionType 
@@ -908,8 +979,16 @@ freeTheoryAtomDefinition (AstTheoryAtomDefinition l _ a _ b p) = do
     free b
     freeIndirection p freeTheoryGuardDefinition
 
-fromRawTheoryAtomDefinition :: TheoryAtomDefinition -> AstTheoryAtomDefinition
-fromRawTheoryAtomDefinition = undefined
+fromRawTheoryAtomDefinition :: AstTheoryAtomDefinition 
+                            -> IO TheoryAtomDefinition
+fromRawTheoryAtomDefinition (AstTheoryAtomDefinition l t a i b g) =
+    TheoryAtomDefinition
+    <$> fromRawLocation l
+    <*> pure (fromRawTheoryAtomDefinitionType t)
+    <*> fmap pack (peekCString a)
+    <*> pure (fromIntegral i)
+    <*> fmap pack (peekCString b)
+    <*> fromIndirect g fromRawTheoryGuardDefinition
 
 data TheoryAtomDefinitionType = Head | Body | Any | Directive
 
@@ -947,8 +1026,11 @@ freeTheoryDefinition (AstTheoryDefinition t ts nt as na) = do
     freeArray ts nt freeTheoryTermDefinition
     freeArray as na freeTheoryAtomDefinition
 
-fromRawTheoryDefinition :: TheoryDefinition -> AstTheoryDefinition
-fromRawTheoryDefinition = undefined
+fromRawTheoryDefinition :: AstTheoryDefinition -> IO TheoryDefinition
+fromRawTheoryDefinition (AstTheoryDefinition s ts nt as na) = TheoryDefinition
+    <$> fmap pack (peekCString s)
+    <*> (mapM fromRawTheoryTermDefinition =<< peekArray (fromIntegral nt) ts)
+    <*> (mapM fromRawTheoryAtomDefinition =<< peekArray (fromIntegral na) as)
 
 data Rule = Rule HeadLiteral [BodyLiteral]
 
@@ -962,8 +1044,10 @@ freeRule (AstRule h bs n) = do
     freeHeadLiteral h
     freeArray bs n freeBodyLiteral
 
-fromRawRule :: Rule -> AstRule
-fromRawRule = undefined
+fromRawRule :: AstRule -> IO Rule
+fromRawRule (AstRule h bs n) = Rule
+    <$> fromRawHeadLiteral h
+    <*> (mapM fromRawBodyLiteral =<< peekArray (fromIntegral n) bs)
 
 data Definition = Definition Text Term Bool
 
@@ -976,8 +1060,11 @@ rawDefinition (Definition s t b) = AstDefinition
 freeDefinition :: AstDefinition -> IO ()
 freeDefinition (AstDefinition s t _) = free s >> freeTerm t
 
-fromRawDefinition :: Definition -> AstDefinition
-fromRawDefinition = undefined
+fromRawDefinition :: AstDefinition -> IO Definition
+fromRawDefinition (AstDefinition s t b) = Definition
+    <$> fmap pack (peekCString s)
+    <*> fromRawTerm t
+    <*> pure (toBool b)
 
 data ShowSignature = ShowSignature Signature Bool
 
@@ -989,8 +1076,10 @@ rawShowSignature (ShowSignature s b) = AstShowSignature
 freeShowSignature :: AstShowSignature -> IO ()
 freeShowSignature (AstShowSignature _ _) = return ()
 
-fromRawShowSignature :: ShowSignature -> AstShowSignature
-fromRawShowSignature = undefined
+fromRawShowSignature :: AstShowSignature -> IO ShowSignature
+fromRawShowSignature (AstShowSignature _ b) = ShowSignature
+    <$> undefined
+    <*> pure (toBool b)
 
 data ShowTerm = ShowTerm Term [BodyLiteral] Bool
 
@@ -1006,8 +1095,11 @@ freeShowTerm (AstShowTerm t ls n _) = do
     freeTerm t
     freeArray ls n freeBodyLiteral
 
-fromRawShowTerm :: ShowTerm -> AstShowTerm
-fromRawShowTerm = undefined
+fromRawShowTerm :: AstShowTerm -> IO ShowTerm
+fromRawShowTerm (AstShowTerm t ls n b) = ShowTerm
+    <$> fromRawTerm t
+    <*> (mapM fromRawBodyLiteral =<< peekArray (fromIntegral n) ls)
+    <*> pure (toBool b)
 
 data Minimize = Minimize Term Term [Term] [BodyLiteral]
 
@@ -1027,8 +1119,12 @@ freeMinimize (AstMinimize a b ts nt ls nl) = do
     freeArray ts nt freeTerm
     freeArray ls nl freeBodyLiteral
 
-fromRawMinimize :: Minimize -> AstMinimize
-fromRawMinimize = undefined
+fromRawMinimize :: AstMinimize -> IO Minimize
+fromRawMinimize (AstMinimize a b ts nt ls nl) = Minimize
+    <$> fromRawTerm a
+    <*> fromRawTerm b
+    <*> (mapM fromRawTerm =<< peekArray (fromIntegral nt) ts)
+    <*> (mapM fromRawBodyLiteral =<< peekArray (fromIntegral nl) ls)
 
 data Script = Script ScriptType Text
 
@@ -1040,8 +1136,10 @@ rawScript (Script t s) = AstScript
 freeScript :: AstScript -> IO ()
 freeScript (AstScript _ s) = free s
 
-fromRawScript :: Script -> AstScript
-fromRawScript = undefined
+fromRawScript :: AstScript -> IO Script
+fromRawScript (AstScript t s) = Script
+    <$> pure (fromRawScriptType t)
+    <*> fmap pack (peekCString s)
 
 data ScriptType = Lua | Python
 
@@ -1067,8 +1165,10 @@ rawProgram (Program n is) = AstProgram
 freeProgram :: AstProgram -> IO ()
 freeProgram (AstProgram s xs n) = free s >> freeArray xs n freeIdentifier
 
-fromRawProgram :: Program -> AstProgram
-fromRawProgram = undefined
+fromRawProgram :: AstProgram -> IO Program
+fromRawProgram (AstProgram s es n) = Program
+    <$> fmap pack (peekCString s)
+    <*> (mapM fromRawIdentifier =<< peekArray (fromIntegral n) es)
 
 data External = External Term [BodyLiteral]
 
@@ -1081,8 +1181,10 @@ rawExternal (External t ls) = AstExternal
 freeExternal :: AstExternal -> IO ()
 freeExternal (AstExternal t ls n) = freeTerm t >> freeArray ls n freeBodyLiteral
 
-fromRawExternal :: External -> AstExternal
-fromRawExternal = undefined
+fromRawExternal :: AstExternal -> IO External
+fromRawExternal (AstExternal t ls n) = External
+    <$> fromRawTerm t
+    <*> (mapM fromRawBodyLiteral =<< peekArray (fromIntegral n) ls)
 
 data Edge = Edge Term Term [BodyLiteral]
 
@@ -1099,8 +1201,11 @@ freeEdge (AstEdge a b ls n) = do
     freeTerm b
     freeArray ls n freeBodyLiteral
 
-fromRawEdge :: Edge -> AstEdge
-fromRawEdge = undefined
+fromRawEdge :: AstEdge -> IO Edge
+fromRawEdge (AstEdge a b ls n) = Edge
+    <$> fromRawTerm a
+    <*> fromRawTerm b
+    <*> (mapM fromRawBodyLiteral =<< peekArray (fromIntegral n) ls)
 
 data Heuristic = Heuristic Term [BodyLiteral] Term Term Term
 
@@ -1121,8 +1226,13 @@ freeHeuristic (AstHeuristic a ls n b c d) = do
     freeTerm d
     freeArray ls n freeBodyLiteral
 
-fromRawHeuristic :: Heuristic -> AstHeuristic
-fromRawHeuristic = undefined
+fromRawHeuristic :: AstHeuristic -> IO Heuristic
+fromRawHeuristic (AstHeuristic t ls n a b c) = Heuristic
+    <$> fromRawTerm t
+    <*> (mapM fromRawBodyLiteral =<< peekArray (fromIntegral n) ls)
+    <*> fromRawTerm a
+    <*> fromRawTerm b
+    <*> fromRawTerm c
 
 data Project = Project Term [BodyLiteral]
 
@@ -1137,8 +1247,10 @@ freeProject (AstProject t ls n) = do
     freeTerm t
     freeArray ls n freeBodyLiteral
 
-fromRawProject :: Project -> AstProject
-fromRawProject = undefined
+fromRawProject :: AstProject -> IO Project
+fromRawProject (AstProject t ls n) = Project
+    <$> fromRawTerm t
+    <*> (mapM fromRawBodyLiteral =<< peekArray (fromIntegral n) ls)
 
 data Statement
     = StmtRule Location Rule
@@ -1211,5 +1323,32 @@ freeStatement (AstStmtSignature l x) =
 freeStatement (AstStmtTheoryDefn l x) =
     freeRawLocation l >> freeIndirection x freeTheoryDefinition
 
-fromRawStatement :: Statement -> AstStatement
-fromRawStatement = undefined
+fromRawStatement :: AstStatement -> IO Statement
+fromRawStatement (AstStmtRule l x) = 
+    StmtRule <$> fromRawLocation l <*> fromIndirect x fromRawRule
+fromRawStatement (AstStmtDefinition l x) = 
+    StmtDefinition <$> fromRawLocation l <*> fromIndirect x fromRawDefinition
+fromRawStatement (AstStmtShowSignature l x) = 
+    StmtShowSignature <$> fromRawLocation l 
+                      <*> fromIndirect x fromRawShowSignature
+fromRawStatement (AstStmtShowTerm l x) = 
+    StmtShowTerm <$> fromRawLocation l <*> fromIndirect x fromRawShowTerm
+fromRawStatement (AstStmtMinimize l x) = 
+    StmtMinimize <$> fromRawLocation l <*> fromIndirect x fromRawMinimize
+fromRawStatement (AstStmtScript l x) = 
+    StmtScript <$> fromRawLocation l <*> fromIndirect x fromRawScript
+fromRawStatement (AstStmtProgram l x) = 
+    StmtProgram <$> fromRawLocation l <*> fromIndirect x fromRawProgram
+fromRawStatement (AstStmtExternal l x) = 
+    StmtExternal <$> fromRawLocation l <*> fromIndirect x fromRawExternal
+fromRawStatement (AstStmtEdge l x) = 
+    StmtEdge <$> fromRawLocation l <*> fromIndirect x fromRawEdge
+fromRawStatement (AstStmtHeuristic l x) = 
+    StmtHeuristic <$> fromRawLocation l <*> fromIndirect x fromRawHeuristic
+fromRawStatement (AstStmtProject l x) = 
+    StmtProject <$> fromRawLocation l <*> fromIndirect x fromRawProject
+fromRawStatement (AstStmtSignature l x) = 
+    StmtSignature <$> fromRawLocation l <*> undefined
+fromRawStatement (AstStmtTheoryDefn l x) =
+    StmtTheoryDefinition <$> fromRawLocation l 
+                         <*> fromIndirect x fromRawTheoryDefinition
