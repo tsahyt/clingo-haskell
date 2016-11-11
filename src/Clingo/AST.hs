@@ -1,3 +1,4 @@
+{-# LANGUAGE ExistentialQuantification #-}
 module Clingo.AST where
 
 import Control.Monad
@@ -8,7 +9,9 @@ import Foreign.C
 
 import Clingo.Internal.Types (Location, rawLocation, freeRawLocation, 
                               fromRawLocation)
+import qualified Clingo.Internal.Types as T
 import Clingo.Raw.AST
+import qualified Clingo.Raw as Raw
 
 freeArray :: Storable a => Ptr a -> CSize -> (a -> IO ()) -> IO ()
 freeArray p n f = unless (p == nullPtr) $ do
@@ -45,9 +48,21 @@ fromRawSign s = case s of
     AstSignDoubleNegation -> DoubleNegationSign
     _ -> error "Invalid clingo_ast_sign_t"
 
--- TODOs
-data Signature
-data Symbol
+data Signature = forall s. Signature (T.Signature s)
+
+rawSignature :: Signature -> Raw.Signature
+rawSignature (Signature (T.Signature x)) = x
+
+fromRawSignature :: Raw.Signature -> Signature
+fromRawSignature = Signature . T.Signature
+
+data Symbol = forall s. Symbol (T.Symbol s)
+
+rawSymbol :: Symbol -> Raw.Symbol
+rawSymbol (Symbol (T.Symbol s)) = s
+
+fromRawSymbol :: Raw.Symbol -> Symbol
+fromRawSymbol = Symbol . T.Symbol
 
 data UnaryOperation = UnaryOperation UnaryOperator Term
 
@@ -171,7 +186,8 @@ data Term
     | TermPool Location Pool
 
 rawTerm :: Term -> IO AstTerm
-rawTerm (TermSymbol l s) = AstTermSymbol <$> rawLocation l <*> undefined
+rawTerm (TermSymbol l s) = AstTermSymbol <$> rawLocation l 
+                                         <*> pure (rawSymbol s)
 rawTerm (TermVariable l n) = AstTermVariable <$> rawLocation l 
                                              <*> newCString (unpack n)
 rawTerm (TermUOp l u) = AstTermUOp <$> rawLocation l <*> rawUnaryOperation u
@@ -193,10 +209,10 @@ freeTerm (AstTermExtFunction l f) = freeRawLocation l >> freeFunction f
 freeTerm (AstTermPool l p) = freeRawLocation l >> freePool p
 
 fromRawTerm :: AstTerm -> IO Term
-fromRawTerm (AstTermSymbol l _) = TermSymbol 
-    <$> fromRawLocation l <*> undefined
-fromRawTerm (AstTermVariable l _) = TermVariable 
-    <$> fromRawLocation l <*> undefined
+fromRawTerm (AstTermSymbol l s) = TermSymbol 
+    <$> fromRawLocation l <*> pure (fromRawSymbol s)
+fromRawTerm (AstTermVariable l s) = TermVariable 
+    <$> fromRawLocation l <*> fmap pack (peekCString s)
 fromRawTerm (AstTermUOp l o) = TermUOp 
     <$> fromRawLocation l <*> fromRawUnaryOperation o
 fromRawTerm (AstTermBOp l o) = TermBOp
@@ -665,10 +681,10 @@ data TheoryTerm
     | TheoryTermUnparsed Location TheoryUnparsedTerm
 
 rawTheoryTerm :: TheoryTerm -> IO AstTheoryTerm
-rawTheoryTerm (TheoryTermSymbol l _) = 
-    AstTheoryTermSymbol <$> rawLocation l <*> undefined
-rawTheoryTerm (TheoryTermVariable l _) =
-    AstTheoryTermVariable <$> rawLocation l <*> undefined
+rawTheoryTerm (TheoryTermSymbol l s) = 
+    AstTheoryTermSymbol <$> rawLocation l <*> pure (rawSymbol s)
+rawTheoryTerm (TheoryTermVariable l t) =
+    AstTheoryTermVariable <$> rawLocation l <*> newCString (unpack t)
 rawTheoryTerm (TheoryTermTuple l a) = 
     AstTheoryTermTuple <$> rawLocation l <*> (new =<< rawTheoryTermArray a)
 rawTheoryTerm (TheoryTermList l a) = 
@@ -701,23 +717,23 @@ freeTheoryTerm (AstTheoryTermUnparsed l t) = do
     freeIndirection t freeTheoryUnparsedTerm
 
 fromRawTheoryTerm :: AstTheoryTerm -> IO TheoryTerm
-fromRawTheoryTerm (AstTheoryTermSymbol l _) = 
-    TheoryTermSymbol <$> fromRawLocation l <*> undefined
-fromRawTheoryTerm (AstTheoryTermVariable l _) =
-    TheoryTermVariable <$> fromRawLocation l <*> undefined
-fromRawTheoryTerm (AstTheoryTermTuple l a) = do
+fromRawTheoryTerm (AstTheoryTermSymbol l s) = 
+    TheoryTermSymbol <$> fromRawLocation l <*> pure (fromRawSymbol s)
+fromRawTheoryTerm (AstTheoryTermVariable l t) =
+    TheoryTermVariable <$> fromRawLocation l <*> fmap pack (peekCString t)
+fromRawTheoryTerm (AstTheoryTermTuple l a) =
     TheoryTermTuple <$> fromRawLocation l 
                     <*> fromIndirect a fromRawTheoryTermArray
-fromRawTheoryTerm (AstTheoryTermList l a) = do
+fromRawTheoryTerm (AstTheoryTermList l a) =
     TheoryTermList <$> fromRawLocation l 
                    <*> fromIndirect a fromRawTheoryTermArray
-fromRawTheoryTerm (AstTheoryTermSet l a) = do
+fromRawTheoryTerm (AstTheoryTermSet l a) =
     TheoryTermSet <$> fromRawLocation l 
                   <*> fromIndirect a fromRawTheoryTermArray
-fromRawTheoryTerm (AstTheoryTermFunction l f) = do
+fromRawTheoryTerm (AstTheoryTermFunction l f) =
     TheoryTermFunction <$> fromRawLocation l 
                        <*> fromIndirect f fromRawTheoryFunction
-fromRawTheoryTerm (AstTheoryTermUnparsed l t) = do
+fromRawTheoryTerm (AstTheoryTermUnparsed l t) =
     TheoryTermUnparsed <$> fromRawLocation l 
                        <*> fromIndirect t fromRawTheoryUnparsedTerm
 
@@ -820,6 +836,7 @@ data BodyLiteral
     = BodyLiteral Location Sign Literal
     | BodyConditional Location ConditionalLiteral
     | BodyLitAggregate Location Sign Aggregate
+    | BodyBodyAggregate Location Sign BodyAggregate
     | BodyTheoryAtom Location Sign TheoryAtom
     | BodyDisjoint Location Sign Disjoint
 
@@ -833,6 +850,9 @@ rawBodyLiteral (BodyConditional l x) = AstBodyConditional
 rawBodyLiteral (BodyLitAggregate l s x) = AstBodyLitAggregate
     <$> rawLocation l <*> pure (rawSign s)
     <*> (new =<< rawAggregate x)
+rawBodyLiteral (BodyBodyAggregate l s x) = AstBodyBodyAggregate
+    <$> rawLocation l <*> pure (rawSign s)
+    <*> (new =<< rawBodyAggregate x)
 rawBodyLiteral (BodyTheoryAtom l s x) = AstBodyTheoryAtom
     <$> rawLocation l <*> pure (rawSign s)
     <*> (new =<< rawTheoryAtom x)
@@ -850,6 +870,9 @@ freeBodyLiteral (AstBodyConditional l x) = do
 freeBodyLiteral (AstBodyLitAggregate l _ x) = do
     freeRawLocation l
     freeIndirection x freeAggregate
+freeBodyLiteral (AstBodyBodyAggregate l _ x) = do
+    freeRawLocation l
+    freeIndirection x freeBodyAggregate
 freeBodyLiteral (AstBodyTheoryAtom l _ x) = do
     freeRawLocation l
     freeIndirection x freeTheoryAtom
@@ -866,6 +889,9 @@ fromRawBodyLiteral (AstBodyConditional l x) = BodyConditional
 fromRawBodyLiteral (AstBodyLitAggregate l s x) = BodyLitAggregate
     <$> fromRawLocation l <*> pure (fromRawSign s) 
     <*> fromIndirect x fromRawAggregate
+fromRawBodyLiteral (AstBodyBodyAggregate l s x) = BodyBodyAggregate
+    <$> fromRawLocation l <*> pure (fromRawSign s) 
+    <*> fromIndirect x fromRawBodyAggregate
 fromRawBodyLiteral (AstBodyTheoryAtom l s x) = BodyTheoryAtom
     <$> fromRawLocation l <*> pure (fromRawSign s) 
     <*> fromIndirect x fromRawTheoryAtom
@@ -1070,15 +1096,15 @@ data ShowSignature = ShowSignature Signature Bool
 
 rawShowSignature :: ShowSignature -> IO AstShowSignature
 rawShowSignature (ShowSignature s b) = AstShowSignature
-    <$> undefined
+    <$> pure (rawSignature s)
     <*> pure (fromBool b)
 
 freeShowSignature :: AstShowSignature -> IO ()
 freeShowSignature (AstShowSignature _ _) = return ()
 
 fromRawShowSignature :: AstShowSignature -> IO ShowSignature
-fromRawShowSignature (AstShowSignature _ b) = ShowSignature
-    <$> undefined
+fromRawShowSignature (AstShowSignature s b) = ShowSignature
+    <$> pure (fromRawSignature s)
     <*> pure (toBool b)
 
 data ShowTerm = ShowTerm Term [BodyLiteral] Bool
@@ -1291,7 +1317,7 @@ rawStatement (StmtHeuristic l x) = AstStmtHeuristic
 rawStatement (StmtProject l x) = AstStmtProject
     <$> rawLocation l <*> (new =<< rawProject x)
 rawStatement (StmtSignature l x) = AstStmtSignature
-    <$> rawLocation l <*> undefined
+    <$> rawLocation l <*> pure (rawSignature x)
 rawStatement (StmtTheoryDefinition l x) = AstStmtTheoryDefn
     <$> rawLocation l <*> (new =<< rawTheoryDefinition x)
 
@@ -1318,8 +1344,7 @@ freeStatement (AstStmtHeuristic l x) =
     freeRawLocation l >> freeIndirection x freeHeuristic
 freeStatement (AstStmtProject l x) = 
     freeRawLocation l >> freeIndirection x freeProject
-freeStatement (AstStmtSignature l x) = 
-    freeRawLocation l >> undefined
+freeStatement (AstStmtSignature l _) = freeRawLocation l
 freeStatement (AstStmtTheoryDefn l x) =
     freeRawLocation l >> freeIndirection x freeTheoryDefinition
 
@@ -1348,7 +1373,7 @@ fromRawStatement (AstStmtHeuristic l x) =
 fromRawStatement (AstStmtProject l x) = 
     StmtProject <$> fromRawLocation l <*> fromIndirect x fromRawProject
 fromRawStatement (AstStmtSignature l x) = 
-    StmtSignature <$> fromRawLocation l <*> undefined
+    StmtSignature <$> fromRawLocation l <*> pure (fromRawSignature x)
 fromRawStatement (AstStmtTheoryDefn l x) =
     StmtTheoryDefinition <$> fromRawLocation l 
                          <*> fromIndirect x fromRawTheoryDefinition
