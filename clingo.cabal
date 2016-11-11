@@ -33,6 +33,7 @@ library
                        Clingo.Inspection.Theory
                        Clingo.ProgramBuilding
                        Clingo.Propagation
+                       Clingo.Internal.AST
                        Clingo.Internal.Statistics
                        Clingo.Internal.Propagation
                        Clingo.Internal.Configuration

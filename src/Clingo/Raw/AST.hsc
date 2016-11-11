@@ -178,6 +178,7 @@ module Clingo.Raw.AST
 
     -- * Functions
     CallbackAST,
+    mkCallbackAst,
     parseProgram,
 )
 where
@@ -311,6 +312,9 @@ pattern AstStatementTypeProjectAtomSignature = #{const clingo_ast_statement_type
 pattern AstStatementTypeTheoryDefinition = #{const clingo_ast_statement_type_theory_definition}
 
 type CallbackAST a = Ptr AstStatement -> Ptr a -> IO CBool 
+
+foreign import ccall "wrapper" mkCallbackAst ::
+    CallbackAST a -> IO (FunPtr (CallbackAST a))
 
 data AstUnaryOperation = AstUnaryOperation AstUnaryOperator AstTerm
     deriving (Eq, Show)
