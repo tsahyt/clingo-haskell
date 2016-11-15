@@ -113,12 +113,12 @@ project (Backend h) atoms = marshall0 $
 addStatements :: (MonadIO m, MonadMask m, Traversable t)
               => ProgramBuilder s -> t Statement -> m ()
 addStatements (ProgramBuilder b) stmts = do
-    marshall0 (Raw.backendBuilderBegin b)
-    mapM_ go stmts `finally` marshall0 (Raw.backendBuilderEnd b)
+    marshall0 (Raw.programBuilderBegin b)
+    mapM_ go stmts `finally` marshall0 (Raw.programBuilderEnd b)
 
     where go stmt = do
               stmt' <- liftIO (rawStatement stmt)
               marshall0 $ 
                   with stmt' $ \ptr ->
-                      Raw.backendBuilderAdd b ptr
+                      Raw.programBuilderAdd b ptr
               liftIO (freeStatement stmt')

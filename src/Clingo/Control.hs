@@ -1,5 +1,6 @@
 {-# LANGUAGE Rank2Types #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE PatternSynonyms #-}
 module Clingo.Control
 (
     Clingo,
@@ -34,6 +35,10 @@ module Clingo.Control
     symbolicAtoms,
     theoryAtoms,
 
+    TruthValue (..),
+    pattern TruthTrue,
+    pattern TruthFalse,
+    pattern TruthFree,
     assignExternal,
     releaseExternal,
     getConst,

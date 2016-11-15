@@ -2,6 +2,7 @@ module Clingo.AST
 (
     parseProgram,
 
+    T.Location (..),
     Sign (..),
     Signature,
     wrapSignature,
