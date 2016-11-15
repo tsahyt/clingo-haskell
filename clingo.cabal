@@ -20,6 +20,7 @@ flag examples
 library
   hs-source-dirs:      src
   exposed-modules:     Clingo.Control
+                       Clingo.AST
                        Clingo.Symbol
                        Clingo.Configuration
                        Clingo.Statistics
@@ -32,6 +33,7 @@ library
                        Clingo.Inspection.Theory
                        Clingo.ProgramBuilding
                        Clingo.Propagation
+                       Clingo.Internal.AST
                        Clingo.Internal.Statistics
                        Clingo.Internal.Propagation
                        Clingo.Internal.Configuration
@@ -115,6 +117,16 @@ executable theory-atoms
 
   hs-source-dirs:      examples
   main-is:             TheoryAtoms.hs
+  default-language:    Haskell2010
+
+executable ast
+  if flag(examples)
+      build-depends:   base, clingo, text
+  else 
+      buildable:       False
+
+  hs-source-dirs:      examples
+  main-is:             AST.hs
   default-language:    Haskell2010
 
 executable statistics

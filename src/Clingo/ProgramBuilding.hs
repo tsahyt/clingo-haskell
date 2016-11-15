@@ -14,13 +14,15 @@ module Clingo.ProgramBuilding
     minimize,
     rule,
     weightedRule,
-    project
+    project,
+    addStatements
 )
 where
 
 import Control.Monad.IO.Class
 import Control.Monad.Catch
 import Data.Foldable
+import Data.Traversable
 
 import Foreign
 import Foreign.C
@@ -28,6 +30,7 @@ import Numeric.Natural
 
 import qualified Clingo.Raw as Raw
 
+import Clingo.Internal.AST (Statement, rawStatement, freeStatement)
 import Clingo.Internal.Types
 import Clingo.Internal.Utils
 
@@ -106,3 +109,16 @@ project :: (MonadIO m, MonadThrow m, Foldable t)
 project (Backend h) atoms = marshall0 $
     withArrayLen (map rawAtom . toList $ atoms) $ \len arr ->
         Raw.backendProject h arr (fromIntegral len)
+
+addStatements :: (MonadIO m, MonadMask m, Traversable t)
+              => ProgramBuilder s -> t Statement -> m ()
+addStatements (ProgramBuilder b) stmts = do
+    marshall0 (Raw.programBuilderBegin b)
+    mapM_ go stmts `finally` marshall0 (Raw.programBuilderEnd b)
+
+    where go stmt = do
+              stmt' <- liftIO (rawStatement stmt)
+              marshall0 $ 
+                  with stmt' $ \ptr ->
+                      Raw.programBuilderAdd b ptr
+              liftIO (freeStatement stmt')

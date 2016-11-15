@@ -10,9 +10,9 @@ module Clingo.Raw.ProgramBuilding
     backendHeuristic,
     backendAcycEdge,
     backendAddAtom,
-    backendBuilderBegin,
-    backendBuilderAdd,
-    backendBuilderEnd
+    programBuilderBegin,
+    programBuilderAdd,
+    programBuilderEnd
 )
 where
 
@@ -43,11 +43,11 @@ foreign import ccall "clingo.h clingo_backend_acyc_edge" backendAcycEdgeFFI ::
     Backend -> CInt -> CInt -> Ptr Literal -> CSize -> IO CBool
 foreign import ccall "clingo.h clingo_backend_add_atom" backendAddAtomFFI ::
     Backend -> Ptr Atom -> IO CBool
-foreign import ccall "clingo.h clingo_backend_builder_begin" backendBuilderBeginFFI ::
+foreign import ccall "clingo.h clingo_program_builder_begin" programBuilderBeginFFI ::
     ProgramBuilder -> IO CBool
-foreign import ccall "clingo.h clingo_backend_builder_add" backendBuilderAddFFI ::
+foreign import ccall "clingo.h clingo_program_builder_add" programBuilderAddFFI ::
     ProgramBuilder -> Ptr AstStatement -> IO CBool
-foreign import ccall "clingo.h clingo_backend_builder_end" backendBuilderEndFFI ::
+foreign import ccall "clingo.h clingo_program_builder_end" programBuilderEndFFI ::
     ProgramBuilder -> IO CBool
 
 backendRule :: MonadIO m => Backend -> CBool -> Ptr Atom -> CSize -> Ptr Literal -> CSize -> m CBool
@@ -77,11 +77,11 @@ backendAcycEdge a b c d e = liftIO $ backendAcycEdgeFFI a b c d e
 backendAddAtom :: MonadIO m => Backend -> Ptr Atom -> m CBool
 backendAddAtom a b = liftIO $ backendAddAtomFFI a b
 
-backendBuilderBegin :: MonadIO m => ProgramBuilder -> m CBool
-backendBuilderBegin a = liftIO $ backendBuilderBeginFFI a
+programBuilderBegin :: MonadIO m => ProgramBuilder -> m CBool
+programBuilderBegin a = liftIO $ programBuilderBeginFFI a
 
-backendBuilderAdd :: MonadIO m => ProgramBuilder -> Ptr AstStatement -> m CBool
-backendBuilderAdd a b = liftIO $ backendBuilderAddFFI a b
+programBuilderAdd :: MonadIO m => ProgramBuilder -> Ptr AstStatement -> m CBool
+programBuilderAdd a b = liftIO $ programBuilderAddFFI a b
 
-backendBuilderEnd :: MonadIO m => ProgramBuilder -> m CBool
-backendBuilderEnd a = liftIO $ backendBuilderEndFFI a
+programBuilderEnd :: MonadIO m => ProgramBuilder -> m CBool
+programBuilderEnd a = liftIO $ programBuilderEndFFI a

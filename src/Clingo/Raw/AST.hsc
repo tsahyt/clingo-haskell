@@ -178,6 +178,7 @@ module Clingo.Raw.AST
 
     -- * Functions
     CallbackAST,
+    mkCallbackAst,
     parseProgram,
 )
 where
@@ -312,6 +313,9 @@ pattern AstStatementTypeTheoryDefinition = #{const clingo_ast_statement_type_the
 
 type CallbackAST a = Ptr AstStatement -> Ptr a -> IO CBool 
 
+foreign import ccall "wrapper" mkCallbackAst ::
+    CallbackAST a -> IO (FunPtr (CallbackAST a))
+
 data AstUnaryOperation = AstUnaryOperation AstUnaryOperator AstTerm
     deriving (Eq, Show)
 
@@ -422,7 +426,7 @@ instance Storable AstTerm where
             AstTermTypePool -> do
                 payload <- (#{peek clingo_ast_term_t, pool} p)
                 pure $! AstTermPool loc payload
-            _ -> error "Malformed struct"
+            _ -> error "Malformed struct clingo_ast_term_t"
     poke p d = case d of
         AstTermSymbol l x -> do
             (#poke clingo_ast_term_t, location) p l
@@ -569,7 +573,7 @@ instance Storable AstLiteral where
             AstLiteralTypeCsp -> do
                 payload <- (#{peek clingo_ast_literal_t, boolean} p)
                 pure $! AstLiteralCSPL loc sign payload
-            _ -> error "Malformed struct"
+            _ -> error "Malformed struct clingo_ast_literal_t"
     poke p d = case d of
         AstLiteralBool l s x -> do
             (#poke clingo_ast_literal_t, location) p l
@@ -858,7 +862,7 @@ instance Storable AstTheoryTerm where
             AstTheoryTermTypeUnparsedTerm -> do
                 payload <- (#{peek clingo_ast_theory_term_t, unparsed_term} p)
                 pure $! AstTheoryTermUnparsed loc payload
-            _ -> error "Malformed struct"
+            _ -> error "Malformed struct clingo_ast_theory_term_t"
     poke p d = case d of
         AstTheoryTermSymbol l x -> do
             (#poke clingo_ast_theory_term_t, location) p l
@@ -966,7 +970,7 @@ instance Storable AstHeadLiteral where
             AstHeadLiteralTypeTheoryAtom -> do
                 payload <- (#{peek clingo_ast_head_literal_t, theory_atom} p)
                 pure $! AstHeadTheoryAtom loc payload
-            _ -> error "Malformed struct"
+            _ -> error "Malformed struct clingo_ast_head_literal_t"
     poke p d = case d of
         AstHeadLiteral l x -> do
             (#{poke clingo_ast_head_literal_t, location}) p l
@@ -1020,7 +1024,7 @@ instance Storable AstBodyLiteral where
             AstBodyLiteralTypeDisjoint -> do
                 payload <- (#{peek clingo_ast_body_literal_t, disjoint} p)
                 pure $! AstBodyDisjoint loc sign payload
-            _ -> error "Malformed struct"
+            _ -> error "Malformed struct clingo_ast_body_literal_t"
     poke p d = case d of
         AstBodyLiteral l s x -> do
             (#poke clingo_ast_body_literal_t, location) p l
@@ -1388,7 +1392,7 @@ instance Storable AstStatement where
             AstStatementTypeTheoryDefinition -> do
                 payload <- (#{peek clingo_ast_statement_t, theory_definition} p)
                 pure $! AstStmtTheoryDefn loc payload
-            _ -> error "Malformed struct"
+            _ -> error "Malformed struct clingo_ast_statement_t"
     poke p d = case d of
         AstStmtRule l x -> do
             (#poke clingo_ast_statement_t, location) p l
