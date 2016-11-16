@@ -3,6 +3,7 @@ module Clingo.Inspection.Symbolic
 (
     SymbolicAtom (..),
     fromSymbolicAtoms,
+    fromSymbolicAtomsSig,
     S.symbolicAtomsSignatures
 )
 where
@@ -32,7 +33,14 @@ fromSymbolicAtoms :: (MonadIO m, MonadThrow m, NFData a)
                   => SymbolicAtoms s 
                   -> ([SymbolicAtom s] -> [a]) 
                   -> m [a]
-fromSymbolicAtoms s f = force . f <$> buildSAtoms s
+fromSymbolicAtoms s f = force . f <$> buildSAtoms Nothing s
+
+fromSymbolicAtomsSig :: (MonadIO m, MonadThrow m, NFData a)
+                     => SymbolicAtoms s
+                     -> Signature s
+                     -> ([SymbolicAtom s] -> [a])
+                     -> m [a]
+fromSymbolicAtomsSig s sig f = force . f <$> buildSAtoms (Just sig) s
 
 getSAtom :: (MonadIO m, MonadThrow m)
          => S.SymbolicAtoms s -> S.SIterator s -> m (SymbolicAtom s)
@@ -43,9 +51,9 @@ getSAtom s i = SymbolicAtom
            <*> S.symbolicAtomsIsFact s i
 
 buildSAtoms :: (MonadIO m, MonadThrow m)
-            => S.SymbolicAtoms s -> m [SymbolicAtom s]
-buildSAtoms s = do
-    start <- S.symbolicAtomsBegin s Nothing
+            => Maybe (Signature s) -> S.SymbolicAtoms s -> m [SymbolicAtom s]
+buildSAtoms sig s = do
+    start <- S.symbolicAtomsBegin s sig
     end   <- S.symbolicAtomsEnd s
     liftIO $ go end start
     where go end i = unsafeInterleaveIO $ do

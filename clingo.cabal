@@ -128,6 +128,17 @@ executable statistics
   main-is:             Statistics.hs
   default-language:    Haskell2010
 
+executable propagator
+  if flag(examples)
+      build-depends:   base, clingo, text, containers, transformers
+  else 
+      buildable:       False
+
+  hs-source-dirs:      examples
+  main-is:             Propagator.hs
+  default-language:    Haskell2010
+
+
 source-repository head
   type:     git
   location: https://github.com/tsahyt/clingo-haskell

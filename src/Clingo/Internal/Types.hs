@@ -10,6 +10,7 @@ module Clingo.Internal.Types
     SymbolicLiteral (..),
     rawSymLit,
     Literal (..),
+    negateLiteral,
     Atom (..),
     AsyncSolver (..),
     IterSolver (..),
@@ -109,7 +110,10 @@ instance Signed (Signature s) where
     negative = toBool . Raw.signatureIsNegative . rawSignature
 
 newtype Literal s = Literal { rawLiteral :: Raw.Literal }
-    deriving (NFData)
+    deriving (Ord, Eq, NFData)
+
+negateLiteral :: Literal s -> Literal s
+negateLiteral (Literal a) = Literal (negate a)
 
 newtype Atom s = Atom { rawAtom :: Raw.Atom }
 
