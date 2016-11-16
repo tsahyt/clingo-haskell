@@ -83,13 +83,10 @@ import Clingo.Internal.Utils
 import qualified Clingo.Internal.Types as T
 import qualified Clingo.Raw as Raw
 
+import Debug.Trace
+
 wrapSymbol :: T.Symbol s -> Symbol
 wrapSymbol = Symbol
-
-{-
- -withSymbol :: Symbol -> (T.Symbol s -> m a) -> m a
- -withSymbol x f = case x of Symbol x -> f x
- -}
 
 wrapSignature :: T.Signature s -> Signature
 wrapSignature = Signature

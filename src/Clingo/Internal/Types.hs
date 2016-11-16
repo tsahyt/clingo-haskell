@@ -126,7 +126,7 @@ data Location = Location
     , locEndLine   :: Natural
     , locBeginCol  :: Natural
     , locEndCol    :: Natural }
-    deriving (Eq, Show)
+    deriving (Eq, Show, Ord)
 
 rawLocation :: Location -> IO Raw.Location
 rawLocation l = Raw.Location 
