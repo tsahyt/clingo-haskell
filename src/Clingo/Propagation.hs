@@ -26,11 +26,7 @@ module Clingo.Propagation
 
     -- * Actions During Solving
     P.Clause (..),
-    P.ClauseType,
-    pattern P.ClauseLearnt,
-    pattern P.ClauseStatic,
-    pattern P.ClauseVolatile,
-    pattern P.ClauseVolatileStatic,
+    P.ClauseType (..),
     addClause,
     propagate,
     hasWatch,

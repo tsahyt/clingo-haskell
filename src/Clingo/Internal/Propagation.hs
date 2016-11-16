@@ -28,11 +28,7 @@ module Clingo.Internal.Propagation
 
     -- * Clauses
     Clause (..),
-    ClauseType,
-    pattern ClauseLearnt,
-    pattern ClauseStatic,
-    pattern ClauseVolatile,
-    pattern ClauseVolatileStatic,
+    ClauseType (..),
 
     -- * Propagation
     assignment,
@@ -96,13 +92,19 @@ truthValue (Assignment a) lit = TruthValue <$> marshall1 go
     where go = Raw.assignmentTruthValue a (rawLiteral lit)
 
 data Clause s = Clause [Literal s] ClauseType
+    deriving (Show)
 
-newtype ClauseType = ClauseType { rawClauseType :: Raw.ClauseType }
+data ClauseType = ClauseLearnt 
+                | ClauseVolatile Bool       -- ^ Bool determines static
+                | ClauseStatic
+    deriving (Eq, Show, Ord)
 
-pattern ClauseLearnt = ClauseType Raw.ClauseLearnt
-pattern ClauseStatic = ClauseType Raw.ClauseStatic
-pattern ClauseVolatile = ClauseType Raw.ClauseVolatile
-pattern ClauseVolatileStatic = ClauseType Raw.ClauseVolatileStatic
+rawClauseType :: ClauseType -> Raw.ClauseType
+rawClauseType c = case c of
+    ClauseLearnt -> Raw.ClauseLearnt
+    ClauseStatic -> Raw.ClauseStatic
+    ClauseVolatile static -> if static then Raw.ClauseVolatileStatic
+                                       else Raw.ClauseVolatile
 
 data PropagationStop = Continue | Stop
     deriving (Eq, Show, Ord, Read, Enum, Bounded)

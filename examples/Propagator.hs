@@ -13,7 +13,6 @@ import Clingo.Model
 import Clingo.Propagation
 import Clingo.Inspection.Symbolic
 
-import Data.Proxy
 import Data.Map (Map)
 import Data.Maybe
 import Data.IntMap (IntMap)
@@ -32,6 +31,7 @@ data PigeonData s = PigeonData
     { placements  :: Map (Literal s) Hole
     , assignments :: IntMap (Map Hole (Literal s))
     }
+    deriving (Show)
 
 assignHole :: Integer -> Hole -> Literal s -> PigeonData s -> PigeonData s
 assignHole tid hole lit pd = pd 
@@ -60,8 +60,8 @@ main = withDefaultClingo $ \ctrl -> do
     addProgram ctrl "pigeon" ["h","p"] 
         "1 { place(P,H) : H = 1..h } 1 :- P = 1..p."
 
-    holes <- createNumber ctrl 8
-    pigeons <- createNumber ctrl 9
+    holes <- createNumber ctrl 2
+    pigeons <- createNumber ctrl 3
     ground ctrl [Part "pigeon" [holes, pigeons]] Nothing
 
     propState <- liftIO newEmptyMVar
@@ -93,6 +93,8 @@ pigeonator ctrl mvar = emptyPropagator
             let xs = zip (take threads [0..]) (repeat M.empty)
              in PigeonData (M.fromList . catMaybes $ ps) (I.fromList xs)
 
+        liftIO (withMVar mvar print)
+
     , propPropagate = Just $ \changes -> do
         -- get previous assignment
         thread <- getThreadId
@@ -106,8 +108,9 @@ pigeonator ctrl mvar = emptyPropagator
             case prev of
                 Nothing -> liftIO $ 
                     modifyMVar_ mvar (return . assignHole thread hole lit)
-                Just p  -> do
+                Just p -> do
                     let c = Clause (map negateLiteral [lit, p]) ClauseLearnt
+                    liftIO (print c)
                     addClause c
                     propagate
 
