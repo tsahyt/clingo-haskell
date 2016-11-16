@@ -111,15 +111,16 @@ instance Signed (Signature s) where
     negative = toBool . Raw.signatureIsNegative . rawSignature
 
 newtype Literal s = Literal { rawLiteral :: Raw.Literal }
-    deriving (Ord, Eq, NFData)
+    deriving (Ord, Show, Eq, NFData)
 
 negateLiteral :: Literal s -> Literal s
 negateLiteral (Literal a) = Literal (negate a)
 
 newtype AspifLiteral s = AspifLiteral { rawAspifLiteral :: Raw.Literal }
-    deriving (NFData)
+    deriving (Ord, Show, Eq, NFData)
 
 newtype Atom s = Atom { rawAtom :: Raw.Atom }
+    deriving (Show)
 
 newtype AsyncSolver s = AsyncSolver Raw.AsyncSolver
 
