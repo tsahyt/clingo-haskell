@@ -10,6 +10,7 @@ module Clingo.Internal.Types
     SymbolicLiteral (..),
     rawSymLit,
     Literal (..),
+    negateLiteral,
     AspifLiteral (..),
     Atom (..),
     AsyncSolver (..),
@@ -110,7 +111,10 @@ instance Signed (Signature s) where
     negative = toBool . Raw.signatureIsNegative . rawSignature
 
 newtype Literal s = Literal { rawLiteral :: Raw.Literal }
-    deriving (NFData)
+    deriving (Ord, Eq, NFData)
+
+negateLiteral :: Literal s -> Literal s
+negateLiteral (Literal a) = Literal (negate a)
 
 newtype AspifLiteral s = AspifLiteral { rawAspifLiteral :: Raw.Literal }
     deriving (NFData)
@@ -130,7 +134,7 @@ data Location = Location
     , locEndLine   :: Natural
     , locBeginCol  :: Natural
     , locEndCol    :: Natural }
-    deriving (Eq, Show)
+    deriving (Eq, Show, Ord)
 
 rawLocation :: Location -> IO Raw.Location
 rawLocation l = Raw.Location 

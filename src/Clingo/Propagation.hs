@@ -4,12 +4,14 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE PatternSynonyms #-}
 module Clingo.Propagation
 (
     Propagation,
     PropagationPhase (..),
     Assignment,
     Literal,
+    negateLiteral,
     Propagator (..),
     emptyPropagator,
     propagatorToIO,
@@ -23,6 +25,12 @@ module Clingo.Propagation
     propTheoryAtoms,
 
     -- * Actions During Solving
+    P.Clause (..),
+    P.ClauseType,
+    pattern P.ClauseLearnt,
+    pattern P.ClauseStatic,
+    pattern P.ClauseVolatile,
+    pattern P.ClauseVolatileStatic,
     addClause,
     propagate,
     hasWatch,

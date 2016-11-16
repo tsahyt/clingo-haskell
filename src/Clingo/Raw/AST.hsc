@@ -387,12 +387,12 @@ instance Storable AstPool where
 
 data AstTerm = AstTermSymbol Location Symbol
              | AstTermVariable Location CString
-             | AstTermUOp Location AstUnaryOperation
-             | AstTermBOp Location AstBinaryOperation
-             | AstTermInterval Location AstInterval
-             | AstTermFunction Location AstFunction
-             | AstTermExtFunction Location AstFunction
-             | AstTermPool Location AstPool
+             | AstTermUOp Location (Ptr AstUnaryOperation)
+             | AstTermBOp Location (Ptr AstBinaryOperation)
+             | AstTermInterval Location (Ptr AstInterval)
+             | AstTermFunction Location (Ptr AstFunction)
+             | AstTermExtFunction Location (Ptr AstFunction)
+             | AstTermPool Location (Ptr AstPool)
     deriving (Eq, Show)
 
 instance Storable AstTerm where
@@ -548,9 +548,9 @@ instance Storable AstComparison where
         (#poke clingo_ast_comparison_t, right) p c
 
 data AstLiteral = AstLiteralBool Location AstSign CBool
-                | AstLiteralTerm Location AstSign AstTerm
-                | AstLiteralComp Location AstSign AstComparison
-                | AstLiteralCSPL Location AstSign AstCspLiteral
+                | AstLiteralTerm Location AstSign (Ptr AstTerm)
+                | AstLiteralComp Location AstSign (Ptr AstComparison)
+                | AstLiteralCSPL Location AstSign (Ptr AstCspLiteral)
     deriving (Eq, Show)
 
 instance Storable AstLiteral where

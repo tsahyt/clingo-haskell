@@ -41,6 +41,7 @@ module Clingo.Symbol
     
     -- * Symbol inspection
     symbolArguments,
+    symbolGetArg,
     symbolHash,
     symbolName,
     symbolNumber,
@@ -172,6 +173,13 @@ symbolString s = do
 symbolArguments :: (MonadIO m, MonadThrow m) => Symbol s -> m [Symbol s]
 symbolArguments s = map Symbol <$> 
     marshall1A (Raw.symbolArguments (rawSymbol s))
+
+symbolGetArg :: (MonadIO m, MonadThrow m) => Symbol s -> Int 
+             -> m (Maybe (Symbol s))
+symbolGetArg s i = do
+    args <- symbolArguments s
+    if length args >= i then return Nothing
+                        else return . Just $ args !! i
 
 prettySymbol :: (MonadIO m, MonadThrow m) => Symbol s -> m Text
 prettySymbol s = do
