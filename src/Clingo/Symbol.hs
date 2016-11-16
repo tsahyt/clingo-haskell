@@ -184,7 +184,7 @@ symbolGetArg s i = do
 prettySymbol :: (MonadIO m, MonadThrow m) => Symbol s -> m Text
 prettySymbol s = do
     len <- marshall1 (Raw.symbolToStringSize (rawSymbol s))
-    str <- liftIO $ alloca $ \ptr -> do
+    str <- liftIO $ allocaArray (fromIntegral len) $ \ptr -> do
         b <- Raw.symbolToString (rawSymbol s) ptr len
         x <- peekCString ptr
         checkAndThrow b
