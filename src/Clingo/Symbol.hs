@@ -178,7 +178,7 @@ symbolGetArg :: (MonadIO m, MonadThrow m) => Symbol s -> Int
              -> m (Maybe (Symbol s))
 symbolGetArg s i = do
     args <- symbolArguments s
-    if length args >= i then return Nothing
+    if length args <= i then return Nothing
                         else return . Just $ args !! i
 
 prettySymbol :: (MonadIO m, MonadThrow m) => Symbol s -> m Text

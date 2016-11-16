@@ -23,6 +23,8 @@ import qualified Data.IntMap as I
 import Text.Printf
 import qualified Data.Text.IO as T
 
+import Debug.Trace
+
 newtype Hole = Hole Int
     deriving (Eq, Show, Ord)
 
@@ -65,7 +67,8 @@ main = withDefaultClingo $ \ctrl -> do
     propState <- liftIO newEmptyMVar
     registerPropagator ctrl False (pigeonator ctrl propState)
 
-    void $ solve ctrl (Just onModel) []
+    solveRet <- solve ctrl (Just onModel) []
+    print solveRet
 
 pigeonator :: Clingo s -> MVar (PigeonData s) -> Propagator s
 pigeonator ctrl mvar = emptyPropagator
