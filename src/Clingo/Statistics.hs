@@ -28,6 +28,7 @@ import Clingo.Internal.Statistics
 
 import System.IO.Unsafe
 
+-- | The polymorphic statistics tree.
 data StatsTree v
     = SValue v
     | SMap [(Text, StatsTree v)]

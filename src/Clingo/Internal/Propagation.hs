@@ -63,29 +63,36 @@ import Clingo.Internal.Types
 
 newtype Assignment s = Assignment Raw.Assignment
 
+-- | Get the current decision level.
 decisionLevel :: (MonadIO m) => Assignment s -> m Natural
 decisionLevel (Assignment a) = fromIntegral <$> Raw.assignmentDecisionLevel a
 
+-- | Determine whether assignment has a conflict.
 hasConflict :: (MonadIO m) => Assignment s -> m Bool
 hasConflict (Assignment a) = toBool <$> Raw.assignmentHasConflict a
 
+-- | Determine whether a literal is part of an assignment.
 hasLiteral :: (MonadIO m) => Assignment s -> Literal s -> m Bool
 hasLiteral (Assignment a) lit = toBool <$> Raw.assignmentHasLiteral a 
                                            (rawLiteral lit)
 
+-- | Find the decision level of a given literal in an assignment.
 levelOf :: (MonadIO m, MonadThrow m) => Assignment s -> Literal s -> m Natural
 levelOf (Assignment a) lit = fromIntegral <$> marshall1 go
     where go = Raw.assignmentLevel a (rawLiteral lit)
 
+-- | Determine the decision literal given a decision level.
 decision :: (MonadIO m, MonadThrow m) 
          => Assignment s -> Natural -> m (Literal s)
 decision (Assignment a) level = Literal <$> marshall1 go
     where go = Raw.assignmentDecision a (fromIntegral level)
 
+-- | Check if a literal has a fixed truth value.
 isFixed :: (MonadIO m, MonadThrow m) => Assignment s -> Literal s -> m Bool
 isFixed (Assignment a) lit = toBool <$> marshall1 go
     where go = Raw.assignmentIsFixed a (rawLiteral lit)
 
+-- | Obtain the truth value of a literal
 truthValue :: (MonadIO m, MonadThrow m) 
            => Assignment s -> Literal s -> m TruthValue
 truthValue (Assignment a) lit = TruthValue <$> marshall1 go

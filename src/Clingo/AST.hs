@@ -85,17 +85,20 @@ import qualified Clingo.Raw as Raw
 
 import Debug.Trace
 
+-- | Wrap a Symbol such that it can be used in an AST
 wrapSymbol :: T.Symbol s -> Symbol
 wrapSymbol = Symbol
 
+-- | Wrap a Signature such that it can be used in an AST
 wrapSignature :: T.Signature s -> Signature
 wrapSignature = Signature
 
+-- | Parse a logic program into a list of statements.
 parseProgram :: (MonadIO m, MonadThrow m)
-             => T.Clingo s
-             -> Text
-             -> Maybe (ClingoWarning -> Text -> IO ())
-             -> Natural
+             => T.Clingo s                              -- ^ Clingo Handle
+             -> Text                                    -- ^ Program
+             -> Maybe (ClingoWarning -> Text -> IO ())  -- ^ Logger Callback
+             -> Natural                                 -- ^ Logger Call Limit
              -> m [Statement]
 parseProgram _ prog logger limit = do
     ref <- liftIO (newIORef [])

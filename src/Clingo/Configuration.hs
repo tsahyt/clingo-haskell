@@ -30,6 +30,7 @@ import Clingo.Internal.Configuration
 
 import System.IO.Unsafe
 
+-- | The configuration tree type, polymorphic over the leaf values.
 data ConfTree v
     = CValue v
     | CMap (Maybe v)   [(Text, ConfTree v)]

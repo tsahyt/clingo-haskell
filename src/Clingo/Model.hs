@@ -20,10 +20,11 @@ module Clingo.Model
     modelSymbols,
 
     contains,
-    costVectors,
+    costVector,
     optimalityProven,
-    context,
 
+    -- * Solve Control
+    context,
     threadID,
     modelAddClause,
 )
@@ -48,6 +49,7 @@ pattern StableModel = ModelType Raw.StableModel
 pattern BraveConsequences = ModelType Raw.BraveConsequences
 pattern CautiousConsequences = ModelType Raw.CautiousConsequences
 
+-- | Type for building symbol selections.
 data SymbolSelection = SymbolSelection 
     { selectCSP     :: Bool
     , selectShown   :: Bool
@@ -72,12 +74,15 @@ rawSymbolSelection s = foldr ((.|.) . fst) zeroBits . filter snd $
 selectNone :: SymbolSelection
 selectNone = SymbolSelection False False False False False False
 
+-- | Get the type of a Model.
 modelType :: (MonadIO m, MonadThrow m) => Model s -> m ModelType
 modelType (Model m) = ModelType <$> marshall1 (Raw.modelType m)
 
+-- | Get the number of a Model.
 modelNumber :: (MonadIO m, MonadThrow m) => Model s -> m Natural
 modelNumber (Model m) = fromIntegral <$> marshall1 (Raw.modelNumber m)
 
+-- | Get the selected symbols from a Model.
 modelSymbols :: (MonadIO m) => Model s -> SymbolSelection -> m [Symbol s]
 modelSymbols (Model m) selection = liftIO $ do
     let flags = rawSymbolSelection selection
@@ -87,27 +92,33 @@ modelSymbols (Model m) selection = liftIO $ do
         as <- peekArray (fromIntegral len) arr
         return $ fmap Symbol as
 
+-- | Constant time lookup to test whether an atom is in a model.
 contains :: (MonadIO m, MonadThrow m) => Model s -> Symbol s -> m Bool
 contains (Model m) s = toBool <$> marshall1 (Raw.modelContains m (rawSymbol s))
 
-costVectors :: (MonadIO m) => Model s -> m [Integer]
-costVectors (Model m) = liftIO $ do
+-- | Get the cost vector of a Model
+costVector :: (MonadIO m) => Model s -> m [Integer]
+costVector (Model m) = liftIO $ do
     len <- marshall1 (Raw.modelCostSize m)
     allocaArray (fromIntegral len) $ \arr -> do
         marshall0 (Raw.modelCost m arr len)
         as <- peekArray (fromIntegral len) arr
         return $ fmap fromIntegral as
 
+-- | Check whether optimality of a model has been proven.
 optimalityProven :: (MonadIO m, MonadThrow m) => Model s -> m Bool
 optimalityProven (Model m) = toBool <$> marshall1 (Raw.modelOptimalityProven m)
 
+-- | Get the associated 'SolveControl' of a Model.
 context :: (MonadIO m, MonadThrow m) => Model s -> m (SolveControl s)
 context (Model m) = SolveControl <$> marshall1 (Raw.modelContext m)
 
+-- | Get the ID of the solver thread that found the model.
 threadID :: (MonadIO m, MonadThrow m) => SolveControl s -> m Integer
 threadID (SolveControl s) = fromIntegral <$>
     marshall1 (Raw.solveControlThreadId s)
 
+-- | Add a clause from the model callback.
 modelAddClause :: (MonadIO m, MonadThrow m, Foldable t)
                => SolveControl s -> t (SymbolicLiteral s) -> m ()
 modelAddClause (SolveControl s) lits = marshall0 $ 
