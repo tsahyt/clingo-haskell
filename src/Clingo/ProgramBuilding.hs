@@ -1,17 +1,25 @@
 -- | A module providing program building capabilities for both ground and
 -- non-ground programs.
+{-# LANGUAGE RankNTypes #-}
 module Clingo.ProgramBuilding
 (
-    Node,
+    Backend,
+    ProgramBuilder,
+    Node (..),
     Literal,
-    ExternalType,
-    HeuristicType,
+    Atom,
+    ExternalType (..),
+    HeuristicType (..),
 
     assume,
 
     -- * Ground Programs
+    GroundStatement,
+    addGroundStatements,
     acycEdge,
     atom,
+    atomAspifLiteral,
+    negateAspifLiteral,
     external,
     heuristic,
     minimize,
@@ -20,6 +28,8 @@ module Clingo.ProgramBuilding
     project,
 
     -- * Non-Ground Programs
+    --
+    -- | See 'Clingo.AST' for the abstract syntax tree to build 'Statement's.
     addStatements
 )
 where
@@ -27,7 +37,6 @@ where
 import Control.Monad.IO.Class
 import Control.Monad.Catch
 import Data.Foldable
-import Data.Traversable
 
 import Foreign
 import Foreign.C
@@ -35,105 +44,140 @@ import Numeric.Natural
 
 import qualified Clingo.Raw as Raw
 
-import Clingo.Internal.AST (Statement, rawStatement, freeStatement)
+import Clingo.AST (Statement)
+import Clingo.Internal.AST (rawStatement, freeStatement)
 import Clingo.Internal.Types
 import Clingo.Internal.Utils
 
-newtype Node = Node { unNode :: CInt }
+newtype Node = Node { unNode :: Int }
 
-newtype ExternalType = ExternalType { rawExtT :: Raw.ExternalType }
+data ExternalType = ExtFree | ExtTrue | ExtFalse | ExtRelease
+    deriving (Show, Eq, Ord, Enum, Read)
 
-newtype HeuristicType = HeuristicType { rawHeuT :: Raw.HeuristicType }
+rawExtT :: ExternalType -> Raw.ExternalType
+rawExtT ExtFree = Raw.ExternalFree
+rawExtT ExtTrue = Raw.ExternalTrue
+rawExtT ExtFalse = Raw.ExternalFalse
+rawExtT ExtRelease = Raw.ExternalRelease
+
+data HeuristicType = HeuristicLevel | HeuristicSign | HeuristicFactor 
+                   | HeuristicInit  | HeuristicTrue | HeuristicFalse
+    deriving (Show, Eq, Ord, Enum, Read)
+
+rawHeuT :: HeuristicType -> Raw.HeuristicType
+rawHeuT HeuristicLevel = Raw.HeuristicLevel
+rawHeuT HeuristicSign = Raw.HeuristicSign
+rawHeuT HeuristicFactor = Raw.HeuristicFactor
+rawHeuT HeuristicInit = Raw.HeuristicInit
+rawHeuT HeuristicTrue = Raw.HeuristicTrue
+rawHeuT HeuristicFalse = Raw.HeuristicFalse
 
 data WeightedLiteral s = WeightedLiteral (Literal s) Integer
+
+-- | A 'GroundStatement' is a statement built from ground atoms. Because the
+-- atoms are only valid within the context of clingo, they may not leave this
+-- context. They can be added to the current program using the
+-- 'addGroundStatements' function.
+newtype GroundStatement s = 
+    GStmt { addGStmt :: forall m. (MonadIO m, MonadThrow m) 
+                     => Backend s -> m () }
 
 rawWeightedLiteral :: WeightedLiteral s -> Raw.WeightedLiteral
 rawWeightedLiteral (WeightedLiteral l w) = 
     Raw.WeightedLiteral (rawLiteral l) (fromIntegral w)
 
--- | Add an edge directive.
-acycEdge :: (MonadIO m, MonadThrow m, Foldable t)
-         => Backend s -> Node -> Node -> t (Literal s) -> m ()
-acycEdge (Backend h) a b lits = marshall0 $
+-- | Build an edge directive.
+acycEdge :: Foldable t
+         => Node -> Node -> t (Literal s) -> GroundStatement s
+acycEdge a b lits = GStmt $ \(Backend h) -> marshall0 $
     withArrayLen (map rawLiteral . toList $ lits) $ \len arr ->
-        Raw.backendAcycEdge h (unNode a) (unNode b) arr (fromIntegral len)
+        Raw.backendAcycEdge h (fromIntegral $ unNode a) 
+            (fromIntegral $ unNode b) arr (fromIntegral len)
 
 -- | Obtain a fresh atom to be used in aspif directives.
 atom :: (MonadIO m, MonadThrow m)
      => Backend s -> m (Atom s)
 atom (Backend h) = Atom <$> marshall1 (Raw.backendAddAtom h)
 
+-- | Use an Atom as a positive AspifLiteral
+atomAspifLiteral :: Atom s -> AspifLiteral s
+atomAspifLiteral (Atom x) = AspifLiteral (fromIntegral x)
+
+negateAspifLiteral :: AspifLiteral s -> AspifLiteral s
+negateAspifLiteral (AspifLiteral x) = AspifLiteral (negate x)
+
 -- | Add an assumption directive.
-assume :: (MonadIO m, MonadThrow m, Foldable t)
-       => Backend s -> t (AspifLiteral s) -> m ()
-assume (Backend h) lits = marshall0 $ 
+assume :: Foldable t
+       => t (AspifLiteral s) -> GroundStatement s
+assume lits = GStmt $ \(Backend h) -> marshall0 $ 
     withArrayLen (map rawAspifLiteral . toList $ lits) $ \len arr ->
         Raw.backendAssume h arr (fromIntegral len)
 
--- | Add an external statement.
-external :: (MonadIO m, MonadThrow m)
-         => Backend s -> Atom s -> ExternalType -> m ()
-external (Backend h) atom t = marshall0 $
-    Raw.backendExternal h (rawAtom atom) (rawExtT t)
+-- | Build an external statement.
+external :: Atom s -> ExternalType -> GroundStatement s
+external a t = GStmt $ \(Backend h) -> marshall0 $
+    Raw.backendExternal h (rawAtom a) (rawExtT t)
 
--- | Add a heuristic directive.
-heuristic :: (MonadIO m, MonadThrow m)
-          => Backend s 
-          -> Atom s 
+-- | Build a heuristic directive.
+heuristic :: (Foldable t)
+          => Atom s 
           -> HeuristicType 
           -> Int                    -- ^ Bias
           -> Natural                -- ^ Priority
-          -> [AspifLiteral s]       -- ^ Condition
-          -> m ()
-heuristic (Backend h) a t bias pri cs = marshall0 $
-    withArrayLen (map rawAspifLiteral cs) $ \len arr ->
+          -> t (AspifLiteral s)     -- ^ Condition
+          -> GroundStatement s
+heuristic a t bias pri cs = GStmt $ \(Backend h) -> marshall0 $
+    withArrayLen (map rawAspifLiteral . toList $ cs) $ \len arr ->
         Raw.backendHeuristic h (rawAtom a) (rawHeuT t) 
             (fromIntegral bias) (fromIntegral pri) arr (fromIntegral len)
 
--- | Add a minimize constraint (or weak constraint).
-minimize :: (MonadIO m, MonadThrow m, Foldable t)
-         => Backend s 
-         -> Integer                 -- ^ Priority
+-- | Build a minimize constraint (or weak constraint).
+minimize :: Foldable t
+         => Integer                 -- ^ Priority
          -> t (WeightedLiteral s)   -- ^ Literals to minimize
-         -> m ()
-minimize (Backend h) priority lits = marshall0 $
+         -> GroundStatement s
+minimize priority lits = GStmt $ \(Backend h) -> marshall0 $
     withArrayLen (map rawWeightedLiteral . toList $ lits) $ \len arr ->
         Raw.backendMinimize h (fromIntegral priority) arr (fromIntegral len)
 
--- | Add a rule.
-rule :: (MonadIO m, MonadThrow m, Foldable t)
-     => Backend s 
-     -> Bool            -- ^ Is a choice rule?
-     -> t (Atom s)      -- ^ Head
-     -> t (Literal s)   -- ^ Body
-     -> m ()
-rule (Backend h) choice hd bd = marshall0 $
+-- | Build a rule.
+rule :: Foldable t
+     => Bool                 -- ^ Is a choice rule?
+     -> t (Atom s)           -- ^ Head
+     -> t (AspifLiteral s)   -- ^ Body
+     -> GroundStatement s
+rule choice hd bd = GStmt $ \(Backend h) -> marshall0 $
     withArrayLen (map rawAtom . toList $ hd) $ \hlen harr ->
-        withArrayLen (map rawLiteral . toList $ bd) $ \blen barr ->
+        withArrayLen (map rawAspifLiteral . toList $ bd) $ \blen barr ->
             Raw.backendRule h (fromBool choice) harr (fromIntegral hlen) 
                                                 barr (fromIntegral blen)
 
--- | Add a weighted rule.
-weightedRule :: (MonadIO m, MonadThrow m, Foldable t)
-             => Backend s 
-             -> Bool                    -- ^ Is a choice rule?
+-- | Build a weighted rule.
+weightedRule :: Foldable t
+             => Bool                    -- ^ Is a choice rule?
              -> t (Atom s)              -- ^ Head
              -> Natural                 -- ^ Lower Bound
              -> t (WeightedLiteral s)   -- ^ Body
-             -> m ()
-weightedRule (Backend h) choice hd weight bd = marshall0 $
+             -> GroundStatement s
+weightedRule choice hd weight bd = GStmt $ \(Backend h) -> marshall0 $
     withArrayLen (map rawAtom . toList $ hd) $ \hlen harr ->
         withArrayLen (map rawWeightedLiteral . toList $ bd) $ \blen barr ->
             Raw.backendWeightRule h (fromBool choice) harr (fromIntegral hlen) 
                                     (fromIntegral weight)
                                     barr (fromIntegral blen)
 
--- | Add a projection directive
-project :: (MonadIO m, MonadThrow m, Foldable t)
-        => Backend s -> t (Atom s) -> m ()
-project (Backend h) atoms = marshall0 $
+-- | Build a projection directive
+project :: Foldable t
+        => t (Atom s) -> GroundStatement s
+project atoms = GStmt $ \(Backend h) -> marshall0 $
     withArrayLen (map rawAtom . toList $ atoms) $ \len arr ->
         Raw.backendProject h arr (fromIntegral len)
+
+-- | Add a collection of 'GroundStatement' to the program via a 'Backend'
+-- handle.
+addGroundStatements :: (MonadIO m, MonadThrow m, Foldable t)
+                    => Backend s -> t (GroundStatement s) -> m ()
+addGroundStatements b xs = mapM_ (`addGStmt` b) (toList xs)
 
 -- | Add a collection of non-ground statements to the solver.
 addStatements :: (MonadIO m, MonadMask m, Traversable t)

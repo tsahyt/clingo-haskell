@@ -49,5 +49,5 @@ main = withDefaultClingo $ \ctrl -> do
         , "y :- &b(3) { } = 17." ]
     ground ctrl [Part "base" []] Nothing
     lit <- theoryAtoms ctrl >>= theory
-    backend ctrl >>= flip assume [lit]
+    backend ctrl >>= flip addGroundStatements [ assume [lit] ]
     void $ solve ctrl (Just onModel) []

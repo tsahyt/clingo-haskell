@@ -129,6 +129,16 @@ executable ast
   main-is:             AST.hs
   default-language:    Haskell2010
 
+executable backend
+  if flag(examples)
+      build-depends:   base, clingo, text
+  else 
+      buildable:       False
+
+  hs-source-dirs:      examples
+  main-is:             Backend.hs
+  default-language:    Haskell2010
+
 executable statistics
   if flag(examples)
       build-depends:   base, clingo, text, wl-pprint-text, StateVar
