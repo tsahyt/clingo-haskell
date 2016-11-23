@@ -45,17 +45,13 @@ where
 
 import Control.DeepSeq
 import Control.Monad.IO.Class
-import Control.Monad.Catch
-import Data.Text (Text, pack, unpack)
+import Data.Text (Text, pack)
 import Data.Bits
 import Foreign
 import Foreign.C
-import Foreign.Marshal.Utils
 import qualified Clingo.Raw as Raw
 import Clingo.Internal.Utils
 import Numeric.Natural
-
-import System.IO.Unsafe
 
 newtype Clingo s = Clingo Raw.Control
 

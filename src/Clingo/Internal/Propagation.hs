@@ -55,7 +55,6 @@ import Control.Monad.Catch
 import Numeric.Natural
 
 import Foreign
-import Foreign.C
 
 import qualified Clingo.Raw as Raw
 import Clingo.Internal.Utils

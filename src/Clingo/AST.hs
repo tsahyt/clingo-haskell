@@ -83,8 +83,6 @@ import Clingo.Internal.Utils
 import qualified Clingo.Internal.Types as T
 import qualified Clingo.Raw as Raw
 
-import Debug.Trace
-
 -- | Wrap a Symbol such that it can be used in an AST
 wrapSymbol :: T.Symbol s -> Symbol
 wrapSymbol = Symbol

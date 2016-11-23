@@ -8,9 +8,6 @@ import Clingo.Symbol
 import Clingo.Model
 import Data.StateVar
 
-import Text.Printf
-import qualified Data.Text.IO as T
-
 onModel :: Model s -> IO Continue
 onModel m = do
     syms <- mapM prettySymbol

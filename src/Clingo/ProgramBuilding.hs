@@ -39,7 +39,6 @@ import Control.Monad.Catch
 import Data.Foldable
 
 import Foreign
-import Foreign.C
 import Numeric.Natural
 
 import qualified Clingo.Raw as Raw
