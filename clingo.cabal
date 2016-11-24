@@ -119,6 +119,16 @@ executable theory-atoms
   main-is:             TheoryAtoms.hs
   default-language:    Haskell2010
 
+executable symbolic-atoms
+  if flag(examples)
+      build-depends:   base, clingo, text
+  else 
+      buildable:       False
+
+  hs-source-dirs:      examples
+  main-is:             SymbolicAtoms.hs
+  default-language:    Haskell2010
+
 executable ast
   if flag(examples)
       build-depends:   base, clingo, text
