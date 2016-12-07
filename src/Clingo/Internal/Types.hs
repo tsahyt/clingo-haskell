@@ -1,5 +1,6 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 module Clingo.Internal.Types
 (
@@ -54,6 +55,7 @@ import Data.Text (Text, pack)
 import Data.Bits
 import Foreign
 import Foreign.C
+import GHC.Generics
 import qualified Clingo.Raw as Raw
 import Clingo.Internal.Utils
 import Numeric.Natural
@@ -75,14 +77,25 @@ runClingo ctrl a = runReaderT (clingo a) ctrl
 askC :: Clingo s Raw.Control
 askC = Clingo ask
 
-newtype Symbol s = Symbol { rawSymbol :: Raw.Symbol }
-    deriving (NFData)
+data Symbol s = Symbol 
+    { rawSymbol :: Raw.Symbol 
+    , symType   :: Raw.SymbolType
+    , symHash   :: Integer
+    , symNum    :: Maybe Integer
+    , symName   :: Maybe Text
+    , symString :: Maybe Text
+    , symArgs   :: [Symbol s]
+    , symPretty :: Text
+    }
+    deriving (Generic)
+
+instance NFData (Symbol s)
 
 instance Eq (Symbol s) where
-    (Symbol a) == (Symbol b) = toBool (Raw.symbolIsEqualTo a b)
+    a == b = toBool (Raw.symbolIsEqualTo (rawSymbol a) (rawSymbol b))
 
 instance Ord (Symbol s) where
-    (Symbol a) <= (Symbol b) = toBool (Raw.symbolIsLessThan a b)
+    a <= b = toBool (Raw.symbolIsLessThan (rawSymbol a) (rawSymbol b))
 
 class Signed a where
     positive :: a -> Bool
@@ -114,13 +127,18 @@ rawSymLit sl = Raw.SymbolicLiteral
     { Raw.slitSymbol   = rawSymbol (symLitSymbol sl)
     , Raw.slitPositive = fromBool (symLitPositive sl) }
 
-newtype Signature s = Signature { rawSignature :: Raw.Signature }
+data Signature s = Signature 
+    { rawSignature :: Raw.Signature
+    , sigArity     :: Natural
+    , sigName      :: Text 
+    , sigHash      :: Integer
+    }
 
 instance Eq (Signature s) where
-    (Signature a) == (Signature b) = toBool (Raw.signatureIsEqualTo a b)
+    a == b = toBool (Raw.signatureIsEqualTo (rawSignature a) (rawSignature b))
 
 instance Ord (Signature s) where
-    (Signature a) <= (Signature b) = toBool (Raw.signatureIsLessThan a b)
+    a <= b = toBool (Raw.signatureIsLessThan (rawSignature a) (rawSignature b))
 
 instance Signed (Signature s) where
     positive = toBool . Raw.signatureIsPositive . rawSignature

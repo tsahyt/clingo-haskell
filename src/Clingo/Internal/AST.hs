@@ -53,36 +53,36 @@ fromRawSign s = case s of
 data Signature = forall s. Signature (T.Signature s)
 
 instance Eq Signature where
-    a == b = T.Signature (rawSignature a) == T.Signature (rawSignature b)
+    a == b = rawSignature a == rawSignature b
 
 instance Ord Signature where
-    a <= b = T.Signature (rawSignature a) <= T.Signature (rawSignature b)
+    a <= b = rawSignature a <= rawSignature b
 
 instance Show Signature where
     show _ = "<signature>"
 
 rawSignature :: Signature -> Raw.Signature
-rawSignature (Signature (T.Signature x)) = x
+rawSignature (Signature x) = T.rawSignature x
 
 fromRawSignature :: Raw.Signature -> Signature
-fromRawSignature = Signature . T.Signature
+fromRawSignature = Signature . undefined -- T.Signature
 
 data Symbol = forall s. Symbol (T.Symbol s)
 
 instance Eq Symbol where
-    a == b = T.Symbol (rawSymbol a) == T.Symbol (rawSymbol b)
+    a == b = rawSymbol a == rawSymbol b
 
 instance Ord Symbol where
-    a <= b = T.Symbol (rawSymbol a) <= T.Symbol (rawSymbol b)
+    a <= b = rawSymbol a <= rawSymbol b
 
 instance Show Symbol where
-    show _ = "<symbol>"
+    show (Symbol s) = unpack . T.symPretty $ s
 
 rawSymbol :: Symbol -> Raw.Symbol
-rawSymbol (Symbol (T.Symbol s)) = s
+rawSymbol (Symbol s) = T.rawSymbol s
 
 fromRawSymbol :: Raw.Symbol -> Symbol
-fromRawSymbol = Symbol . T.Symbol
+fromRawSymbol = Symbol . undefined -- T.Symbol
 
 data UnaryOperation = UnaryOperation UnaryOperator Term
     deriving (Eq, Show, Ord)

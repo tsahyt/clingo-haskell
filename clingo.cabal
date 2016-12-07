@@ -37,6 +37,7 @@ library
                        Clingo.Internal.Statistics
                        Clingo.Internal.Propagation
                        Clingo.Internal.Configuration
+                       Clingo.Internal.Symbol
                        Clingo.Raw
                        Clingo.Raw.AST
                        Clingo.Raw.Asynchronous

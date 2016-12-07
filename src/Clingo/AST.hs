@@ -84,11 +84,11 @@ import qualified Clingo.Raw as Raw
 
 -- | Wrap a Symbol such that it can be used in an AST
 wrapSymbol :: T.Symbol s -> Symbol
-wrapSymbol = Symbol
+wrapSymbol = undefined -- Symbol
 
 -- | Wrap a Signature such that it can be used in an AST
 wrapSignature :: T.Signature s -> Signature
-wrapSignature = Signature
+wrapSignature = undefined -- Signature
 
 -- | Parse a logic program into a list of statements.
 parseProgram :: Text                                    -- ^ Program

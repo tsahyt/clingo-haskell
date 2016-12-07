@@ -50,8 +50,6 @@ module Clingo.Symbol
 )
 where
 
-import Control.Monad.IO.Class
-
 import Data.Text (Text, pack, unpack)
 import Numeric.Natural
 import Foreign.C
@@ -59,6 +57,7 @@ import Foreign
 
 import Clingo.Internal.Types
 import Clingo.Internal.Utils
+import Clingo.Internal.Symbol
 import qualified Clingo.Raw as Raw
 
 import System.IO.Unsafe
@@ -74,7 +73,7 @@ pattern SymSupremum = SymbolType Raw.SymSupremum
 
 -- | Get the type of a symbol
 symbolType :: Symbol s -> SymbolType
-symbolType = SymbolType . Raw.symbolType . rawSymbol
+symbolType = SymbolType . symType
 
 newtype FunctionSymbol s = FuncSym { unFuncSym :: Symbol s }
     deriving (Eq, Ord)
@@ -96,52 +95,49 @@ parseTerm :: Text                                       -- ^ Term as 'Text'
           -> Maybe (ClingoWarning -> Text -> IO ())     -- ^ Logger callback
           -> Natural                                    -- ^ Callback limit
           -> Clingo s (Symbol s)
-parseTerm t logger limit = Symbol <$> marshall1 go
+parseTerm t logger limit = pureSymbol =<< marshall1 go
     where go x = withCString (unpack t) $ \cstr -> do
                      logCB <- maybe (pure nullFunPtr) wrapCBLogger logger
                      Raw.parseTerm cstr logCB nullPtr (fromIntegral limit) x
 
 -- | Get the name of a signature.
 signatureName :: Signature s -> Text
-signatureName s = unsafePerformIO $
-    pack <$> (peekCString . Raw.signatureName . rawSignature $ s)
+signatureName = sigName
 
 -- | Get the arity of a signature.
 signatureArity :: Signature s -> Natural
-signatureArity = fromIntegral . Raw.signatureArity . rawSignature
+signatureArity = sigArity
 
 -- | Hash a signature.
 signatureHash :: Signature s -> Integer
-signatureHash = fromIntegral . Raw.symbolHash . rawSignature
+signatureHash = sigHash
 
 -- | Create a new signature with the solver.
 signatureCreate :: Text                     -- ^ Name
                 -> Natural                  -- ^ Arity
                 -> Bool                     -- ^ Positive
                 -> Clingo s (Signature s)
-signatureCreate name arity pos = Signature <$> marshall1 go
+signatureCreate name arity pos = pureSignature =<< marshall1 go
     where go x = withCString (unpack name) $ \cstr ->
                      Raw.signatureCreate cstr (fromIntegral arity) 
                                          (fromBool pos) x
 
 -- | Create a number symbol.
 createNumber :: (Integral a) => a -> Clingo s (Symbol s)
-createNumber a = Symbol <$> 
+createNumber a = pureSymbol =<< 
     marshall1V (Raw.symbolCreateNumber (fromIntegral a))
 
 -- | Create a supremum symbol, @#sup@.
 createSupremum :: Clingo s (Symbol s)
-createSupremum = Symbol <$> 
-    marshall1V Raw.symbolCreateSupremum
+createSupremum = pureSymbol =<< marshall1V Raw.symbolCreateSupremum
 
 -- | Create a infimum symbol, @#inf@.
 createInfimum :: Clingo s (Symbol s)
-createInfimum = Symbol <$> 
-    marshall1V Raw.symbolCreateInfimum
+createInfimum = pureSymbol =<< marshall1V Raw.symbolCreateInfimum
 
 -- | Construct a symbol representing a string.
 createString :: Text -> Clingo s (Symbol s)
-createString str = Symbol <$> marshall1 go
+createString str = pureSymbol =<< marshall1 go
     where go = withCString (unpack str) . flip Raw.symbolCreateString
 
 -- | Construct a symbol representing a function or tuple.
@@ -149,7 +145,7 @@ createFunction :: Text          -- ^ Function name
                -> [Symbol s]    -- ^ Arguments
                -> Bool          -- ^ Positive sign
                -> Clingo s (Symbol s)
-createFunction name args pos = Symbol <$> marshall1 go 
+createFunction name args pos = pureSymbol =<< marshall1 go 
     where go x = withCString (unpack name) $ \cstr -> 
                      withArrayLen (map rawSymbol args) $ \len syms -> 
                          Raw.symbolCreateFunction cstr syms 
@@ -161,48 +157,31 @@ createId t = createFunction t []
 
 -- | Hash a symbol
 symbolHash :: Symbol s -> Integer
-symbolHash = fromIntegral . Raw.symbolHash . rawSymbol
+symbolHash = symHash
 
 -- | Obtain number from symbol. Will fail for invalid symbol types.
-symbolNumber :: Symbol s -> Clingo s (Maybe Integer)
-symbolNumber s = fmap fromIntegral <$> 
-    marshall1RT (Raw.symbolNumber (rawSymbol s))
+symbolNumber :: Symbol s -> Maybe Integer
+symbolNumber = symNum
 
 -- | Obtain the name of a symbol when possible.
-symbolName :: Symbol s -> Clingo s (Maybe Text)
-symbolName s = do
-    x <- marshall1RT (Raw.symbolName (rawSymbol s))
-    case x of
-        Nothing   -> return Nothing
-        Just cstr -> liftIO $ (Just . pack) <$> peekCString cstr
+symbolName :: Symbol s -> Maybe Text
+symbolName = symName
 
 -- | Obtain the string from a suitable symbol.
-symbolString :: Symbol s -> Clingo s (Maybe Text)
-symbolString s = do
-    x <- marshall1RT (Raw.symbolString (rawSymbol s))
-    case x of
-        Nothing   -> return Nothing
-        Just cstr -> liftIO $ (Just . pack) <$> peekCString cstr
+symbolString :: Symbol s -> Maybe Text
+symbolString = symString
 
 -- | Obtain the arguments of a symbol. May be empty.
-symbolArguments :: Symbol s -> Clingo s [Symbol s]
-symbolArguments s = map Symbol <$> 
-    marshall1A (Raw.symbolArguments (rawSymbol s))
+symbolArguments :: Symbol s -> [Symbol s]
+symbolArguments = symArgs
 
 -- | Obtain the n-th argument of a symbol.
-symbolGetArg :: Symbol s -> Int -> Clingo s (Maybe (Symbol s))
-symbolGetArg s i = do
-    args <- symbolArguments s
-    if length args <= i then return Nothing
-                        else return . Just $ args !! i
+symbolGetArg :: Symbol s -> Int -> Maybe (Symbol s)
+symbolGetArg s i =
+    let args = symbolArguments s in
+    if length args <= i then Nothing
+                        else Just $ args !! i
 
 -- | Pretty print a symbol into a 'Text'.
-prettySymbol :: Symbol s -> Clingo s Text
-prettySymbol s = do
-    len <- marshall1 (Raw.symbolToStringSize (rawSymbol s))
-    str <- liftIO $ allocaArray (fromIntegral len) $ \ptr -> do
-        b <- Raw.symbolToString (rawSymbol s) ptr len
-        x <- peekCString ptr
-        checkAndThrow b
-        return x
-    return (pack str)
+prettySymbol :: Symbol s -> Text
+prettySymbol = symPretty
