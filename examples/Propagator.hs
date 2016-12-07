@@ -49,33 +49,34 @@ forceMVar mvar x = liftIO $ do
     _ <- tryTakeMVar mvar
     putMVar mvar x
 
-onModel :: Model s -> IO Continue
+onModel :: Model s -> Clingo s Continue
 onModel m = do
     syms <- mapM prettySymbol
         =<< modelSymbols m (selectNone { selectShown = True }) 
-    putStr "Model: " >> print syms
+    liftIO (putStr "Model: " >> print syms)
     return Continue
     
 main :: IO ()
-main = withDefaultClingo $ \ctrl -> do
-    addProgram ctrl "pigeon" ["h","p"] 
+main = withDefaultClingo $ do
+    addProgram "pigeon" ["h","p"] 
         "1 { place(P,H) : H = 1..h } 1 :- P = 1..p."
 
-    holes <- createNumber ctrl 2
-    pigeons <- createNumber ctrl 3
-    ground ctrl [Part "pigeon" [holes, pigeons]] Nothing
+    holes <- createNumber 2
+    pigeons <- createNumber 3
+    ground [Part "pigeon" [holes, pigeons]] Nothing
 
     propState <- liftIO newEmptyMVar
-    registerPropagator ctrl False (pigeonator ctrl propState)
+    registerPropagator False (pigeonator propState)
 
-    solveRet <- solve ctrl (Just onModel) []
-    print solveRet
+    solveRet <- solve (Just onModel) []
+    liftIO (print solveRet)
 
-pigeonator :: Clingo s -> MVar (PigeonData s) -> Propagator s
-pigeonator ctrl mvar = emptyPropagator
+-- TODO: Propagator with symbol inspection methods?
+pigeonator :: MVar (PigeonData s) -> Propagator s
+pigeonator mvar = emptyPropagator
     { propInit = Just $ do
         -- obtain place/2 atoms
-        placeSig <- signatureCreate ctrl "place" 2 True
+        placeSig <- undefined -- signatureCreate "place" 2 True
         watches <- propSymbolicAtoms 
                >>= \sa -> fromSymbolicAtomsSig sa placeSig id
 
@@ -83,8 +84,8 @@ pigeonator ctrl mvar = emptyPropagator
         mapM_ ((addWatch =<<) . solverLiteral . literal) watches
         ps <- forM watches $ \atom -> do
                   hole <- runMaybeT $ do
-                              arg <- MaybeT $ symbolGetArg (symbol atom) 1
-                              Hole . fromIntegral <$> MaybeT (symbolNumber arg)
+                              arg <- MaybeT $ undefined -- symbolGetArg (symbol atom) 1
+                              Hole . fromIntegral <$> MaybeT undefined -- (symbolNumber arg)
                   lit <- solverLiteral . literal $ atom
                   return $ (,) <$> pure lit <*> hole
 

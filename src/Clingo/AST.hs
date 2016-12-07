@@ -69,7 +69,6 @@ module Clingo.AST
 where
 
 import Control.Monad.IO.Class
-import Control.Monad.Catch
 
 import Data.Text (Text, unpack)
 import Data.IORef
@@ -92,13 +91,11 @@ wrapSignature :: T.Signature s -> Signature
 wrapSignature = Signature
 
 -- | Parse a logic program into a list of statements.
-parseProgram :: (MonadIO m, MonadThrow m)
-             => T.Clingo s                              -- ^ Clingo Handle
-             -> Text                                    -- ^ Program
+parseProgram :: Text                                    -- ^ Program
              -> Maybe (ClingoWarning -> Text -> IO ())  -- ^ Logger Callback
              -> Natural                                 -- ^ Logger Call Limit
-             -> m [Statement]
-parseProgram _ prog logger limit = do
+             -> T.Clingo s [Statement]
+parseProgram prog logger limit = do
     ref <- liftIO (newIORef [])
     marshall0 $
         withCString (unpack prog) $ \p -> do

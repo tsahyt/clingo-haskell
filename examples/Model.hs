@@ -2,6 +2,7 @@
 module Main where
 
 import Control.Monad
+import Control.Monad.IO.Class
 import Clingo.Control
 import Clingo.Symbol
 import Clingo.Model
@@ -12,13 +13,14 @@ import System.Environment (getArgs)
 import Text.Printf
 import qualified Data.Text.IO as T
 
-printModel :: Model s -> Text -> SymbolSelection -> IO ()
+printModel :: Model s -> Text -> SymbolSelection -> Clingo s ()
 printModel m label s = do
     syms <- mapM prettySymbol =<< modelSymbols m s
-    T.putStr (label `mappend` ": ")
-    T.putStrLn . mconcat $ intersperse " " syms
+    liftIO $ do
+        T.putStr (label `mappend` ": ")
+        T.putStrLn . mconcat $ intersperse " " syms
 
-onModel :: Model s -> IO Continue
+onModel :: Model s -> Clingo s Continue
 onModel m = do  
     t <- modelType m
     n <- modelNumber m
@@ -27,7 +29,7 @@ onModel m = do
             BraveConsequences -> "Brave consequences"
             CautiousConsequences -> "Cautious consequences"
 
-    printf "%s %d:\n" (tstring :: String) n
+    liftIO (printf "%s %d:\n" (tstring :: String) n)
     mapM_ (uncurry (printModel m)) 
         [ ("  shown", selectNone { selectShown = True })
         , ("  atoms", selectNone { selectAtoms = True })
@@ -40,7 +42,7 @@ onModel m = do
     
 main :: IO ()
 main = getArgs >>= \args -> 
-    withClingo (defaultClingo { clingoArgs = args }) $ \ctrl -> do
-        addProgram ctrl "base" [] "1 {a; b} 1. #show c : b. #show a/0."
-        ground ctrl [Part "base" []] Nothing
-        void $ solve ctrl (Just onModel) []
+    withClingo (defaultClingo { clingoArgs = args }) $ do
+        addProgram "base" [] "1 {a; b} 1. #show c : b. #show a/0."
+        ground [Part "base" []] Nothing
+        void $ solve (Just onModel) []

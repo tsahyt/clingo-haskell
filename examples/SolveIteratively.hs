@@ -2,6 +2,7 @@
 module Main where
 
 import Control.Monad
+import Control.Monad.IO.Class
 import Clingo.Control
 import Clingo.Symbol
 import Clingo.Model
@@ -10,11 +11,11 @@ import Clingo.Iterative
 import Text.Printf
 import qualified Data.Text.IO as T
 
-printModel :: Model s -> IO ()
+printModel :: Model s -> Clingo s ()
 printModel m = do
     syms <- mapM prettySymbol
         =<< modelSymbols m (selectNone { selectShown = True }) 
-    putStr "Model: " >> print syms
+    liftIO (putStr "Model: " >> print syms)
     
 main :: IO ()
 main = withDefaultClingo $ \ctrl -> do

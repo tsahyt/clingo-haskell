@@ -4,6 +4,8 @@
 module Clingo.Internal.Types
 (
     Clingo (..),
+    runClingo,
+    askC,
     Signed (..),
     Symbol (..),
     Signature (..),
@@ -44,7 +46,10 @@ module Clingo.Internal.Types
 where
 
 import Control.DeepSeq
+import Control.Applicative
 import Control.Monad.IO.Class
+import Control.Monad.Reader
+import Control.Monad.Catch
 import Data.Text (Text, pack)
 import Data.Bits
 import Foreign
@@ -53,7 +58,22 @@ import qualified Clingo.Raw as Raw
 import Clingo.Internal.Utils
 import Numeric.Natural
 
-newtype Clingo s = Clingo Raw.Control
+-- | The 'Clingo' monad provides a base monad for computations utilizing the
+-- clingo answer set solver. It uses an additional type parameter to ensure that
+-- values that are managed by the solver can not leave scope.
+newtype Clingo s a = Clingo { clingo :: ReaderT Raw.Control IO a }
+    deriving (Functor, Applicative, Monad, MonadMask, MonadThrow
+             , MonadCatch, MonadIO, MonadFix, MonadPlus, Alternative)
+
+-- | Run a clingo computation from an explicit handle. The handle must be
+-- cleaned up manually afterwards, or on failure!
+runClingo :: Raw.Control -> Clingo s a -> IO a
+runClingo ctrl a = runReaderT (clingo a) ctrl
+
+-- | Get the control handle from the 'Clingo' monad. Arbitrarily unsafe things
+-- can be done with this!
+askC :: Clingo s Raw.Control
+askC = Clingo ask
 
 newtype Symbol s = Symbol { rawSymbol :: Raw.Symbol }
     deriving (NFData)

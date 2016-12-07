@@ -51,7 +51,6 @@ module Clingo.Symbol
 where
 
 import Control.Monad.IO.Class
-import Control.Monad.Catch
 
 import Data.Text (Text, pack, unpack)
 import Numeric.Natural
@@ -93,13 +92,11 @@ instance Signed (FunctionSymbol s) where
         toBool <$> marshall1 (Raw.symbolIsNegative . rawSymbol . unFuncSym $ s)
 
 -- | Parse a term in string form. This does not return an AST Term!
-parseTerm :: (MonadIO m, MonadThrow m)
-          => Clingo s
-          -> Text                                       -- ^ Term as 'Text'
+parseTerm :: Text                                       -- ^ Term as 'Text'
           -> Maybe (ClingoWarning -> Text -> IO ())     -- ^ Logger callback
           -> Natural                                    -- ^ Callback limit
-          -> m (Symbol s)
-parseTerm _ t logger limit = Symbol <$> marshall1 go
+          -> Clingo s (Symbol s)
+parseTerm t logger limit = Symbol <$> marshall1 go
     where go x = withCString (unpack t) $ \cstr -> do
                      logCB <- maybe (pure nullFunPtr) wrapCBLogger logger
                      Raw.parseTerm cstr logCB nullPtr (fromIntegral limit) x
@@ -118,66 +115,61 @@ signatureHash :: Signature s -> Integer
 signatureHash = fromIntegral . Raw.symbolHash . rawSignature
 
 -- | Create a new signature with the solver.
-signatureCreate :: (MonadIO m, MonadThrow m)
-                => Clingo s 
-                -> Text                     -- ^ Name
+signatureCreate :: Text                     -- ^ Name
                 -> Natural                  -- ^ Arity
                 -> Bool                     -- ^ Positive
-                -> m (Signature s)
-signatureCreate _ name arity pos = Signature <$> marshall1 go
+                -> Clingo s (Signature s)
+signatureCreate name arity pos = Signature <$> marshall1 go
     where go x = withCString (unpack name) $ \cstr ->
                      Raw.signatureCreate cstr (fromIntegral arity) 
                                          (fromBool pos) x
 
 -- | Create a number symbol.
-createNumber :: (Integral a, MonadIO m) => Clingo s -> a -> m (Symbol s)
-createNumber _ a = Symbol <$> 
+createNumber :: (Integral a) => a -> Clingo s (Symbol s)
+createNumber a = Symbol <$> 
     marshall1V (Raw.symbolCreateNumber (fromIntegral a))
 
 -- | Create a supremum symbol, @#sup@.
-createSupremum :: MonadIO m => Clingo s -> m (Symbol s)
-createSupremum _ = Symbol <$> 
+createSupremum :: Clingo s (Symbol s)
+createSupremum = Symbol <$> 
     marshall1V Raw.symbolCreateSupremum
 
 -- | Create a infimum symbol, @#inf@.
-createInfimum :: MonadIO m => Clingo s -> m (Symbol s)
-createInfimum _ = Symbol <$> 
+createInfimum :: Clingo s (Symbol s)
+createInfimum = Symbol <$> 
     marshall1V Raw.symbolCreateInfimum
 
 -- | Construct a symbol representing a string.
-createString :: (MonadIO m, MonadThrow m) => Clingo s -> Text -> m (Symbol s)
-createString _ str = Symbol <$> marshall1 go
+createString :: Text -> Clingo s (Symbol s)
+createString str = Symbol <$> marshall1 go
     where go = withCString (unpack str) . flip Raw.symbolCreateString
 
 -- | Construct a symbol representing a function or tuple.
-createFunction :: (MonadIO m, MonadThrow m) 
-               => Clingo s
-               -> Text          -- ^ Function name
+createFunction :: Text          -- ^ Function name
                -> [Symbol s]    -- ^ Arguments
                -> Bool          -- ^ Positive sign
-               -> m (Symbol s)
-createFunction _ name args pos = Symbol <$> marshall1 go 
+               -> Clingo s (Symbol s)
+createFunction name args pos = Symbol <$> marshall1 go 
     where go x = withCString (unpack name) $ \cstr -> 
                      withArrayLen (map rawSymbol args) $ \len syms -> 
                          Raw.symbolCreateFunction cstr syms 
                              (fromIntegral len) (fromBool pos) x
 
 -- | Construct a symbol representing an id.
-createId :: (MonadIO m, MonadThrow m) 
-         => Clingo s -> Text -> Bool -> m (Symbol s)
-createId c t = createFunction c t []
+createId :: Text -> Bool -> Clingo s (Symbol s)
+createId t = createFunction t []
 
 -- | Hash a symbol
 symbolHash :: Symbol s -> Integer
 symbolHash = fromIntegral . Raw.symbolHash . rawSymbol
 
 -- | Obtain number from symbol. Will fail for invalid symbol types.
-symbolNumber :: (MonadIO m, MonadThrow m) => Symbol s -> m (Maybe Integer)
+symbolNumber :: Symbol s -> Clingo s (Maybe Integer)
 symbolNumber s = fmap fromIntegral <$> 
     marshall1RT (Raw.symbolNumber (rawSymbol s))
 
 -- | Obtain the name of a symbol when possible.
-symbolName :: (MonadIO m, MonadThrow m) => Symbol s -> m (Maybe Text)
+symbolName :: Symbol s -> Clingo s (Maybe Text)
 symbolName s = do
     x <- marshall1RT (Raw.symbolName (rawSymbol s))
     case x of
@@ -185,7 +177,7 @@ symbolName s = do
         Just cstr -> liftIO $ (Just . pack) <$> peekCString cstr
 
 -- | Obtain the string from a suitable symbol.
-symbolString :: (MonadIO m, MonadThrow m) => Symbol s -> m (Maybe Text)
+symbolString :: Symbol s -> Clingo s (Maybe Text)
 symbolString s = do
     x <- marshall1RT (Raw.symbolString (rawSymbol s))
     case x of
@@ -193,20 +185,19 @@ symbolString s = do
         Just cstr -> liftIO $ (Just . pack) <$> peekCString cstr
 
 -- | Obtain the arguments of a symbol. May be empty.
-symbolArguments :: (MonadIO m, MonadThrow m) => Symbol s -> m [Symbol s]
+symbolArguments :: Symbol s -> Clingo s [Symbol s]
 symbolArguments s = map Symbol <$> 
     marshall1A (Raw.symbolArguments (rawSymbol s))
 
 -- | Obtain the n-th argument of a symbol.
-symbolGetArg :: (MonadIO m, MonadThrow m) => Symbol s -> Int 
-             -> m (Maybe (Symbol s))
+symbolGetArg :: Symbol s -> Int -> Clingo s (Maybe (Symbol s))
 symbolGetArg s i = do
     args <- symbolArguments s
     if length args <= i then return Nothing
                         else return . Just $ args !! i
 
 -- | Pretty print a symbol into a 'Text'.
-prettySymbol :: (MonadIO m, MonadThrow m) => Symbol s -> m Text
+prettySymbol :: Symbol s -> Clingo s Text
 prettySymbol s = do
     len <- marshall1 (Raw.symbolToStringSize (rawSymbol s))
     str <- liftIO $ allocaArray (fromIntegral len) $ \ptr -> do

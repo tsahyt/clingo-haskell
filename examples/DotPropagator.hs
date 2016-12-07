@@ -29,14 +29,14 @@ watchAll = mapM_ ((addWatch =<<) . solverLiteral . literal)
            =<< flip fromSymbolicAtoms id =<< propSymbolicAtoms
 
 main :: IO ()
-main = withDefaultClingo $ \ctrl -> do
+main = withDefaultClingo $ do
     path <- head <$> liftIO getArgs
-    registerPropagator ctrl False $ emptyPropagator
+    registerPropagator False $ emptyPropagator
         { propInit = Just watchAll
         , propPropagate = Just writeDots
         , propUndo = Just takeDots
         }
-    loadProgram ctrl path
-    ground ctrl [Part "base" []] Nothing
-    solve ctrl Nothing []
-    putChar '\n'
+    loadProgram path
+    ground [Part "base" []] Nothing
+    solve Nothing []
+    liftIO (putChar '\n')
