@@ -160,14 +160,14 @@ executable model
   main-is:             Model.hs
   default-language:    Haskell2010
 
-executable solve-iteratively
+executable solve-async
   if flag(examples)
-      build-depends:   base, clingo, text, monad-loops
+      build-depends:   base, clingo, text, monad-loops, MonadRandom
   else 
       buildable:       False
 
   hs-source-dirs:      examples
-  main-is:             SolveIteratively.hs
+  main-is:             SolveAsync.hs
   default-language:    Haskell2010
 
 executable statistics

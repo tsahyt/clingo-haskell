@@ -13,12 +13,12 @@ import Foreign.C
 import Clingo.Raw.Enums
 import Clingo.Raw.Types
 
-foreign import ccall "clingo.h clingo_solve_async_get" solveAsyncGetFFI ::
-    AsyncSolver -> Ptr SolveResult -> IO CBool
-foreign import ccall "clingo.h clingo_solve_async_wait" solveAsyncWaitFFI ::
-    AsyncSolver -> CDouble -> Ptr CBool -> IO CBool
-foreign import ccall "clingo.h clingo_solve_async_cancel" solveAsyncCancelFFI ::
-    AsyncSolver -> IO CBool
+foreign import ccall "clingo.h clingo_solve_async_get" 
+    solveAsyncGetFFI :: AsyncSolver -> Ptr SolveResult -> IO CBool
+foreign import ccall "clingo.h clingo_solve_async_wait" 
+    solveAsyncWaitFFI :: AsyncSolver -> CDouble -> Ptr CBool -> IO CBool
+foreign import ccall "clingo.h clingo_solve_async_cancel" 
+    solveAsyncCancelFFI :: AsyncSolver -> IO CBool
 
 solveAsyncGet :: MonadIO m => AsyncSolver -> Ptr SolveResult -> m CBool
 solveAsyncGet a b = liftIO $ solveAsyncGetFFI a b
