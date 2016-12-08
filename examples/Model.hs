@@ -13,14 +13,14 @@ import System.Environment (getArgs)
 import Text.Printf
 import qualified Data.Text.IO as T
 
-printModel :: Model s -> Text -> SymbolSelection -> Clingo s ()
+printModel :: Model s -> Text -> SymbolSelection -> IOSym s ()
 printModel m label s = do
-    syms <- mapM prettySymbol =<< modelSymbols m s
+    syms <- map prettySymbol <$> modelSymbols m s
     liftIO $ do
         T.putStr (label `mappend` ": ")
         T.putStrLn . mconcat $ intersperse " " syms
 
-onModel :: Model s -> Clingo s Continue
+onModel :: Model s -> IOSym s Continue
 onModel m = do  
     t <- modelType m
     n <- modelNumber m

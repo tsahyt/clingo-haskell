@@ -115,6 +115,14 @@ parseTerm t logger limit = pureSymbol =<< marshall1 go
                      logCB <- maybe (pure nullFunPtr) wrapCBLogger logger
                      Raw.parseTerm cstr logCB nullPtr (fromIntegral limit) x
 
+instance MonadSymbol IOSym where
+    createSignature = createSignature'
+    createNumber = createNumber'
+    createSupremum = createSupremum'
+    createInfimum = createInfimum'
+    createString = createString'
+    createFunction = createFunction'
+
 instance MonadSymbol Clingo where
     createSignature = createSignature'
     createNumber = createNumber'

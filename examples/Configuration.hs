@@ -9,10 +9,10 @@ import Clingo.Symbol
 import Clingo.Model
 import Data.StateVar
 
-onModel :: Model s -> Clingo s Continue
+onModel :: Model s -> IOSym s Continue
 onModel m = do
-    syms <- mapM prettySymbol
-        =<< modelSymbols m (selectNone { selectShown = True }) 
+    syms <- map prettySymbol
+        <$> modelSymbols m (selectNone { selectShown = True }) 
     liftIO (putStr "Model: " >> print syms)
     return Continue
 

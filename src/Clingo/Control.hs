@@ -3,6 +3,7 @@
 {-# LANGUAGE PatternSynonyms #-}
 module Clingo.Control
 (
+    IOSym,
     Clingo,
     ClingoWarning,
     warningString,
@@ -61,6 +62,7 @@ import Numeric.Natural
 
 import qualified Clingo.Raw as Raw
 import Clingo.Internal.Utils
+import Clingo.Internal.Symbol
 import Clingo.Internal.Types
 import Clingo.Propagation (Propagator, propagatorToIO)
 
@@ -160,7 +162,7 @@ wrapCBGround f = liftIO $ Raw.mkCallbackGround go
           go loc name arg args _ cbSym _ = reraiseIO $ do
               loc'  <- fromRawLocation =<< peek loc
               name' <- pack <$> peekCString name
-              syms  <- map Symbol <$> peekArray (fromIntegral args) arg
+              syms  <- mapM pureSymbol =<< peekArray (fromIntegral args) arg
               f loc' name' syms (unwrapCBSymbol $ Raw.getCallbackSymbol cbSym)
 
 unwrapCBSymbol :: Raw.CallbackSymbol () -> ([Symbol s] -> IO ())
@@ -192,27 +194,27 @@ continueBool Continue = True
 continueBool Stop = False
 
 -- | Solve the currently grounded program, with an optional on-model callback.
-solve :: Maybe (Model s -> Clingo s Continue)
+solve :: Maybe (Model s -> IOSym s Continue)
       -> [SymbolicLiteral s] 
       -> Clingo s SolveResult
 solve onModel assumptions = askC >>= \ctrl -> 
     fromRawSolveResult <$> marshall1 (go ctrl)
     where go ctrl x = 
               withArrayLen (map rawSymLit assumptions) $ \len arr -> do
-              modelCB <- maybe (pure nullFunPtr) (wrapCBModel ctrl) onModel
+              modelCB <- maybe (pure nullFunPtr) (wrapCBModel) onModel
               Raw.controlSolve ctrl modelCB nullPtr 
                                arr (fromIntegral len) x
 
 -- | Start asynchronous solving of the currently grounded program.
-solveAsync :: (Model s -> Clingo s Continue)
-           -> (SolveResult -> Clingo s ())
+solveAsync :: (Model s -> IOSym s Continue)
+           -> (SolveResult -> IOSym s ())
            -> [SymbolicLiteral s]
            -> Clingo s (AsyncSolver s)
 solveAsync onModel onFinish assumptions = askC >>= \ctrl ->
     AsyncSolver <$> marshall1 (go ctrl)
     where go ctrl x = withArrayLen (map rawSymLit assumptions) $ \len arr -> do
-                      modelCB <- wrapCBModel ctrl onModel
-                      finishCB <- wrapCBFinish ctrl onFinish
+                      modelCB <- wrapCBModel onModel
+                      finishCB <- wrapCBFinish onFinish
                       Raw.controlSolveAsync ctrl modelCB nullPtr
                                                  finishCB nullPtr
                                                  arr (fromIntegral len) x
@@ -225,21 +227,19 @@ solveIterative assumptions = askC >>= \ctrl ->
                           Raw.controlSolveIter ctrl arr (fromIntegral len) x
 
 wrapCBModel :: MonadIO m
-            => Raw.Control
-            -> (Model s -> Clingo s Continue) 
+            => (Model s -> IOSym s Continue) 
             -> m (FunPtr (Raw.CallbackModel ()))
-wrapCBModel ctrl f = liftIO $ Raw.mkCallbackModel go
+wrapCBModel f = liftIO $ Raw.mkCallbackModel go
     where go :: Raw.Model -> Ptr a -> Ptr Raw.CBool -> IO Raw.CBool
           go m _ r = reraiseIO $ 
-              poke r . fromBool . continueBool =<< runClingo ctrl (f (Model m))
+              poke r . fromBool . continueBool =<< iosym (f (Model m))
 
 wrapCBFinish :: MonadIO m
-             => Raw.Control
-             -> (SolveResult -> Clingo s ())
+             => (SolveResult -> IOSym s ())
              -> m (FunPtr (Raw.CallbackFinish ()))
-wrapCBFinish ctrl f = liftIO $ Raw.mkCallbackFinish go
+wrapCBFinish f = liftIO $ Raw.mkCallbackFinish go
     where go :: Raw.SolveResult -> Ptr () -> IO Raw.CBool
-          go s _ = reraiseIO $ runClingo ctrl (f (fromRawSolveResult s))
+          go s _ = reraiseIO $ iosym (f (fromRawSolveResult s))
 
 -- | Obtain statistics handle. See 'Clingo.Statistics'.
 statistics :: Clingo s (Statistics s)
@@ -297,7 +297,7 @@ releaseExternal s = askC >>= \ctrl ->
 
 -- | Get the symbol for a constant definition @#const name = symbol@.
 getConst :: Text -> Clingo s (Symbol s)
-getConst name = askC >>= \ctrl -> Symbol <$> marshall1 (go ctrl)
+getConst name = askC >>= \ctrl -> pureSymbol =<< marshall1 (go ctrl)
     where go ctrl x = withCString (unpack name) $ \cstr -> 
                           Raw.controlGetConst ctrl cstr x
 

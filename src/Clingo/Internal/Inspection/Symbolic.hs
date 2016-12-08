@@ -30,6 +30,7 @@ import Foreign
 import qualified Clingo.Raw as Raw
 import Clingo.Internal.Types
 import Clingo.Internal.Utils
+import Clingo.Internal.Symbol
 
 newtype SIterator s = SIterator Raw.SymbolicAtomIterator
 
@@ -65,7 +66,7 @@ symbolicAtomsIteratorEq (SymbolicAtoms s) (SIterator a) (SIterator b) =
 symbolicAtomsSymbol :: (MonadIO m, MonadThrow m)
                     => SymbolicAtoms s -> SIterator s -> m (Symbol s)
 symbolicAtomsSymbol (SymbolicAtoms s) (SIterator i) =
-    Symbol <$> marshall1 (Raw.symbolicAtomsSymbol s i)
+    pureSymbol =<< marshall1 (Raw.symbolicAtomsSymbol s i)
 
 symbolicAtomsIsFact :: (MonadIO m, MonadThrow m)
                     => SymbolicAtoms s -> SIterator s -> m Bool
@@ -88,7 +89,7 @@ symbolicAtomsSignatures (SymbolicAtoms s) = do
     len <- marshall1 (Raw.symbolicAtomsSignaturesSize s)
     liftIO $ allocaArray (fromIntegral len) $ \arr -> do
         marshall0 (Raw.symbolicAtomsSignatures s arr len)
-        map Signature <$> peekArray (fromIntegral len) arr
+        mapM pureSignature =<< peekArray (fromIntegral len) arr
 
 symbolicAtomsNext :: (MonadIO m, MonadThrow m)
                   => SymbolicAtoms s -> SIterator s -> m (SIterator s)

@@ -4,6 +4,7 @@
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 module Clingo.Internal.Types
 (
+    IOSym (..),
     Clingo (..),
     runClingo,
     askC,
@@ -60,17 +61,23 @@ import qualified Clingo.Raw as Raw
 import Clingo.Internal.Utils
 import Numeric.Natural
 
+-- | A monad that serves as witness that data registered with a running solver
+-- still exists and can be used.
+newtype IOSym s a = IOSym { iosym :: IO a }
+    deriving (Functor, Applicative, Monad, MonadMask, MonadThrow
+             , MonadCatch, MonadIO, MonadFix, MonadPlus, Alternative )
+
 -- | The 'Clingo' monad provides a base monad for computations utilizing the
 -- clingo answer set solver. It uses an additional type parameter to ensure that
--- values that are managed by the solver can not leave scope.
-newtype Clingo s a = Clingo { clingo :: ReaderT Raw.Control IO a }
+-- values that are managed by the solver can not leave scope. 
+newtype Clingo s a = Clingo { clingo :: ReaderT Raw.Control (IOSym s) a }
     deriving (Functor, Applicative, Monad, MonadMask, MonadThrow
              , MonadCatch, MonadIO, MonadFix, MonadPlus, Alternative)
 
 -- | Run a clingo computation from an explicit handle. The handle must be
 -- cleaned up manually afterwards, or on failure!
 runClingo :: Raw.Control -> Clingo s a -> IO a
-runClingo ctrl a = runReaderT (clingo a) ctrl
+runClingo ctrl a = iosym (runReaderT (clingo a) ctrl)
 
 -- | Get the control handle from the 'Clingo' monad. Arbitrarily unsafe things
 -- can be done with this!

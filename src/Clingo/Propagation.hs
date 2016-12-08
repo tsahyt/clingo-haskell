@@ -73,6 +73,8 @@ import Control.Monad.Reader
 import Control.Monad.Trans.Maybe
 
 import Clingo.Internal.Types
+import Clingo.Internal.Symbol
+import Clingo.Symbol
 import qualified Clingo.Internal.Propagation as P
 import Clingo.Internal.Propagation (Assignment, Clause)
 
@@ -103,6 +105,14 @@ instance MonadReader (PropagateCtrl s) (Propagation 'Solving s) where
     ask = Propagation ask
     local f (Propagation x) = Propagation (local f x)
     reader = Propagation . reader
+
+instance MonadSymbol (Propagation phase) where
+    createSignature = createSignature'
+    createNumber = createNumber'
+    createSupremum = createSupremum'
+    createInfimum = createInfimum'
+    createString = createString'
+    createFunction = createFunction'
 
 handleStop :: P.PropagationStop -> Propagation phase s ()
 handleStop P.Continue = return ()

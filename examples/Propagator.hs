@@ -49,10 +49,10 @@ forceMVar mvar x = liftIO $ do
     _ <- tryTakeMVar mvar
     putMVar mvar x
 
-onModel :: Model s -> Clingo s Continue
+onModel :: Model s -> IOSym s Continue
 onModel m = do
-    syms <- mapM prettySymbol
-        =<< modelSymbols m (selectNone { selectShown = True }) 
+    syms <- map prettySymbol
+        <$> modelSymbols m (selectNone { selectShown = True }) 
     liftIO (putStr "Model: " >> print syms)
     return Continue
     
@@ -61,8 +61,8 @@ main = withDefaultClingo $ do
     addProgram "pigeon" ["h","p"] 
         "1 { place(P,H) : H = 1..h } 1 :- P = 1..p."
 
-    holes <- createNumber 2
-    pigeons <- createNumber 3
+    holes <- createNumber 8
+    pigeons <- createNumber 9
     ground [Part "pigeon" [holes, pigeons]] Nothing
 
     propState <- liftIO newEmptyMVar
@@ -76,16 +76,16 @@ pigeonator :: MVar (PigeonData s) -> Propagator s
 pigeonator mvar = emptyPropagator
     { propInit = Just $ do
         -- obtain place/2 atoms
-        placeSig <- undefined -- signatureCreate "place" 2 True
+        placeSig <- createSignature "place" 2 True
         watches <- propSymbolicAtoms 
                >>= \sa -> fromSymbolicAtomsSig sa placeSig id
 
         -- watch and create initial placements
         mapM_ ((addWatch =<<) . solverLiteral . literal) watches
         ps <- forM watches $ \atom -> do
-                  hole <- runMaybeT $ do
-                              arg <- MaybeT $ undefined -- symbolGetArg (symbol atom) 1
-                              Hole . fromIntegral <$> MaybeT undefined -- (symbolNumber arg)
+                  let hole = do 
+                             arg <- symbolGetArg (symbol atom) 1
+                             Hole . fromIntegral <$> symbolNumber arg
                   lit <- solverLiteral . literal $ atom
                   return $ (,) <$> pure lit <*> hole
 
