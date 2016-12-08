@@ -2,6 +2,7 @@
 module Main where
 
 import Control.Monad
+import Control.Monad.IO.Class
 import Data.Maybe
 import Clingo.Control
 import Clingo.Symbol
@@ -13,23 +14,23 @@ import qualified Data.Text as T
 
 import Clingo.Inspection.Theory
 
-onModel :: Model s -> IO Continue
+onModel :: Model s -> IOSym s Continue
 onModel m = do
-    syms <- mapM prettySymbol
-        =<< modelSymbols m (selectNone { selectShown = True }) 
-    putStr "Model: " >> print syms
+    syms <- map prettySymbol
+        <$> modelSymbols m (selectNone { selectShown = True }) 
+    liftIO (putStr "Model: " >> print syms)
     return Continue
 
-theory :: TheoryAtoms s -> IO (AspifLiteral s)
+theory :: TheoryAtoms s -> Clingo s (AspifLiteral s)
 theory t = do
     -- obtain number of theory atoms via length
     size <- fromTheoryAtoms t length 
-    putStrLn $ "number of grounded theory atoms: " ++ show size
+    liftIO (putStrLn $ "number of grounded theory atoms: " ++ show size)
 
     -- find the atom b/1 and determine whether it has a guard
     atomB <- fromTheoryAtoms t (head . filter (nameIs "b"))
-    putStrLn $ "theory atom b/1 has guard: " ++ 
-               show (isJust . atomGuard $ atomB)
+    liftIO (putStrLn $ "theory atom b/1 has guard: " ++ 
+                       show (isJust . atomGuard $ atomB))
 
     return (atomLiteral atomB)
 
@@ -38,8 +39,8 @@ theory t = do
                            Just b  -> a == b
     
 main :: IO ()
-main = withDefaultClingo $ \ctrl -> do
-    addProgram ctrl "base" [] $ mconcat
+main = withDefaultClingo $ do
+    addProgram "base" [] $ mconcat
         [ "#theory t {"
         , "  term   { + : 1, binary, left };"
         , "  &a/0 : term, any;"
@@ -47,7 +48,7 @@ main = withDefaultClingo $ \ctrl -> do
         , "}."
         , "x :- &a { 1+2 }."
         , "y :- &b(3) { } = 17." ]
-    ground ctrl [Part "base" []] Nothing
-    lit <- theoryAtoms ctrl >>= theory
-    backend ctrl >>= flip addGroundStatements [ assume [lit] ]
-    void $ solve ctrl (Just onModel) []
+    ground [Part "base" []] Nothing
+    lit <- theory =<< theoryAtoms
+    flip addGroundStatements [ assume [lit] ] =<< backend
+    void $ solve (Just onModel) []
