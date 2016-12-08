@@ -17,7 +17,7 @@ onModel m = do
     liftIO (putStr "Model: " >> print syms)
     return Continue
 
-rewrite :: Term -> Statement -> Statement
+rewrite :: Term a -> Statement a b -> Statement a b
 rewrite a@(TermSymbol loc sym) (StmtRule l (Rule h b)) = 
     let lit = BodyLiteral loc NoSign (LiteralTerm loc NoSign a)
      in StmtRule l (Rule h (lit : b))
@@ -30,7 +30,7 @@ main = withDefaultClingo $ do
     -- create enable atom
     sym  <- createId "enable" True
     let loc  = Location "<rewrite>" "<rewrite>" 0 0 0 0
-        atom = TermSymbol loc (wrapSymbol sym)
+        atom = TermSymbol loc sym
 
     -- add rewritten statements into the builder
     addStatements builder . map (rewrite atom)

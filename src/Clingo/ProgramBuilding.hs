@@ -180,7 +180,9 @@ addGroundStatements b xs = mapM_ (`addGStmt` b) (toList xs)
 
 -- | Add a collection of non-ground statements to the solver.
 addStatements :: (MonadIO m, MonadMask m, Traversable t)
-              => ProgramBuilder s -> t Statement -> m ()
+              => ProgramBuilder s 
+              -> t (Statement (Symbol s) (Signature s)) 
+              -> m ()
 addStatements (ProgramBuilder b) stmts = do
     marshall0 (Raw.programBuilderBegin b)
     mapM_ go stmts `finally` marshall0 (Raw.programBuilderEnd b)

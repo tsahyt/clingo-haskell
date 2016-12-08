@@ -4,10 +4,8 @@ module Clingo.AST
 
     T.Location (..),
     Sign (..),
-    Signature,
-    wrapSignature,
-    Symbol,
-    wrapSymbol,
+    T.Signature,
+    T.Symbol,
     UnaryOperation (..),
     UnaryOperator (..),
     BinaryOperation (..),
@@ -82,19 +80,11 @@ import Clingo.Internal.Utils
 import qualified Clingo.Internal.Types as T
 import qualified Clingo.Raw as Raw
 
--- | Wrap a Symbol such that it can be used in an AST
-wrapSymbol :: T.Symbol s -> Symbol
-wrapSymbol = undefined -- Symbol
-
--- | Wrap a Signature such that it can be used in an AST
-wrapSignature :: T.Signature s -> Signature
-wrapSignature = undefined -- Signature
-
 -- | Parse a logic program into a list of statements.
 parseProgram :: Text                                    -- ^ Program
              -> Maybe (ClingoWarning -> Text -> IO ())  -- ^ Logger Callback
              -> Natural                                 -- ^ Logger Call Limit
-             -> T.Clingo s [Statement]
+             -> T.Clingo s [Statement (T.Symbol s) (T.Signature s)]
 parseProgram prog logger limit = do
     ref <- liftIO (newIORef [])
     marshall0 $
@@ -106,7 +96,7 @@ parseProgram prog logger limit = do
     liftIO (readIORef ref)
 
 wrapCBAst :: MonadIO m
-          => (Statement -> IO ())
+          => (Statement (T.Symbol s) (T.Signature s) -> IO ())
           -> m (FunPtr (Ptr Raw.AstStatement -> Ptr () -> IO Raw.CBool))
 wrapCBAst f = liftIO $ Raw.mkCallbackAst go
     where go :: Ptr Raw.AstStatement -> Ptr () -> IO Raw.CBool
