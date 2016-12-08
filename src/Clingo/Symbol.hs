@@ -131,6 +131,14 @@ instance MonadSymbol Clingo where
     createString = createString'
     createFunction = createFunction'
 
+instance MonadSymbol IterSolver where
+    createSignature = createSignature'
+    createNumber = createNumber'
+    createSupremum = createSupremum'
+    createInfimum = createInfimum'
+    createString = createString'
+    createFunction = createFunction'
+
 -- | Get the name of a signature.
 signatureName :: Signature s -> Text
 signatureName = sigName

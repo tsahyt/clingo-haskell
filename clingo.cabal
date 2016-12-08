@@ -162,7 +162,7 @@ executable model
 
 executable solve-iteratively
   if flag(examples)
-      build-depends:   base, clingo, text
+      build-depends:   base, clingo, text, monad-loops
   else 
       buildable:       False
 

@@ -201,7 +201,7 @@ solve onModel assumptions = askC >>= \ctrl ->
     fromRawSolveResult <$> marshall1 (go ctrl)
     where go ctrl x = 
               withArrayLen (map rawSymLit assumptions) $ \len arr -> do
-              modelCB <- maybe (pure nullFunPtr) (wrapCBModel) onModel
+              modelCB <- maybe (pure nullFunPtr) wrapCBModel onModel
               Raw.controlSolve ctrl modelCB nullPtr 
                                arr (fromIntegral len) x
 
@@ -220,11 +220,14 @@ solveAsync onModel onFinish assumptions = askC >>= \ctrl ->
                                                  arr (fromIntegral len) x
 
 -- | Start iterative solving of the currently grounded program.
-solveIterative :: [SymbolicLiteral s] -> Clingo s (IterSolver s)
-solveIterative assumptions = askC >>= \ctrl ->
-    IterSolver <$> marshall1 (go ctrl)
+solveIterative :: [SymbolicLiteral s] -> IterSolver s a -> Clingo s a
+solveIterative assumptions action = askC >>= \ctrl -> do
+    h <- marshall1 (go ctrl)
+    liftIO $ finally (runIterSolver h action) (close h)
     where go ctrl x = withArrayLen (map rawSymLit assumptions) $ \len arr ->
                           Raw.controlSolveIter ctrl arr (fromIntegral len) x
+
+          close h = marshall0 (Raw.solveIterativelyClose h)
 
 wrapCBModel :: MonadIO m
             => (Model s -> IOSym s Continue) 

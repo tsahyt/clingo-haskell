@@ -3,9 +3,8 @@ module Clingo.Iterative
     IterSolver,
     SolveResult (..),
     exhausted,
-    iterativelyNext,
-    iterativelyGet,
-    iterativelyClose
+    nextModel,
+    getSolveResult,
 )
 where
 
@@ -18,19 +17,13 @@ import qualified Clingo.Raw as Raw
 import Clingo.Internal.Types
 import Clingo.Internal.Utils
 
-iterativelyNext :: (MonadIO m, MonadThrow m)
-                => IterSolver s -> m (Maybe (Model s))
-iterativelyNext (IterSolver s) = do
+nextModel :: IterSolver s (Maybe (Model s))
+nextModel = askIter >>= \s -> do
     Raw.Model mptr <- marshall1 (Raw.solveIterativelyNext s)
     return $ if mptr == nullPtr 
         then Nothing
         else Just (Model (Raw.Model mptr))
 
-iterativelyGet :: (MonadIO m, MonadThrow m)
-               => IterSolver s -> m SolveResult
-iterativelyGet (IterSolver s) = 
+getSolveResult :: IterSolver s SolveResult
+getSolveResult = askIter >>= \s ->  
     fromRawSolveResult <$> marshall1 (Raw.solveIterativelyGet s)
-
-iterativelyClose :: (MonadIO m, MonadThrow m)
-                 => IterSolver s -> m ()
-iterativelyClose (IterSolver s) = marshall0 (Raw.solveIterativelyClose s)

@@ -19,6 +19,8 @@ module Clingo.Internal.Types
     Atom (..),
     AsyncSolver (..),
     IterSolver (..),
+    runIterSolver,
+    askIter,
     Model (..),
     Location (..),
     rawLocation,
@@ -165,7 +167,16 @@ newtype Atom s = Atom { rawAtom :: Raw.Atom }
 
 newtype AsyncSolver s = AsyncSolver Raw.AsyncSolver
 
-newtype IterSolver s = IterSolver Raw.IterSolver
+newtype IterSolver s a = IterSolver 
+    { iterSolver :: ReaderT Raw.IterSolver (IOSym s) a }
+    deriving ( Functor, Applicative, Monad, MonadMask, MonadThrow
+             , MonadCatch, MonadIO )
+
+runIterSolver :: Raw.IterSolver -> IterSolver s a -> IO a
+runIterSolver h a = iosym (runReaderT (iterSolver a) h)
+
+askIter :: IterSolver s Raw.IterSolver
+askIter = IterSolver ask
 
 newtype Model s = Model Raw.Model
 
