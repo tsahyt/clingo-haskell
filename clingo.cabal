@@ -58,6 +58,7 @@ library
                        Clingo.Internal.Types
   c-sources:           cbits/wrappers.c
   build-depends:       base >= 4.7 && < 5,
+                       bifunctors,
                        transformers,
                        mtl,
                        exceptions,

@@ -1,9 +1,15 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveFoldable #-}
+{-# LANGUAGE DeriveTraversable #-}
 module Clingo.Internal.AST where
 
 import Control.Monad
 import Data.Text (Text, unpack, pack)
+import Data.Bifunctor
+import Data.Bifoldable
+import Data.Bitraversable
 import Numeric.Natural
 import Foreign hiding (Pool, freePool)
 import Foreign.C
@@ -11,9 +17,7 @@ import Foreign.C
 import Clingo.Internal.Types (Location, rawLocation, freeRawLocation, 
                               fromRawLocation, Symbol (..), Signature (..))
 import Clingo.Internal.Symbol (pureSymbol, pureSignature)
-import qualified Clingo.Internal.Types as T
 import Clingo.Raw.AST
-import qualified Clingo.Raw as Raw
 
 freeArray :: Storable a => Ptr a -> CSize -> (a -> IO ()) -> IO ()
 freeArray p n f = unless (p == nullPtr) $ do
@@ -52,7 +56,7 @@ fromRawSign s = case s of
     _ -> error "Invalid clingo_ast_sign_t"
 
 data UnaryOperation a = UnaryOperation UnaryOperator (Term a)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawUnaryOperation :: UnaryOperation (Symbol s) -> IO AstUnaryOperation
 rawUnaryOperation (UnaryOperation o t) = 
@@ -83,7 +87,7 @@ fromRawUnaryOperator o = case o of
     _ -> error "Invalid clingo_ast_unary_operator_t"
 
 data BinaryOperation a = BinaryOperation BinaryOperator (Term a) (Term a)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawBinaryOperation :: BinaryOperation (Symbol s) -> IO AstBinaryOperation
 rawBinaryOperation (BinaryOperation o l r) =
@@ -124,7 +128,7 @@ fromRawBinaryOperator o = case o of
     _ -> error "Invalid clingo_ast_binary_operator_t"
 
 data Interval a = Interval (Term a) (Term a)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawInterval :: Interval (Symbol s) -> IO AstInterval
 rawInterval (Interval a b) = AstInterval <$> rawTerm a <*> rawTerm b
@@ -136,7 +140,7 @@ fromRawInterval :: AstInterval -> IO (Interval (Symbol s))
 fromRawInterval (AstInterval a b) = Interval <$> fromRawTerm a <*> fromRawTerm b
 
 data Function a = Function Text [Term a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawFunction :: Function (Symbol s) -> IO AstFunction
 rawFunction (Function n ts) = do
@@ -155,7 +159,7 @@ fromRawFunction (AstFunction s ts n) = Function
     <*> (mapM fromRawTerm =<< peekArray (fromIntegral n) ts)
 
 data Pool a = Pool [Term a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawPool :: Pool (Symbol s) -> IO AstPool
 rawPool (Pool ts) = do
@@ -178,7 +182,7 @@ data Term a
     | TermFunction Location (Function a)
     | TermExtFunction Location (Function a)
     | TermPool Location (Pool a)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawTerm :: Term (Symbol s) -> IO AstTerm
 rawTerm (TermSymbol l s) = AstTermSymbol <$> rawLocation l 
@@ -234,7 +238,7 @@ fromRawTerm (AstTermPool l p) = TermPool
     <$> fromRawLocation l <*> fromIndirect p fromRawPool
 
 data CspProductTerm a = CspProductTerm Location (Term a) (Maybe (Term a))
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawCspProductTerm :: CspProductTerm (Symbol s) -> IO AstCspProductTerm
 rawCspProductTerm (CspProductTerm l t m) = AstCspProductTerm
@@ -255,7 +259,7 @@ fromRawCspProductTerm (AstCspProductTerm l t x) = CspProductTerm
     <*> (mapM fromRawTerm =<< peekMaybe x)
 
 data CspSumTerm a = CspSumTerm Location [CspProductTerm a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawCspSumTerm :: CspSumTerm (Symbol s) -> IO AstCspSumTerm
 rawCspSumTerm (CspSumTerm l ts) = do
@@ -274,7 +278,7 @@ fromRawCspSumTerm (AstCspSumTerm l ts n) = CspSumTerm
     <*> (mapM fromRawCspProductTerm =<< peekArray (fromIntegral n) ts)
 
 data CspGuard a = CspGuard ComparisonOperator (CspSumTerm a)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawCspGuard :: CspGuard (Symbol s) -> IO AstCspGuard
 rawCspGuard (CspGuard o t) = AstCspGuard
@@ -312,7 +316,7 @@ fromRawComparisonOperator o = case o of
     _ -> error "Invalid clingo_ast_comparison_operator_type_t"
 
 data CspLiteral a = CspLiteral (CspSumTerm a) [CspGuard a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawCspLiteral :: CspLiteral (Symbol s) -> IO AstCspLiteral
 rawCspLiteral (CspLiteral t gs) = do
@@ -348,7 +352,7 @@ fromRawIdentifier (AstId l n) = Identifier
     <*> fmap pack (peekCString n)
 
 data Comparison a = Comparison ComparisonOperator (Term a) (Term a)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawComparison :: Comparison (Symbol s) -> IO AstComparison
 rawComparison (Comparison o a b) = AstComparison
@@ -366,7 +370,7 @@ data Literal a
     | LiteralTerm Location Sign (Term a)
     | LiteralComp Location Sign (Comparison a)
     | LiteralCSPL Location Sign (CspLiteral a)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawLiteral :: Literal (Symbol s) -> IO AstLiteral
 rawLiteral (LiteralBool l s b) = AstLiteralBool 
@@ -401,7 +405,7 @@ fromRawLiteral (AstLiteralCSPL l s b) = LiteralCSPL
                           <*> fromIndirect b fromRawCspLiteral
 
 data AggregateGuard a = AggregateGuard ComparisonOperator (Term a)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawAggregateGuard :: AggregateGuard (Symbol s) -> IO AstAggregateGuard
 rawAggregateGuard (AggregateGuard o t) = AstAggregateGuard
@@ -420,7 +424,7 @@ fromRawAggregateGuard (AstAggregateGuard o t) = AggregateGuard
     <$> pure (fromRawComparisonOperator o) <*> fromRawTerm t
 
 data ConditionalLiteral a = ConditionalLiteral (Literal a) [Literal a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawConditionalLiteral :: ConditionalLiteral (Symbol s) 
                       -> IO AstConditionalLiteral
@@ -443,7 +447,7 @@ fromRawConditionalLiteral (AstConditionalLiteral l ls n) = ConditionalLiteral
 data Aggregate a = Aggregate [ConditionalLiteral a] 
                              (Maybe (AggregateGuard a)) 
                              (Maybe (AggregateGuard a))
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawAggregate :: Aggregate (Symbol s) -> IO AstAggregate
 rawAggregate (Aggregate ls a b) = do
@@ -465,7 +469,7 @@ fromRawAggregate (AstAggregate ls n a b) = Aggregate
     <*> (mapM fromRawAggregateGuard =<< peekMaybe b)
 
 data BodyAggregateElement a = BodyAggregateElement [Term a] [Literal a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawBodyAggregateElement :: BodyAggregateElement (Symbol s) 
                         -> IO AstBodyAggregateElement
@@ -490,7 +494,7 @@ fromRawBodyAggregateElement (AstBodyAggregateElement ts nt ls nl) =
 data BodyAggregate a = BodyAggregate AggregateFunction [BodyAggregateElement a] 
                                    (Maybe (AggregateGuard a))
                                    (Maybe (AggregateGuard a))
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawBodyAggregate :: BodyAggregate (Symbol s) -> IO AstBodyAggregate
 rawBodyAggregate (BodyAggregate f es a b) = AstBodyAggregate
@@ -584,7 +588,7 @@ fromRawHeadAggregate (AstHeadAggregate f es n a b) = HeadAggregate
     <*> (mapM fromRawAggregateGuard =<< peekMaybe b)
 
 data Disjunction a = Disjunction [ConditionalLiteral a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawDisjunction :: Disjunction (Symbol s) -> IO AstDisjunction
 rawDisjunction (Disjunction ls) = AstDisjunction 
@@ -600,7 +604,7 @@ fromRawDisjunction (AstDisjunction ls n) = Disjunction
 
 data DisjointElement a = 
     DisjointElement Location [Term a] (CspSumTerm a) [Literal a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawDisjointElement :: DisjointElement (Symbol s) -> IO AstDisjointElement
 rawDisjointElement (DisjointElement l ts s ls) = AstDisjointElement
@@ -626,7 +630,7 @@ fromRawDisjointElement (AstDisjointElement l ts nt s ls nl) = DisjointElement
     <*> (mapM fromRawLiteral =<< peekArray (fromIntegral nl) ls)
 
 data Disjoint a = Disjoint [DisjointElement a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawDisjoint :: Disjoint (Symbol s) -> IO AstDisjoint
 rawDisjoint (Disjoint es) = AstDisjoint
@@ -641,7 +645,7 @@ fromRawDisjoint (AstDisjoint es n) = Disjoint
     <$> (mapM fromRawDisjointElement =<< peekArray (fromIntegral n) es)
 
 data TheoryTermArray a = TheoryTermArray [TheoryTerm a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawTheoryTermArray :: TheoryTermArray (Symbol s) -> IO AstTheoryTermArray
 rawTheoryTermArray (TheoryTermArray ts) = AstTheoryTermArray
@@ -656,7 +660,7 @@ fromRawTheoryTermArray (AstTheoryTermArray ts n) = TheoryTermArray
     <$> (mapM fromRawTheoryTerm =<< peekArray (fromIntegral n) ts)
 
 data TheoryFunction a = TheoryFunction Text [TheoryTerm a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawTheoryFunction :: TheoryFunction (Symbol s) -> IO AstTheoryFunction
 rawTheoryFunction (TheoryFunction t ts) = AstTheoryFunction
@@ -676,7 +680,7 @@ fromRawTheoryFunction (AstTheoryFunction s ts n) = TheoryFunction
 
 data TheoryUnparsedTermElement a = 
     TheoryUnparsedTermElement [Text] (TheoryTerm a)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawTheoryUnparsedTermElement :: TheoryUnparsedTermElement (Symbol s)
                              -> IO AstTheoryUnparsedTermElement
@@ -699,7 +703,7 @@ fromRawTheoryUnparsedTermElement (AstTheoryUnparsedTermElement ns n t) =
     <*> fromRawTheoryTerm t
 
 data TheoryUnparsedTerm a = TheoryUnparsedTerm [TheoryUnparsedTermElement a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawTheoryUnparsedTerm :: TheoryUnparsedTerm (Symbol s) 
                       -> IO AstTheoryUnparsedTerm
@@ -725,7 +729,7 @@ data TheoryTerm a
     | TheoryTermSet Location (TheoryTermArray a)
     | TheoryTermFunction Location (TheoryFunction a)
     | TheoryTermUnparsed Location (TheoryUnparsedTerm a)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawTheoryTerm :: TheoryTerm (Symbol s) -> IO AstTheoryTerm
 rawTheoryTerm (TheoryTermSymbol l s) = 
@@ -785,7 +789,7 @@ fromRawTheoryTerm (AstTheoryTermUnparsed l t) =
                        <*> fromIndirect t fromRawTheoryUnparsedTerm
 
 data TheoryAtomElement a = TheoryAtomElement [TheoryTerm a] [Literal a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawTheoryAtomElement :: TheoryAtomElement (Symbol s) -> IO AstTheoryAtomElement
 rawTheoryAtomElement (TheoryAtomElement ts ls) = AstTheoryAtomElement
@@ -806,7 +810,7 @@ fromRawTheoryAtomElement (AstTheoryAtomElement ts nt ls nl) = TheoryAtomElement
     <*> (mapM fromRawLiteral =<< peekArray (fromIntegral nl) ls)
 
 data TheoryGuard a = TheoryGuard Text (TheoryTerm a)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawTheoryGuard :: TheoryGuard (Symbol s) -> IO AstTheoryGuard
 rawTheoryGuard (TheoryGuard s t) = AstTheoryGuard
@@ -822,7 +826,7 @@ fromRawTheoryGuard (AstTheoryGuard n t) = TheoryGuard
     <*> fromRawTheoryTerm t
 
 data TheoryAtom a = TheoryAtom (Term a) [TheoryAtomElement a] (TheoryGuard a)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawTheoryAtom :: TheoryAtom (Symbol s) -> IO AstTheoryAtom
 rawTheoryAtom (TheoryAtom t es g) = AstTheoryAtom
@@ -848,7 +852,7 @@ data HeadLiteral a
     | HeadDisjunction Location (Disjunction a)
     | HeadLitAggregate Location (Aggregate a)
     | HeadTheoryAtom Location (TheoryAtom a)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawHeadLiteral :: HeadLiteral (Symbol s) -> IO AstHeadLiteral
 rawHeadLiteral (HeadLiteral l x) = AstHeadLiteral
@@ -891,7 +895,7 @@ data BodyLiteral a
     | BodyBodyAggregate Location Sign (BodyAggregate a)
     | BodyTheoryAtom Location Sign (TheoryAtom a)
     | BodyDisjoint Location Sign (Disjoint a)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawBodyLiteral :: BodyLiteral (Symbol s) -> IO AstBodyLiteral
 rawBodyLiteral (BodyLiteral l s x) = AstBodyLiteral
@@ -1119,7 +1123,7 @@ fromRawTheoryDefinition (AstTheoryDefinition s ts nt as na) = TheoryDefinition
     <*> (mapM fromRawTheoryAtomDefinition =<< peekArray (fromIntegral na) as)
 
 data Rule a = Rule (HeadLiteral a) [BodyLiteral a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawRule :: Rule (Symbol s) -> IO AstRule
 rawRule (Rule h bs) = AstRule
@@ -1137,7 +1141,7 @@ fromRawRule (AstRule h bs n) = Rule
     <*> (mapM fromRawBodyLiteral =<< peekArray (fromIntegral n) bs)
 
 data Definition a = Definition Text (Term a) Bool
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawDefinition :: Definition (Symbol s) -> IO AstDefinition
 rawDefinition (Definition s t b) = AstDefinition
@@ -1155,7 +1159,7 @@ fromRawDefinition (AstDefinition s t b) = Definition
     <*> pure (toBool b)
 
 data ShowSignature b = ShowSignature b Bool
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawShowSignature :: ShowSignature (Signature b) -> IO AstShowSignature
 rawShowSignature (ShowSignature s b) = AstShowSignature
@@ -1171,7 +1175,7 @@ fromRawShowSignature (AstShowSignature s b) = ShowSignature
     <*> pure (toBool b)
 
 data ShowTerm a = ShowTerm (Term a) [BodyLiteral a] Bool
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawShowTerm :: ShowTerm (Symbol s) -> IO AstShowTerm
 rawShowTerm (ShowTerm t ls b) = AstShowTerm
@@ -1192,7 +1196,7 @@ fromRawShowTerm (AstShowTerm t ls n b) = ShowTerm
     <*> pure (toBool b)
 
 data Minimize a = Minimize (Term a) (Term a) [Term a] [BodyLiteral a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawMinimize :: Minimize (Symbol s) -> IO AstMinimize
 rawMinimize (Minimize a b ts ls) = AstMinimize
@@ -1265,7 +1269,7 @@ fromRawProgram (AstProgram s es n) = Program
     <*> (mapM fromRawIdentifier =<< peekArray (fromIntegral n) es)
 
 data External a = External (Term a) [BodyLiteral a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawExternal :: External (Symbol s) -> IO AstExternal
 rawExternal (External t ls) = AstExternal
@@ -1282,7 +1286,7 @@ fromRawExternal (AstExternal t ls n) = External
     <*> (mapM fromRawBodyLiteral =<< peekArray (fromIntegral n) ls)
 
 data Edge a = Edge (Term a) (Term a) [BodyLiteral a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawEdge :: Edge (Symbol s) -> IO AstEdge
 rawEdge (Edge a b ls) = AstEdge
@@ -1304,7 +1308,7 @@ fromRawEdge (AstEdge a b ls n) = Edge
     <*> (mapM fromRawBodyLiteral =<< peekArray (fromIntegral n) ls)
 
 data Heuristic a = Heuristic (Term a) [BodyLiteral a] (Term a) (Term a) (Term a)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawHeuristic :: Heuristic (Symbol s) -> IO AstHeuristic
 rawHeuristic (Heuristic a ls b c d) = AstHeuristic
@@ -1332,7 +1336,7 @@ fromRawHeuristic (AstHeuristic t ls n a b c) = Heuristic
     <*> fromRawTerm c
 
 data Project a = Project (Term a) [BodyLiteral a]
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawProject :: Project (Symbol s) -> IO AstProject
 rawProject (Project t ls) = AstProject
@@ -1364,7 +1368,55 @@ data Statement a b
     | StmtProject Location (Project a)
     | StmtSignature Location b
     | StmtTheoryDefinition Location TheoryDefinition
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
+
+instance Bifunctor Statement where
+    bimap f g s = case s of
+        StmtRule l x -> StmtRule l (fmap f x)
+        StmtDefinition l x -> StmtDefinition l (fmap f x)
+        StmtShowSignature l x -> StmtShowSignature l (fmap g x)
+        StmtShowTerm l x -> StmtShowTerm l (fmap f x)
+        StmtMinimize l x -> StmtMinimize l (fmap f x)
+        StmtScript l x -> StmtScript l x
+        StmtProgram l x -> StmtProgram l x
+        StmtExternal l x -> StmtExternal l (fmap f x)
+        StmtEdge l x -> StmtEdge l (fmap f x)
+        StmtHeuristic l x -> StmtHeuristic l (fmap f x)
+        StmtProject l x -> StmtProject l (fmap f x)
+        StmtSignature l x -> StmtSignature l (g x)
+        StmtTheoryDefinition l x -> StmtTheoryDefinition l x
+
+instance Bifoldable Statement where
+    bifoldr f g z s = case s of
+        StmtRule _ x -> foldr f z x
+        StmtDefinition _ x -> foldr f z x
+        StmtShowSignature _ x -> foldr g z x
+        StmtShowTerm _ x -> foldr f z x
+        StmtMinimize _ x -> foldr f z x
+        StmtScript _ _ -> z
+        StmtProgram _ _ -> z
+        StmtExternal _ x -> foldr f z x
+        StmtEdge _ x -> foldr f z x
+        StmtHeuristic _ x -> foldr f z x
+        StmtProject _ x -> foldr f z x
+        StmtSignature _ x -> g x z
+        StmtTheoryDefinition _ _ -> z
+
+instance Bitraversable Statement where
+    bitraverse f g s = case s of
+        StmtRule l x -> StmtRule l <$> traverse f x
+        StmtDefinition l x -> StmtDefinition l <$> traverse f x
+        StmtShowSignature l x -> StmtShowSignature l <$> traverse g x
+        StmtShowTerm l x -> StmtShowTerm l <$> traverse f x
+        StmtMinimize l x -> StmtMinimize l <$> traverse f x
+        StmtScript l x -> pure $ StmtScript l x
+        StmtProgram l x -> pure $ StmtProgram l x
+        StmtExternal l x -> StmtExternal l <$> traverse f x
+        StmtEdge l x -> StmtEdge l <$> traverse f x
+        StmtHeuristic l x -> StmtHeuristic l <$> traverse f x
+        StmtProject l x -> StmtProject l <$> traverse f x
+        StmtSignature l x -> StmtSignature l <$> g x
+        StmtTheoryDefinition l x -> pure $ StmtTheoryDefinition l x
 
 rawStatement :: Statement (Symbol s) (Signature s) -> IO AstStatement
 rawStatement (StmtRule l x) = AstStmtRule
