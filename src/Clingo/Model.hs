@@ -38,6 +38,7 @@ import Foreign
 import Numeric.Natural
 
 import qualified Clingo.Raw as Raw
+import Clingo.Internal.Symbol
 import Clingo.Internal.Types
 import Clingo.Internal.Utils
 
@@ -90,7 +91,7 @@ modelSymbols (Model m) selection = liftIO $ do
     allocaArray (fromIntegral len) $ \arr -> do
         marshall0 (Raw.modelSymbols m flags arr len)
         as <- peekArray (fromIntegral len) arr
-        return $ fmap Symbol as
+        mapM pureSymbol as
 
 -- | Constant time lookup to test whether an atom is in a model.
 contains :: (MonadIO m, MonadThrow m) => Model s -> Symbol s -> m Bool

@@ -22,23 +22,17 @@ module Clingo.Symbol
     FunctionSymbol,
     functionSymbol,
 
-    -- * Signature creation/inspection
+    -- * Signature parsing/inspection
     Signature,
-    signatureCreate,
-    prettySymbol,
     parseTerm,
 
     signatureArity,
     signatureHash,
     signatureName,
 
-    -- * Symbol creation
-    createFunction,
+    -- * Symbol and signature creation
+    MonadSymbol (..),
     createId,
-    createInfimum,
-    createNumber,
-    createString,
-    createSupremum,
     
     -- * Symbol inspection
     symbolArguments,
@@ -46,11 +40,12 @@ module Clingo.Symbol
     symbolHash,
     symbolName,
     symbolNumber,
-    symbolString
+    symbolString,
+    prettySymbol
 )
 where
 
-import Data.Text (Text, pack, unpack)
+import Data.Text (Text, unpack)
 import Numeric.Natural
 import Foreign.C
 import Foreign
@@ -90,6 +85,26 @@ instance Signed (FunctionSymbol s) where
     negative s = unsafePerformIO $ 
         toBool <$> marshall1 (Raw.symbolIsNegative . rawSymbol . unFuncSym $ s)
 
+class MonadSymbol m where
+    -- | Create a new signature with the solver, taking a name, an arity and a
+    -- bool determining the sign.
+    createSignature :: Text -> Natural -> Bool -> m s (Signature s)
+    -- | Create a number symbol.
+    createNumber :: (Integral a) => a -> m s (Symbol s)
+    -- | Create a supremum symbol, @#sup@.
+    createSupremum :: m s (Symbol s)
+    -- | Create a infimum symbol, @#inf@.
+    createInfimum :: m s (Symbol s)
+    -- | Construct a symbol representing a string.
+    createString :: Text -> m s (Symbol s)
+    -- | Construct a symbol representing a function or tuple from a name,
+    -- arguments, and whether the sign is positive.
+    createFunction :: Text -> [Symbol s] -> Bool -> m s (Symbol s)
+
+-- | Construct a symbol representing an id.
+createId :: MonadSymbol m => Text -> Bool -> m s (Symbol s)
+createId t = createFunction t []
+
 -- | Parse a term in string form. This does not return an AST Term!
 parseTerm :: Text                                       -- ^ Term as 'Text'
           -> Maybe (ClingoWarning -> Text -> IO ())     -- ^ Logger callback
@@ -99,6 +114,14 @@ parseTerm t logger limit = pureSymbol =<< marshall1 go
     where go x = withCString (unpack t) $ \cstr -> do
                      logCB <- maybe (pure nullFunPtr) wrapCBLogger logger
                      Raw.parseTerm cstr logCB nullPtr (fromIntegral limit) x
+
+instance MonadSymbol Clingo where
+    createSignature = createSignature'
+    createNumber = createNumber'
+    createSupremum = createSupremum'
+    createInfimum = createInfimum'
+    createString = createString'
+    createFunction = createFunction'
 
 -- | Get the name of a signature.
 signatureName :: Signature s -> Text
@@ -111,49 +134,6 @@ signatureArity = sigArity
 -- | Hash a signature.
 signatureHash :: Signature s -> Integer
 signatureHash = sigHash
-
--- | Create a new signature with the solver.
-signatureCreate :: Text                     -- ^ Name
-                -> Natural                  -- ^ Arity
-                -> Bool                     -- ^ Positive
-                -> Clingo s (Signature s)
-signatureCreate name arity pos = pureSignature =<< marshall1 go
-    where go x = withCString (unpack name) $ \cstr ->
-                     Raw.signatureCreate cstr (fromIntegral arity) 
-                                         (fromBool pos) x
-
--- | Create a number symbol.
-createNumber :: (Integral a) => a -> Clingo s (Symbol s)
-createNumber a = pureSymbol =<< 
-    marshall1V (Raw.symbolCreateNumber (fromIntegral a))
-
--- | Create a supremum symbol, @#sup@.
-createSupremum :: Clingo s (Symbol s)
-createSupremum = pureSymbol =<< marshall1V Raw.symbolCreateSupremum
-
--- | Create a infimum symbol, @#inf@.
-createInfimum :: Clingo s (Symbol s)
-createInfimum = pureSymbol =<< marshall1V Raw.symbolCreateInfimum
-
--- | Construct a symbol representing a string.
-createString :: Text -> Clingo s (Symbol s)
-createString str = pureSymbol =<< marshall1 go
-    where go = withCString (unpack str) . flip Raw.symbolCreateString
-
--- | Construct a symbol representing a function or tuple.
-createFunction :: Text          -- ^ Function name
-               -> [Symbol s]    -- ^ Arguments
-               -> Bool          -- ^ Positive sign
-               -> Clingo s (Symbol s)
-createFunction name args pos = pureSymbol =<< marshall1 go 
-    where go x = withCString (unpack name) $ \cstr -> 
-                     withArrayLen (map rawSymbol args) $ \len syms -> 
-                         Raw.symbolCreateFunction cstr syms 
-                             (fromIntegral len) (fromBool pos) x
-
--- | Construct a symbol representing an id.
-createId :: Text -> Bool -> Clingo s (Symbol s)
-createId t = createFunction t []
 
 -- | Hash a symbol
 symbolHash :: Symbol s -> Integer
