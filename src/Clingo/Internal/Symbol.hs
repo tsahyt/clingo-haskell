@@ -34,8 +34,6 @@ import Clingo.Internal.Types
 import Clingo.Internal.Utils
 import qualified Clingo.Raw as Raw
 
-import System.IO.Unsafe
-
 pureSymbol :: (MonadIO m, MonadThrow m) => Raw.Symbol -> m (Symbol s)
 pureSymbol s = Symbol
     <$> pure s
@@ -50,26 +48,33 @@ pureSymbol s = Symbol
 symbolHash' :: Raw.Symbol -> Integer
 symbolHash' = fromIntegral . Raw.symbolHash
 
-symbolNumber' :: (MonadIO m, MonadThrow m) => Raw.Symbol -> m (Maybe Integer)
-symbolNumber' s = fmap fromIntegral <$> 
-    marshall1RT (Raw.symbolNumber s)
+symbolNumber' :: (MonadIO m) => Raw.Symbol -> m (Maybe Integer)
+symbolNumber' s = case Raw.symbolType s of
+    Raw.SymNumber -> fmap fromIntegral <$> marshall1RT (Raw.symbolNumber s)
+    _ -> return Nothing
 
-symbolName' :: (MonadIO m, MonadThrow m) => Raw.Symbol -> m (Maybe Text)
-symbolName' s = do
-    x <- marshall1RT (Raw.symbolName s)
-    case x of
-        Nothing   -> return Nothing
-        Just cstr -> liftIO $ (Just . pack) <$> peekCString cstr
+symbolName' :: (MonadIO m) => Raw.Symbol -> m (Maybe Text)
+symbolName' s = case Raw.symbolType s of
+    Raw.SymFunction -> do
+        x <- marshall1RT (Raw.symbolName s)
+        case x of
+            Nothing   -> return Nothing
+            Just cstr -> liftIO $ (Just . pack) <$> peekCString cstr
+    _ -> return Nothing
 
-symbolString' :: (MonadIO m, MonadThrow m) => Raw.Symbol -> m (Maybe Text)
-symbolString' s = do
-    x <- marshall1RT (Raw.symbolString s)
-    case x of
-        Nothing   -> return Nothing
-        Just cstr -> liftIO $ (Just . pack) <$> peekCString cstr
+symbolString' :: (MonadIO m) => Raw.Symbol -> m (Maybe Text)
+symbolString' s = case Raw.symbolType s of
+    Raw.SymString -> do
+        x <- marshall1RT (Raw.symbolString s)
+        case x of
+            Nothing   -> return Nothing
+            Just cstr -> liftIO $ (Just . pack) <$> peekCString cstr
+    _ -> return Nothing
 
 symbolArguments' :: (MonadIO m, MonadThrow m) => Raw.Symbol -> m [Symbol s]
-symbolArguments' s = mapM pureSymbol =<< marshall1A (Raw.symbolArguments s)
+symbolArguments' s = case Raw.symbolType s of
+    Raw.SymFunction -> mapM pureSymbol =<< marshall1A (Raw.symbolArguments s)
+    _ -> return []
 
 prettySymbol' :: (MonadIO m, MonadThrow m) => Raw.Symbol -> m Text
 prettySymbol' s = do

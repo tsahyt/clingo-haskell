@@ -55,13 +55,14 @@ checkAndThrow :: (MonadIO m, MonadThrow m) => Raw.CBool -> m ()
 checkAndThrow b = unless (toBool b) $ getException >>= throwM
 {-# INLINE checkAndThrow #-}
 
-checkAndThrowRT :: (MonadIO m, MonadThrow m) => a -> Raw.CBool -> m (Maybe a)
+checkAndThrowRT :: (MonadIO m, MonadThrow m) 
+                => m a -> Raw.CBool -> m (Maybe a)
 checkAndThrowRT a b
-    | toBool b = return (Just a)
+    | toBool b = Just <$> a
     | otherwise = do
         exc <- getException
         case exc of
-            ClingoException Raw.ErrorRuntime _ -> return (Just a)
+            ClingoException Raw.ErrorRuntime _ -> return Nothing
             _ -> throwM exc
 {-# INLINE checkAndThrowRT #-}
 
@@ -88,14 +89,12 @@ marshall1V action =
         peek ptr
 {-# INLINE marshall1V #-}
 
-marshall1RT :: (Storable a, MonadIO m, MonadThrow m)
+marshall1RT :: (Storable a, MonadIO m)
             => (Ptr a -> IO Raw.CBool) -> m (Maybe a)
-marshall1RT action = do
-    (res, a) <- liftIO $ alloca $ \ptr -> do
+marshall1RT action =
+    liftIO $ alloca $ \ptr -> do
         res <- action ptr
-        a <- peek ptr
-        return (res, a)
-    checkAndThrowRT a res
+        checkAndThrowRT (peek ptr) res
 {-# INLINE marshall1RT #-}
 
 marshall2 :: (Storable a, Storable b, MonadIO m, MonadThrow m)
