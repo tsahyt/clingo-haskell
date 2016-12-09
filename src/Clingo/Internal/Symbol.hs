@@ -18,7 +18,9 @@ module Clingo.Internal.Symbol
     createSupremum',
     createInfimum',
     createString',
-    createFunction'
+    createFunction',
+
+    MonadSymbol (..),
 )
 where
 
@@ -137,3 +139,43 @@ createFunction' name args pos = pureSymbol =<< marshall1 go
                      withArrayLen (map rawSymbol args) $ \len syms -> 
                          Raw.symbolCreateFunction cstr syms 
                              (fromIntegral len) (fromBool pos) x
+
+class MonadSymbol m where
+    -- | Create a new signature with the solver, taking a name, an arity and a
+    -- bool determining the sign.
+    createSignature :: Text -> Natural -> Bool -> m s (Signature s)
+    -- | Create a number symbol.
+    createNumber :: (Integral a) => a -> m s (Symbol s)
+    -- | Create a supremum symbol, @#sup@.
+    createSupremum :: m s (Symbol s)
+    -- | Create a infimum symbol, @#inf@.
+    createInfimum :: m s (Symbol s)
+    -- | Construct a symbol representing a string.
+    createString :: Text -> m s (Symbol s)
+    -- | Construct a symbol representing a function or tuple from a name,
+    -- arguments, and whether the sign is positive.
+    createFunction :: Text -> [Symbol s] -> Bool -> m s (Symbol s)
+
+instance MonadSymbol IOSym where
+    createSignature = createSignature'
+    createNumber = createNumber'
+    createSupremum = createSupremum'
+    createInfimum = createInfimum'
+    createString = createString'
+    createFunction = createFunction'
+
+instance MonadSymbol Clingo where
+    createSignature = createSignature'
+    createNumber = createNumber'
+    createSupremum = createSupremum'
+    createInfimum = createInfimum'
+    createString = createString'
+    createFunction = createFunction'
+
+instance MonadSymbol IterSolver where
+    createSignature = createSignature'
+    createNumber = createNumber'
+    createSupremum = createSupremum'
+    createInfimum = createInfimum'
+    createString = createString'
+    createFunction = createFunction'
