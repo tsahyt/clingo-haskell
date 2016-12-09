@@ -54,6 +54,23 @@ module Clingo.Raw.Types
 
     -- * Program Inspection
     GroundProgramObserver (..),
+    mkGpoInitProgram,
+    mkGpoBeginStep,
+    mkGpoEndStep,
+    mkGpoRule,
+    mkGpoWeightRule,
+    mkGpoMinimize,
+    mkGpoProject,
+    mkGpoExternal,
+    mkGpoAssume,
+    mkGpoHeuristic,
+    mkGpoAcycEdge,
+    mkGpoTheoryTermNum,
+    mkGpoTheoryTermStr,
+    mkGpoTheoryTermCmp,
+    mkGpoTheoryElement,
+    mkGpoTheoryAtom,
+    mkGpoTheoryAtomGrd,
 
     -- * Control
     Control (..),
@@ -240,7 +257,7 @@ data GroundProgramObserver a = GroundProgramObserver
     , gpoAcycEdge      :: FunPtr (CInt -> CInt -> Ptr Literal -> CSize 
                                        -> Ptr a -> IO CBool)
     , gpoTheoryTermNum :: FunPtr (Identifier -> CInt -> Ptr a -> IO CBool)
-    , gpoTheoryTermStr :: FunPtr (Identifier -> Ptr CChar -> IO CBool)
+    , gpoTheoryTermStr :: FunPtr (Identifier -> Ptr CChar -> Ptr a -> IO CBool)
     , gpoTheoryTermCmp :: FunPtr (Identifier -> CInt -> Ptr Identifier -> CSize 
                                              -> Ptr a -> IO CBool)
     , gpoTheoryElement :: FunPtr (Identifier -> Ptr Identifier -> CSize 
@@ -253,6 +270,41 @@ data GroundProgramObserver a = GroundProgramObserver
                                              -> Identifier -> Ptr a 
                                              -> IO CBool)
     }
+
+foreign import ccall "wrapper" mkGpoInitProgram :: 
+    (CBool -> Ptr a -> IO CBool) -> IO (FunPtr (CBool -> Ptr a -> IO CBool))
+foreign import ccall "wrapper" mkGpoBeginStep :: 
+    (Ptr a -> IO CBool) -> IO (FunPtr (Ptr a -> IO CBool))
+foreign import ccall "wrapper" mkGpoEndStep ::
+    (Ptr a -> IO CBool) -> IO (FunPtr (Ptr a -> IO CBool))
+foreign import ccall "wrapper" mkGpoRule ::
+    (CBool -> Ptr Atom -> CSize -> Ptr Literal -> CSize -> Ptr a -> IO CBool) -> IO (FunPtr (CBool -> Ptr Atom -> CSize -> Ptr Literal -> CSize -> Ptr a -> IO CBool))
+foreign import ccall "wrapper" mkGpoWeightRule ::
+    (CBool -> Ptr Atom -> CSize -> Weight -> Ptr WeightedLiteral -> CSize -> Ptr a -> IO CBool) -> IO (FunPtr (CBool -> Ptr Atom -> CSize -> Weight -> Ptr WeightedLiteral -> CSize -> Ptr a -> IO CBool))
+foreign import ccall "wrapper" mkGpoMinimize ::
+    (Weight -> Ptr WeightedLiteral -> CSize -> Ptr a -> IO CBool) -> IO (FunPtr (Weight -> Ptr WeightedLiteral -> CSize -> Ptr a -> IO CBool))
+foreign import ccall "wrapper" mkGpoProject ::
+    (Ptr Atom -> CSize -> Ptr a -> IO CBool) -> IO (FunPtr (Ptr Atom -> CSize -> Ptr a -> IO CBool))
+foreign import ccall "wrapper" mkGpoExternal ::
+    (Atom -> ExternalType -> Ptr a -> IO CBool) -> IO (FunPtr (Atom -> ExternalType -> Ptr a -> IO CBool))
+foreign import ccall "wrapper" mkGpoAssume ::
+    (Ptr Literal -> CSize -> Ptr a -> IO CBool) -> IO (FunPtr (Ptr Literal -> CSize -> Ptr a -> IO CBool))
+foreign import ccall "wrapper" mkGpoHeuristic ::
+    (Atom -> HeuristicType -> CInt -> CUInt -> Ptr Literal -> CSize -> Ptr a -> IO CBool) -> IO (FunPtr (Atom -> HeuristicType -> CInt -> CUInt -> Ptr Literal -> CSize -> Ptr a -> IO CBool))
+foreign import ccall "wrapper" mkGpoAcycEdge ::
+    (CInt -> CInt -> Ptr Literal -> CSize -> Ptr a -> IO CBool) -> IO (FunPtr (CInt -> CInt -> Ptr Literal -> CSize -> Ptr a -> IO CBool))
+foreign import ccall "wrapper" mkGpoTheoryTermNum ::
+    (Identifier -> CInt -> Ptr a -> IO CBool) -> IO (FunPtr (Identifier -> CInt -> Ptr a -> IO CBool))
+foreign import ccall "wrapper" mkGpoTheoryTermStr ::
+    (Identifier -> Ptr CChar -> Ptr a -> IO CBool) -> IO (FunPtr (Identifier -> Ptr CChar -> Ptr a -> IO CBool))
+foreign import ccall "wrapper" mkGpoTheoryTermCmp ::
+    (Identifier -> CInt -> Ptr Identifier -> CSize -> Ptr a -> IO CBool) -> IO (FunPtr (Identifier -> CInt -> Ptr Identifier -> CSize -> Ptr a -> IO CBool))
+foreign import ccall "wrapper" mkGpoTheoryElement ::
+    (Identifier -> Ptr Identifier -> CSize -> Ptr Literal -> CSize -> Ptr a -> IO CBool) -> IO (FunPtr (Identifier -> Ptr Identifier -> CSize -> Ptr Literal -> CSize -> Ptr a -> IO CBool))
+foreign import ccall "wrapper" mkGpoTheoryAtom ::
+    (Identifier -> Identifier -> Ptr Identifier -> CSize -> IO CBool) -> IO (FunPtr (Identifier -> Identifier -> Ptr Identifier -> CSize -> IO CBool))
+foreign import ccall "wrapper" mkGpoTheoryAtomGrd ::
+    (Identifier -> Identifier -> Ptr Identifier -> CSize -> Identifier -> Identifier -> Ptr a -> IO CBool) -> IO (FunPtr (Identifier -> Identifier -> Ptr Identifier -> CSize -> Identifier -> Identifier -> Ptr a -> IO CBool))
 
 instance Storable (GroundProgramObserver a) where
     sizeOf _ = #{size clingo_ground_program_observer_t}

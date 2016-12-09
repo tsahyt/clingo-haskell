@@ -50,28 +50,6 @@ import Clingo.Internal.Utils
 
 newtype Node = Node { unNode :: Int }
 
-data ExternalType = ExtFree | ExtTrue | ExtFalse | ExtRelease
-    deriving (Show, Eq, Ord, Enum, Read)
-
-rawExtT :: ExternalType -> Raw.ExternalType
-rawExtT ExtFree = Raw.ExternalFree
-rawExtT ExtTrue = Raw.ExternalTrue
-rawExtT ExtFalse = Raw.ExternalFalse
-rawExtT ExtRelease = Raw.ExternalRelease
-
-data HeuristicType = HeuristicLevel | HeuristicSign | HeuristicFactor 
-                   | HeuristicInit  | HeuristicTrue | HeuristicFalse
-    deriving (Show, Eq, Ord, Enum, Read)
-
-rawHeuT :: HeuristicType -> Raw.HeuristicType
-rawHeuT HeuristicLevel = Raw.HeuristicLevel
-rawHeuT HeuristicSign = Raw.HeuristicSign
-rawHeuT HeuristicFactor = Raw.HeuristicFactor
-rawHeuT HeuristicInit = Raw.HeuristicInit
-rawHeuT HeuristicTrue = Raw.HeuristicTrue
-rawHeuT HeuristicFalse = Raw.HeuristicFalse
-
-data WeightedLiteral s = WeightedLiteral (Literal s) Integer
 
 -- | A 'GroundStatement' is a statement built from ground atoms. Because the
 -- atoms are only valid within the context of clingo, they may not leave this
@@ -80,10 +58,6 @@ data WeightedLiteral s = WeightedLiteral (Literal s) Integer
 newtype GroundStatement s = 
     GStmt { addGStmt :: forall m. (MonadIO m, MonadThrow m) 
                      => Backend s -> m () }
-
-rawWeightedLiteral :: WeightedLiteral s -> Raw.WeightedLiteral
-rawWeightedLiteral (WeightedLiteral l w) = 
-    Raw.WeightedLiteral (rawLiteral l) (fromIntegral w)
 
 -- | Build an edge directive.
 acycEdge :: Foldable t

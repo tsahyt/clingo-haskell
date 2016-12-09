@@ -14,6 +14,15 @@ module Clingo.Internal.Types
     SymbolicLiteral (..),
     rawSymLit,
     Literal (..),
+    WeightedLiteral (..),
+    rawWeightedLiteral,
+    fromRawWeightedLiteral,
+    ExternalType (..),
+    rawExtT,
+    fromRawExtT,
+    HeuristicType (..),
+    rawHeuT,
+    fromRawHeuT,
     negateLiteral,
     AspifLiteral (..),
     Atom (..),
@@ -155,6 +164,53 @@ instance Signed (Signature s) where
 
 newtype Literal s = Literal { rawLiteral :: Raw.Literal }
     deriving (Ord, Show, Eq, NFData)
+
+data WeightedLiteral s = WeightedLiteral (Literal s) Integer
+
+rawWeightedLiteral :: WeightedLiteral s -> Raw.WeightedLiteral
+rawWeightedLiteral (WeightedLiteral l w) = 
+    Raw.WeightedLiteral (rawLiteral l) (fromIntegral w)
+
+fromRawWeightedLiteral :: Raw.WeightedLiteral -> WeightedLiteral s
+fromRawWeightedLiteral (Raw.WeightedLiteral l w) = 
+    WeightedLiteral (Literal l) (fromIntegral w)
+
+data ExternalType = ExtFree | ExtTrue | ExtFalse | ExtRelease
+    deriving (Show, Eq, Ord, Enum, Read)
+
+rawExtT :: ExternalType -> Raw.ExternalType
+rawExtT ExtFree = Raw.ExternalFree
+rawExtT ExtTrue = Raw.ExternalTrue
+rawExtT ExtFalse = Raw.ExternalFalse
+rawExtT ExtRelease = Raw.ExternalRelease
+
+fromRawExtT :: Raw.ExternalType -> ExternalType
+fromRawExtT Raw.ExternalFree = ExtFree
+fromRawExtT Raw.ExternalTrue = ExtTrue
+fromRawExtT Raw.ExternalFalse = ExtFalse
+fromRawExtT Raw.ExternalRelease = ExtRelease
+fromRawExtT _ = error "unknown external_type"
+
+data HeuristicType = HeuristicLevel | HeuristicSign | HeuristicFactor 
+                   | HeuristicInit  | HeuristicTrue | HeuristicFalse
+    deriving (Show, Eq, Ord, Enum, Read)
+
+rawHeuT :: HeuristicType -> Raw.HeuristicType
+rawHeuT HeuristicLevel = Raw.HeuristicLevel
+rawHeuT HeuristicSign = Raw.HeuristicSign
+rawHeuT HeuristicFactor = Raw.HeuristicFactor
+rawHeuT HeuristicInit = Raw.HeuristicInit
+rawHeuT HeuristicTrue = Raw.HeuristicTrue
+rawHeuT HeuristicFalse = Raw.HeuristicFalse
+
+fromRawHeuT :: Raw.HeuristicType -> HeuristicType
+fromRawHeuT Raw.HeuristicLevel = HeuristicLevel
+fromRawHeuT Raw.HeuristicSign = HeuristicSign
+fromRawHeuT Raw.HeuristicFactor = HeuristicFactor
+fromRawHeuT Raw.HeuristicInit = HeuristicInit
+fromRawHeuT Raw.HeuristicTrue = HeuristicTrue
+fromRawHeuT Raw.HeuristicFalse = HeuristicFalse
+fromRawHeuT _ = error "unknown heuristic_type"
 
 negateLiteral :: Literal s -> Literal s
 negateLiteral (Literal a) = Literal (negate a)
