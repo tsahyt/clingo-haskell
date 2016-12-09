@@ -12,7 +12,7 @@ import Clingo.Iterative
 import Text.Printf
 import qualified Data.Text.IO as T
 
-printModel :: MonadIO m => Model s -> m ()
+printModel :: (MonadIO (m s), MonadModel m) => Model s -> m s ()
 printModel m = do
     syms <- map prettySymbol
         <$> modelSymbols m (selectNone { selectShown = True }) 
