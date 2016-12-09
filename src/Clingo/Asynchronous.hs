@@ -9,9 +9,6 @@ module Clingo.Asynchronous
 )
 where
 
-import Control.Monad.IO.Class
-import Control.Monad.Catch
-
 import Foreign.Marshal.Utils
 
 import qualified Clingo.Raw as Raw

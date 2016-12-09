@@ -174,15 +174,17 @@ project atoms = GStmt $ \(Backend h) -> marshall0 $
 
 -- | Add a collection of 'GroundStatement' to the program via a 'Backend'
 -- handle.
-addGroundStatements :: (MonadIO m, MonadThrow m, Foldable t)
-                    => Backend s -> t (GroundStatement s) -> m ()
+addGroundStatements :: Foldable t
+                    => Backend s 
+                    -> t (GroundStatement s) 
+                    -> Clingo s ()
 addGroundStatements b xs = mapM_ (`addGStmt` b) (toList xs)
 
 -- | Add a collection of non-ground statements to the solver.
-addStatements :: (MonadIO m, MonadMask m, Traversable t)
+addStatements :: Traversable t
               => ProgramBuilder s 
               -> t (Statement (Symbol s) (Signature s)) 
-              -> m ()
+              -> Clingo s ()
 addStatements (ProgramBuilder b) stmts = do
     marshall0 (Raw.programBuilderBegin b)
     mapM_ go stmts `finally` marshall0 (Raw.programBuilderEnd b)
