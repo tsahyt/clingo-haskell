@@ -5,7 +5,6 @@ module Main where
 
 import Control.Concurrent.MVar
 import Control.Monad
-import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 import Clingo.Control
@@ -98,12 +97,12 @@ pigeonator mvar = emptyPropagator
     , propPropagate = Just $ \changes -> do
         -- get previous assignment
         thread <- getThreadId
-        state  <- liftIO (readMVar mvar)
-        let Just holes = fromIntegral thread `I.lookup` assignments state
 
         -- apply and check assignments done by solver
         forM_ changes $ \lit -> do
-            let Just hole = lit `M.lookup` placements state
+            state  <- liftIO (readMVar mvar)
+            let Just holes = fromIntegral thread `I.lookup` assignments state
+                Just hole = lit `M.lookup` placements state
                 prev = hole `M.lookup` holes
             case prev of
                 Nothing -> liftIO $
