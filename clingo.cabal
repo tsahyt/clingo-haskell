@@ -59,13 +59,13 @@ library
                        Clingo.Raw.Types
   c-sources:           cbits/wrappers.c
   build-depends:       base >= 4.7 && < 5,
-                       bifunctors,
-                       transformers,
-                       mtl,
-                       exceptions,
-                       text,
-                       deepseq,
-                       StateVar
+                       bifunctors >= 5.4 && < 6,
+                       transformers == 0.5.*,
+                       mtl == 2.2.*,
+                       exceptions == 0.8.*,
+                       text == 1.2.*,
+                       deepseq == 1.4.*,
+                       StateVar == 1.1.*
   extra-libraries:     clingo
   include-dirs:        include
   ghc-options:         -Wall
