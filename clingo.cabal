@@ -19,25 +19,28 @@ flag examples
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Clingo.Control
+  exposed-modules:     Clingo
                        Clingo.AST
-                       Clingo.Symbol
-                       Clingo.Configuration
-                       Clingo.Statistics
                        Clingo.Asynchronous
-                       Clingo.Model
-                       Clingo.Iterative
-                       Clingo.Internal.Inspection.Symbolic
-                       Clingo.Internal.Inspection.Theory
+                       Clingo.Configuration
+                       Clingo.Control
                        Clingo.Inspection.Symbolic
                        Clingo.Inspection.Theory
+                       Clingo.Iterative
+                       Clingo.Model
                        Clingo.ProgramBuilding
                        Clingo.Propagation
+                       Clingo.Statistics
+                       Clingo.Symbol
                        Clingo.Internal.AST
-                       Clingo.Internal.Statistics
-                       Clingo.Internal.Propagation
                        Clingo.Internal.Configuration
+                       Clingo.Internal.Inspection.Symbolic
+                       Clingo.Internal.Inspection.Theory
+                       Clingo.Internal.Propagation
+                       Clingo.Internal.Statistics
                        Clingo.Internal.Symbol
+                       Clingo.Internal.Types
+                       Clingo.Internal.Utils
                        Clingo.Raw
                        Clingo.Raw.AST
                        Clingo.Raw.Asynchronous
@@ -54,8 +57,6 @@ library
                        Clingo.Raw.Statistics
                        Clingo.Raw.Symbol
                        Clingo.Raw.Types
-  other-modules:       Clingo.Internal.Utils
-                       Clingo.Internal.Types
   c-sources:           cbits/wrappers.c
   build-depends:       base >= 4.7 && < 5,
                        bifunctors,
