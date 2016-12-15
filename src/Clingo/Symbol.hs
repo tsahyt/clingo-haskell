@@ -1,5 +1,6 @@
 -- | Functions for handling symbols and signatures with clingo.
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 module Clingo.Symbol
 (
@@ -41,7 +42,13 @@ module Clingo.Symbol
     symbolName,
     symbolNumber,
     symbolString,
-    prettySymbol
+    prettySymbol,
+
+    -- * Pure types
+    PureSymbol (..),
+    unpureSymbol,
+    PureSignature (..),
+    unpureSignature
 )
 where
 
@@ -49,6 +56,8 @@ import Data.Text (Text, unpack)
 import Numeric.Natural
 import Foreign.C
 import Foreign
+
+import GHC.Generics
 
 import Clingo.Internal.Types
 import Clingo.Internal.Utils
@@ -141,3 +150,31 @@ symbolGetArg s i =
 -- | Pretty print a symbol into a 'Text'.
 prettySymbol :: Symbol s -> Text
 prettySymbol = symPretty
+
+-- | 'PureSymbol' represents a completely pure Haskell alternative to the
+-- handled 'Symbol' type of the clingo library.
+data PureSymbol
+    = PureInfimum
+    | PureSupremum
+    | PureNumber Integer
+    | PureFunction Text [PureSymbol] Bool
+    | PureString Text
+    deriving (Eq, Show, Ord, Generic)
+
+-- | Create a 'Symbol' in the solver from a 'PureSymbol'
+unpureSymbol :: (Monad (m s), MonadSymbol m) => PureSymbol -> m s (Symbol s)
+unpureSymbol PureInfimum = createInfimum
+unpureSymbol PureSupremum = createSupremum
+unpureSymbol (PureNumber i) = createNumber i
+unpureSymbol (PureFunction f as b) = 
+    flip (createFunction f) b =<< mapM unpureSymbol as
+unpureSymbol (PureString t) = createString t
+
+-- | 'PureSignature' represents a completely pure Haskell alternative to the
+-- handled 'Signature' type of the clingo library.
+data PureSignature = PureSignature Text Natural Bool
+    deriving (Eq, Show, Ord, Generic)
+
+-- | Create a 'Signature' in the solver from a 'PureSignature'
+unpureSignature :: MonadSymbol m => PureSignature -> m s (Signature s)
+unpureSignature (PureSignature t a b) = createSignature t a b

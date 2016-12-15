@@ -1,6 +1,7 @@
 module Clingo.AST
 (
     parseProgram,
+    fromPureAST,
 
     T.Location (..),
     Sign (..),
@@ -68,6 +69,7 @@ where
 
 import Control.Monad.IO.Class
 
+import Data.Bitraversable
 import Data.Text (Text, unpack)
 import Data.IORef
 import Numeric.Natural
@@ -75,6 +77,7 @@ import Numeric.Natural
 import Foreign hiding (Pool)
 import Foreign.C
 
+import Clingo.Symbol
 import Clingo.Internal.AST
 import Clingo.Internal.Utils
 import qualified Clingo.Internal.Types as T
@@ -94,6 +97,15 @@ parseProgram prog logger limit = do
             Raw.parseProgram p astCB nullPtr 
                                logCB nullPtr (fromIntegral limit)
     liftIO (readIORef ref)
+
+-- | An AST can be constructed in a pure environment using 'PureSymbol' and
+-- 'PureSignature' and then registered with the solver when required. Creation
+-- calls for the same symbol in multiple places will be repeated, i.e. no symbol
+-- table is being created internally by this function!
+fromPureAST :: (Monad (m s), MonadSymbol m)
+            => [Statement PureSymbol PureSignature]
+            -> m s [Statement (T.Symbol s) (T.Signature s)]
+fromPureAST = traverse (bitraverse unpureSymbol unpureSignature)
 
 wrapCBAst :: MonadIO m
           => (Statement (T.Symbol s) (T.Signature s) -> IO ())
