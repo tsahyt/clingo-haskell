@@ -47,11 +47,14 @@ module Clingo.Symbol
     -- * Pure types
     PureSymbol (..),
     unpureSymbol,
+    toPureSymbol,
     PureSignature (..),
-    unpureSignature
+    unpureSignature,
+    toPureSignature
 )
 where
 
+import Data.Maybe (fromJust)
 import Data.Text (Text, unpack)
 import Numeric.Natural
 import Foreign.C
@@ -170,6 +173,18 @@ unpureSymbol (PureFunction f as b) =
     flip (createFunction f) b =<< mapM unpureSymbol as
 unpureSymbol (PureString t) = createString t
 
+toPureSymbol :: Symbol s -> PureSymbol
+toPureSymbol s = case symType s of
+    Raw.SymInfimum -> PureInfimum
+    Raw.SymSupremum -> PureSupremum
+    Raw.SymString -> PureString (fromJust $ symbolString s)
+    Raw.SymFunction -> PureFunction 
+        (fromJust $ symbolName s) 
+        (map toPureSymbol $ symbolArguments s) 
+        (fromJust (positive <$> functionSymbol s))
+    Raw.SymNumber -> PureNumber (fromJust $ symbolNumber s)
+    _ -> error "Unknown symbol type"
+
 -- | 'PureSignature' represents a completely pure Haskell alternative to the
 -- handled 'Signature' type of the clingo library.
 data PureSignature = PureSignature Text Natural Bool
@@ -178,3 +193,7 @@ data PureSignature = PureSignature Text Natural Bool
 -- | Create a 'Signature' in the solver from a 'PureSignature'
 unpureSignature :: MonadSymbol m => PureSignature -> m s (Signature s)
 unpureSignature (PureSignature t a b) = createSignature t a b
+
+toPureSignature :: Signature s -> PureSignature
+toPureSignature s = PureSignature 
+    (signatureName s) (signatureArity s) (positive s)

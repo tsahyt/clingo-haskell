@@ -2,6 +2,7 @@ module Clingo.AST
 (
     parseProgram,
     fromPureAST,
+    toPureAST,
 
     T.Location (..),
     Sign (..),
@@ -69,6 +70,7 @@ where
 
 import Control.Monad.IO.Class
 
+import Data.Bifunctor
 import Data.Bitraversable
 import Data.Text (Text, unpack)
 import Data.IORef
@@ -106,6 +108,10 @@ fromPureAST :: (Monad (m s), MonadSymbol m)
             => [Statement PureSymbol PureSignature]
             -> m s [Statement (T.Symbol s) (T.Signature s)]
 fromPureAST = traverse (bitraverse unpureSymbol unpureSignature)
+
+toPureAST :: [Statement (T.Symbol s) (T.Signature s)]
+          -> [Statement PureSymbol PureSignature]
+toPureAST = fmap (bimap toPureSymbol toPureSignature)
 
 wrapCBAst :: MonadIO m
           => (Statement (T.Symbol s) (T.Signature s) -> IO ())
