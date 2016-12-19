@@ -19,6 +19,10 @@ import Clingo.Internal.Types (Location, rawLocation, freeRawLocation,
 import Clingo.Internal.Symbol (pureSymbol, pureSignature)
 import Clingo.Raw.AST
 
+newArray' :: Storable a => [a] -> IO (Ptr a)
+newArray' [] = pure nullPtr
+newArray' xs = newArray xs
+
 freeArray :: Storable a => Ptr a -> CSize -> (a -> IO ()) -> IO ()
 freeArray p n f = unless (p == nullPtr) $ do
     p' <- peekArray (fromIntegral n) p
@@ -145,7 +149,7 @@ data Function a = Function Text [Term a]
 rawFunction :: Function (Symbol s) -> IO AstFunction
 rawFunction (Function n ts) = do
     n'  <- newCString (unpack n)
-    ts' <- newArray =<< mapM rawTerm ts
+    ts' <- newArray' =<< mapM rawTerm ts
     return $ AstFunction n' ts' (fromIntegral . length $ ts)
 
 freeFunction :: AstFunction -> IO ()
@@ -163,7 +167,7 @@ data Pool a = Pool [Term a]
 
 rawPool :: Pool (Symbol s) -> IO AstPool
 rawPool (Pool ts) = do
-    ts' <- newArray =<< mapM rawTerm ts
+    ts' <- newArray' =<< mapM rawTerm ts
     return $ AstPool ts' (fromIntegral . length $ ts)
 
 freePool :: AstPool -> IO ()
@@ -264,7 +268,7 @@ data CspSumTerm a = CspSumTerm Location [CspProductTerm a]
 rawCspSumTerm :: CspSumTerm (Symbol s) -> IO AstCspSumTerm
 rawCspSumTerm (CspSumTerm l ts) = do
     l' <- rawLocation l
-    ts' <- newArray =<< mapM rawCspProductTerm ts
+    ts' <- newArray' =<< mapM rawCspProductTerm ts
     return $ AstCspSumTerm l' ts' (fromIntegral . length $ ts)
 
 freeCspSumTerm :: AstCspSumTerm -> IO ()
@@ -320,7 +324,7 @@ data CspLiteral a = CspLiteral (CspSumTerm a) [CspGuard a]
 
 rawCspLiteral :: CspLiteral (Symbol s) -> IO AstCspLiteral
 rawCspLiteral (CspLiteral t gs) = do
-    gs' <- newArray =<< mapM rawCspGuard gs
+    gs' <- newArray' =<< mapM rawCspGuard gs
     t'  <- rawCspSumTerm t
     return $ AstCspLiteral t' gs' (fromIntegral . length $ gs)
 
@@ -430,7 +434,7 @@ rawConditionalLiteral :: ConditionalLiteral (Symbol s)
                       -> IO AstConditionalLiteral
 rawConditionalLiteral (ConditionalLiteral l ls) = do
     l' <- rawLiteral l
-    ls' <- newArray =<< mapM rawLiteral ls
+    ls' <- newArray' =<< mapM rawLiteral ls
     return $ AstConditionalLiteral l' ls' (fromIntegral . length $ ls)
 
 freeConditionalLiteral :: AstConditionalLiteral -> IO ()
@@ -451,7 +455,7 @@ data Aggregate a = Aggregate [ConditionalLiteral a]
 
 rawAggregate :: Aggregate (Symbol s) -> IO AstAggregate
 rawAggregate (Aggregate ls a b) = do
-    ls' <- newArray =<< mapM rawConditionalLiteral ls
+    ls' <- newArray' =<< mapM rawConditionalLiteral ls
     a'  <- rawAggregateGuardM a
     b'  <- rawAggregateGuardM b
     return $ AstAggregate ls' (fromIntegral . length $ ls) a' b'
@@ -474,8 +478,8 @@ data BodyAggregateElement a = BodyAggregateElement [Term a] [Literal a]
 rawBodyAggregateElement :: BodyAggregateElement (Symbol s) 
                         -> IO AstBodyAggregateElement
 rawBodyAggregateElement (BodyAggregateElement ts ls) = do
-    ts' <- newArray =<< mapM rawTerm ts
-    ls' <- newArray =<< mapM rawLiteral ls
+    ts' <- newArray' =<< mapM rawTerm ts
+    ls' <- newArray' =<< mapM rawLiteral ls
     return $ AstBodyAggregateElement ts' (fromIntegral . length $ ts) 
                                      ls' (fromIntegral . length $ ls)
 
@@ -499,7 +503,7 @@ data BodyAggregate a = BodyAggregate AggregateFunction [BodyAggregateElement a]
 rawBodyAggregate :: BodyAggregate (Symbol s) -> IO AstBodyAggregate
 rawBodyAggregate (BodyAggregate f es a b) = AstBodyAggregate
     <$> pure (rawAggregateFunction f)
-    <*> (newArray =<< mapM rawBodyAggregateElement es)
+    <*> (newArray' =<< mapM rawBodyAggregateElement es)
     <*> pure (fromIntegral . length $ es)
     <*> rawAggregateGuardM a
     <*> rawAggregateGuardM b
@@ -544,7 +548,7 @@ data HeadAggregateElement a =
 rawHeadAggregateElement :: HeadAggregateElement (Symbol s) 
                         -> IO AstHeadAggregateElement
 rawHeadAggregateElement (HeadAggregateElement ts l) = AstHeadAggregateElement
-    <$> (newArray =<< mapM rawTerm ts)
+    <$> (newArray' =<< mapM rawTerm ts)
     <*> pure (fromIntegral . length $ ts)
     <*> rawConditionalLiteral l
 
@@ -569,7 +573,7 @@ data HeadAggregate a = HeadAggregate AggregateFunction
 rawHeadAggregate :: HeadAggregate (Symbol s) -> IO AstHeadAggregate
 rawHeadAggregate (HeadAggregate f es a b) = AstHeadAggregate
     <$> pure (rawAggregateFunction f)
-    <*> (newArray =<< mapM rawHeadAggregateElement es)
+    <*> (newArray' =<< mapM rawHeadAggregateElement es)
     <*> pure (fromIntegral . length $ es)
     <*> rawAggregateGuardM a
     <*> rawAggregateGuardM b
@@ -592,7 +596,7 @@ data Disjunction a = Disjunction [ConditionalLiteral a]
 
 rawDisjunction :: Disjunction (Symbol s) -> IO AstDisjunction
 rawDisjunction (Disjunction ls) = AstDisjunction 
-    <$> (newArray =<< mapM rawConditionalLiteral ls)
+    <$> (newArray' =<< mapM rawConditionalLiteral ls)
     <*> pure (fromIntegral . length $ ls)
 
 freeDisjunction :: AstDisjunction -> IO ()
@@ -609,10 +613,10 @@ data DisjointElement a =
 rawDisjointElement :: DisjointElement (Symbol s) -> IO AstDisjointElement
 rawDisjointElement (DisjointElement l ts s ls) = AstDisjointElement
     <$> rawLocation l
-    <*> (newArray =<< mapM rawTerm ts)
+    <*> (newArray' =<< mapM rawTerm ts)
     <*> pure (fromIntegral . length $ ts)
     <*> rawCspSumTerm s
-    <*> (newArray =<< mapM rawLiteral ls)
+    <*> (newArray' =<< mapM rawLiteral ls)
     <*> pure (fromIntegral . length $ ls)
 
 freeDisjointElement :: AstDisjointElement -> IO ()
@@ -634,7 +638,7 @@ data Disjoint a = Disjoint [DisjointElement a]
 
 rawDisjoint :: Disjoint (Symbol s) -> IO AstDisjoint
 rawDisjoint (Disjoint es) = AstDisjoint
-    <$> (newArray =<< mapM rawDisjointElement es)
+    <$> (newArray' =<< mapM rawDisjointElement es)
     <*> pure (fromIntegral . length $ es)
 
 freeDisjoint :: AstDisjoint -> IO ()
@@ -649,7 +653,7 @@ data TheoryTermArray a = TheoryTermArray [TheoryTerm a]
 
 rawTheoryTermArray :: TheoryTermArray (Symbol s) -> IO AstTheoryTermArray
 rawTheoryTermArray (TheoryTermArray ts) = AstTheoryTermArray
-    <$> (newArray =<< mapM rawTheoryTerm ts)
+    <$> (newArray' =<< mapM rawTheoryTerm ts)
     <*> pure (fromIntegral . length $ ts)
 
 freeTheoryTermArray :: AstTheoryTermArray -> IO ()
@@ -665,7 +669,7 @@ data TheoryFunction a = TheoryFunction Text [TheoryTerm a]
 rawTheoryFunction :: TheoryFunction (Symbol s) -> IO AstTheoryFunction
 rawTheoryFunction (TheoryFunction t ts) = AstTheoryFunction
     <$> newCString (unpack t)
-    <*> (newArray =<< mapM rawTheoryTerm ts)
+    <*> (newArray' =<< mapM rawTheoryTerm ts)
     <*> pure (fromIntegral . length $ ts)
 
 freeTheoryFunction :: AstTheoryFunction -> IO ()
@@ -686,7 +690,7 @@ rawTheoryUnparsedTermElement :: TheoryUnparsedTermElement (Symbol s)
                              -> IO AstTheoryUnparsedTermElement
 rawTheoryUnparsedTermElement (TheoryUnparsedTermElement ts t) =
     AstTheoryUnparsedTermElement
-    <$> (newArray =<< mapM (newCString . unpack) ts)
+    <$> (newArray' =<< mapM (newCString . unpack) ts)
     <*> pure (fromIntegral . length $ ts)
     <*> rawTheoryTerm t
 
@@ -708,7 +712,7 @@ data TheoryUnparsedTerm a = TheoryUnparsedTerm [TheoryUnparsedTermElement a]
 rawTheoryUnparsedTerm :: TheoryUnparsedTerm (Symbol s) 
                       -> IO AstTheoryUnparsedTerm
 rawTheoryUnparsedTerm (TheoryUnparsedTerm es) = AstTheoryUnparsedTerm
-    <$> (newArray =<< mapM rawTheoryUnparsedTermElement es)
+    <$> (newArray' =<< mapM rawTheoryUnparsedTermElement es)
     <*> pure (fromIntegral . length $ es)
 
 freeTheoryUnparsedTerm :: AstTheoryUnparsedTerm -> IO ()
@@ -793,9 +797,9 @@ data TheoryAtomElement a = TheoryAtomElement [TheoryTerm a] [Literal a]
 
 rawTheoryAtomElement :: TheoryAtomElement (Symbol s) -> IO AstTheoryAtomElement
 rawTheoryAtomElement (TheoryAtomElement ts ls) = AstTheoryAtomElement
-    <$> (newArray =<< mapM rawTheoryTerm ts)
+    <$> (newArray' =<< mapM rawTheoryTerm ts)
     <*> pure (fromIntegral . length $ ts)
-    <*> (newArray =<< mapM rawLiteral ls)
+    <*> (newArray' =<< mapM rawLiteral ls)
     <*> pure (fromIntegral . length $ ls)
 
 freeTheoryAtomElement :: AstTheoryAtomElement -> IO ()
@@ -831,7 +835,7 @@ data TheoryAtom a = TheoryAtom (Term a) [TheoryAtomElement a] (TheoryGuard a)
 rawTheoryAtom :: TheoryAtom (Symbol s) -> IO AstTheoryAtom
 rawTheoryAtom (TheoryAtom t es g) = AstTheoryAtom
     <$> rawTerm t
-    <*> (newArray =<< mapM rawTheoryAtomElement es)
+    <*> (newArray' =<< mapM rawTheoryAtomElement es)
     <*> pure (fromIntegral . length $ es)
     <*> rawTheoryGuard g
 
@@ -1014,7 +1018,7 @@ rawTheoryTermDefinition :: TheoryTermDefinition -> IO AstTheoryTermDefinition
 rawTheoryTermDefinition (TheoryTermDefinition l s xs) = AstTheoryTermDefinition
     <$> rawLocation l
     <*> newCString (unpack s)
-    <*> (newArray =<< mapM rawTheoryOperatorDefinition xs)
+    <*> (newArray' =<< mapM rawTheoryOperatorDefinition xs)
     <*> pure (fromIntegral . length $ xs)
 
 freeTheoryTermDefinition :: AstTheoryTermDefinition -> IO ()
@@ -1038,7 +1042,7 @@ data TheoryGuardDefinition =
 rawTheoryGuardDefinition :: TheoryGuardDefinition -> IO AstTheoryGuardDefinition
 rawTheoryGuardDefinition (TheoryGuardDefinition t ts) = AstTheoryGuardDefinition
     <$> newCString (unpack t)
-    <*> (newArray =<< mapM (newCString . unpack) ts)
+    <*> (newArray' =<< mapM (newCString . unpack) ts)
     <*> pure (fromIntegral . length $ ts)
 
 freeTheoryGuardDefinition :: AstTheoryGuardDefinition -> IO ()
@@ -1113,9 +1117,9 @@ data TheoryDefinition =
 rawTheoryDefinition :: TheoryDefinition -> IO AstTheoryDefinition
 rawTheoryDefinition (TheoryDefinition t ts as) = AstTheoryDefinition
     <$> newCString (unpack t)
-    <*> (newArray =<< mapM rawTheoryTermDefinition ts)
+    <*> (newArray' =<< mapM rawTheoryTermDefinition ts)
     <*> pure (fromIntegral . length $ ts)
-    <*> (newArray =<< mapM rawTheoryAtomDefinition as)
+    <*> (newArray' =<< mapM rawTheoryAtomDefinition as)
     <*> pure (fromIntegral . length $ as)
 
 freeTheoryDefinition :: AstTheoryDefinition -> IO ()
@@ -1135,7 +1139,7 @@ data Rule a = Rule (HeadLiteral a) [BodyLiteral a]
 
 rawRule :: Rule (Symbol s) -> IO AstRule
 rawRule (Rule h bs) = AstRule
-    <$> rawHeadLiteral h <*> (newArray =<< mapM rawBodyLiteral bs)
+    <$> rawHeadLiteral h <*> (newArray' =<< mapM rawBodyLiteral bs)
                          <*> pure (fromIntegral . length $ bs)
 
 freeRule :: AstRule -> IO ()
@@ -1188,7 +1192,7 @@ data ShowTerm a = ShowTerm (Term a) [BodyLiteral a] Bool
 rawShowTerm :: ShowTerm (Symbol s) -> IO AstShowTerm
 rawShowTerm (ShowTerm t ls b) = AstShowTerm
     <$> rawTerm t
-    <*> (newArray =<< mapM rawBodyLiteral ls)
+    <*> (newArray' =<< mapM rawBodyLiteral ls)
     <*> pure (fromIntegral . length $ ls)
     <*> pure (fromBool b)
 
@@ -1210,9 +1214,9 @@ rawMinimize :: Minimize (Symbol s) -> IO AstMinimize
 rawMinimize (Minimize a b ts ls) = AstMinimize
     <$> rawTerm a
     <*> rawTerm b
-    <*> (newArray =<< mapM rawTerm ts)
+    <*> (newArray' =<< mapM rawTerm ts)
     <*> pure (fromIntegral . length $ ts)
-    <*> (newArray =<< mapM rawBodyLiteral ls)
+    <*> (newArray' =<< mapM rawBodyLiteral ls)
     <*> pure (fromIntegral . length $ ls)
 
 freeMinimize :: AstMinimize -> IO ()
@@ -1265,7 +1269,7 @@ data Program = Program Text [Identifier]
 rawProgram :: Program -> IO AstProgram
 rawProgram (Program n is) = AstProgram
     <$> newCString (unpack n)
-    <*> (newArray =<< mapM rawIdentifier is)
+    <*> (newArray' =<< mapM rawIdentifier is)
     <*> pure (fromIntegral . length $ is)
 
 freeProgram :: AstProgram -> IO ()
@@ -1282,7 +1286,7 @@ data External a = External (Term a) [BodyLiteral a]
 rawExternal :: External (Symbol s) -> IO AstExternal
 rawExternal (External t ls) = AstExternal
     <$> rawTerm t
-    <*> (newArray =<< mapM rawBodyLiteral ls)
+    <*> (newArray' =<< mapM rawBodyLiteral ls)
     <*> pure (fromIntegral . length $ ls)
 
 freeExternal :: AstExternal -> IO ()
@@ -1300,7 +1304,7 @@ rawEdge :: Edge (Symbol s) -> IO AstEdge
 rawEdge (Edge a b ls) = AstEdge
     <$> rawTerm a
     <*> rawTerm b
-    <*> (newArray =<< mapM rawBodyLiteral ls)
+    <*> (newArray' =<< mapM rawBodyLiteral ls)
     <*> pure (fromIntegral . length $ ls)
 
 freeEdge :: AstEdge -> IO ()
@@ -1321,7 +1325,7 @@ data Heuristic a = Heuristic (Term a) [BodyLiteral a] (Term a) (Term a) (Term a)
 rawHeuristic :: Heuristic (Symbol s) -> IO AstHeuristic
 rawHeuristic (Heuristic a ls b c d) = AstHeuristic
     <$> rawTerm a
-    <*> (newArray =<< mapM rawBodyLiteral ls)
+    <*> (newArray' =<< mapM rawBodyLiteral ls)
     <*> pure (fromIntegral . length $ ls)
     <*> rawTerm b
     <*> rawTerm c
@@ -1349,7 +1353,7 @@ data Project a = Project (Term a) [BodyLiteral a]
 rawProject :: Project (Symbol s) -> IO AstProject
 rawProject (Project t ls) = AstProject
     <$> rawTerm t
-    <*> (newArray =<< mapM rawBodyLiteral ls)
+    <*> (newArray' =<< mapM rawBodyLiteral ls)
     <*> pure (fromIntegral . length $ ls)
 
 freeProject :: AstProject -> IO ()
