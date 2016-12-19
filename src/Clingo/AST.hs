@@ -98,7 +98,7 @@ parseProgram prog logger limit = do
             astCB <- wrapCBAst (\s -> modifyIORef ref (s :))
             Raw.parseProgram p astCB nullPtr 
                                logCB nullPtr (fromIntegral limit)
-    liftIO (readIORef ref)
+    liftIO (reverse <$> readIORef ref)
 
 -- | An AST can be constructed in a pure environment using 'PureSymbol' and
 -- 'PureSignature' and then registered with the solver when required. Creation

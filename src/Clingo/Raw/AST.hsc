@@ -979,19 +979,19 @@ instance Storable AstHeadLiteral where
             (#{poke clingo_ast_head_literal_t, literal}) p x
         AstHeadDisjunction l x -> do
             (#{poke clingo_ast_head_literal_t, location}) p l
-            (#{poke clingo_ast_head_literal_t, type}) p (AstHeadLiteralTypeLiteral :: AstHeadLiteralType)
+            (#{poke clingo_ast_head_literal_t, type}) p (AstHeadLiteralTypeDisjunction :: AstHeadLiteralType)
             (#{poke clingo_ast_head_literal_t, disjunction}) p x
         AstHeadLitAggregate l x -> do
             (#{poke clingo_ast_head_literal_t, location}) p l
-            (#{poke clingo_ast_head_literal_t, type}) p (AstHeadLiteralTypeLiteral :: AstHeadLiteralType)
+            (#{poke clingo_ast_head_literal_t, type}) p (AstHeadLiteralTypeAggregate :: AstHeadLiteralType)
             (#{poke clingo_ast_head_literal_t, aggregate}) p x
         AstHeadHeadAggregate l x -> do
             (#{poke clingo_ast_head_literal_t, location}) p l
-            (#{poke clingo_ast_head_literal_t, type}) p (AstHeadLiteralTypeLiteral :: AstHeadLiteralType)
+            (#{poke clingo_ast_head_literal_t, type}) p (AstHeadLiteralTypeHeadAggregate :: AstHeadLiteralType)
             (#{poke clingo_ast_head_literal_t, head_aggregate}) p x
         AstHeadTheoryAtom l x -> do
             (#{poke clingo_ast_head_literal_t, location}) p l
-            (#{poke clingo_ast_head_literal_t, type}) p (AstHeadLiteralTypeLiteral :: AstHeadLiteralType)
+            (#{poke clingo_ast_head_literal_t, type}) p (AstHeadLiteralTypeTheoryAtom :: AstHeadLiteralType)
             (#{poke clingo_ast_head_literal_t, theory_atom}) p x
 
 data AstBodyLiteral 

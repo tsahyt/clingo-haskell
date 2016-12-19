@@ -109,8 +109,8 @@ foreign import ccall "wrapper" mkCallbackLogger ::
     Logger a -> IO (FunPtr (Logger a))
 
 data Location = Location
-    { locBeginFile :: Ptr CChar
-    , locEndFile   :: Ptr CChar
+    { locBeginFile :: CString
+    , locEndFile   :: CString
     , locBeginLine :: #type size_t
     , locEndLine   :: #type size_t
     , locBeginCol  :: #type size_t

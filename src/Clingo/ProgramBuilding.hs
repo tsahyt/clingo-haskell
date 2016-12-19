@@ -165,7 +165,7 @@ addStatements (ProgramBuilder b) stmts = do
 
     where go stmt = do
               stmt' <- liftIO (rawStatement stmt)
-              marshall0 $ 
+              marshall0 $
                   with stmt' $ \ptr ->
                       Raw.programBuilderAdd b ptr
               liftIO (freeStatement stmt')
