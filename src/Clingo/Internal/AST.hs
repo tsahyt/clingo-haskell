@@ -539,7 +539,7 @@ fromRawAggregateFunction f = case f of
 
 data HeadAggregateElement a = 
     HeadAggregateElement [Term a] (ConditionalLiteral a)
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawHeadAggregateElement :: HeadAggregateElement (Symbol s) 
                         -> IO AstHeadAggregateElement
@@ -564,7 +564,7 @@ data HeadAggregate a = HeadAggregate AggregateFunction
                                    [HeadAggregateElement a]
                                    (Maybe (AggregateGuard a))
                                    (Maybe (AggregateGuard a))
-    deriving (Eq, Show, Ord)
+    deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 rawHeadAggregate :: HeadAggregate (Symbol s) -> IO AstHeadAggregate
 rawHeadAggregate (HeadAggregate f es a b) = AstHeadAggregate
@@ -851,6 +851,7 @@ data HeadLiteral a
     = HeadLiteral Location (Literal a)
     | HeadDisjunction Location (Disjunction a)
     | HeadLitAggregate Location (Aggregate a)
+    | HeadHeadAggregate Location (HeadAggregate a)
     | HeadTheoryAtom Location (TheoryAtom a)
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
@@ -861,6 +862,8 @@ rawHeadLiteral (HeadDisjunction l d) = AstHeadDisjunction
     <$> rawLocation l <*> (new =<< rawDisjunction d)
 rawHeadLiteral (HeadLitAggregate l d) = AstHeadLitAggregate
     <$> rawLocation l <*> (new =<< rawAggregate d)
+rawHeadLiteral (HeadHeadAggregate l d) = AstHeadHeadAggregate
+    <$> rawLocation l <*> (new =<< rawHeadAggregate d)
 rawHeadLiteral (HeadTheoryAtom l d) = AstHeadTheoryAtom
     <$> rawLocation l <*> (new =<< rawTheoryAtom d)
 
@@ -874,6 +877,9 @@ freeHeadLiteral (AstHeadDisjunction l x) = do
 freeHeadLiteral (AstHeadLitAggregate l x) = do
     freeRawLocation l
     freeIndirection x freeAggregate
+freeHeadLiteral (AstHeadHeadAggregate l x) = do
+    freeRawLocation l
+    freeIndirection x freeHeadAggregate
 freeHeadLiteral (AstHeadTheoryAtom l x) = do
     freeRawLocation l
     freeIndirection x freeTheoryAtom
@@ -885,6 +891,8 @@ fromRawHeadLiteral (AstHeadDisjunction l x) = HeadDisjunction
     <$> fromRawLocation l <*> fromIndirect x fromRawDisjunction
 fromRawHeadLiteral (AstHeadLitAggregate l x) = HeadLitAggregate
     <$> fromRawLocation l <*> fromIndirect x fromRawAggregate
+fromRawHeadLiteral (AstHeadHeadAggregate l x) = HeadHeadAggregate
+    <$> fromRawLocation l <*> fromIndirect x fromRawHeadAggregate
 fromRawHeadLiteral (AstHeadTheoryAtom l x) = HeadTheoryAtom
     <$> fromRawLocation l <*> fromIndirect x fromRawTheoryAtom
 

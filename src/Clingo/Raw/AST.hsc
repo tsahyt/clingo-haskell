@@ -565,13 +565,13 @@ instance Storable AstLiteral where
                 payload <- (#{peek clingo_ast_literal_t, boolean} p)
                 pure $! AstLiteralBool loc sign payload
             AstLiteralTypeSymbolic -> do
-                payload <- (#{peek clingo_ast_literal_t, boolean} p)
+                payload <- (#{peek clingo_ast_literal_t, symbol} p)
                 pure $! AstLiteralTerm loc sign payload
             AstLiteralTypeComparison -> do
-                payload <- (#{peek clingo_ast_literal_t, boolean} p)
+                payload <- (#{peek clingo_ast_literal_t, comparison} p)
                 pure $! AstLiteralComp loc sign payload
             AstLiteralTypeCsp -> do
-                payload <- (#{peek clingo_ast_literal_t, boolean} p)
+                payload <- (#{peek clingo_ast_literal_t, csp_literal} p)
                 pure $! AstLiteralCSPL loc sign payload
             _ -> error "Malformed struct clingo_ast_literal_t"
     poke p d = case d of
@@ -945,6 +945,7 @@ instance Storable AstTheoryAtom where
 data AstHeadLiteral = AstHeadLiteral Location (Ptr AstLiteral)
                     | AstHeadDisjunction Location (Ptr AstDisjunction)
                     | AstHeadLitAggregate Location (Ptr AstAggregate)
+                    | AstHeadHeadAggregate Location (Ptr AstHeadAggregate)
                     | AstHeadTheoryAtom Location (Ptr AstTheoryAtom)
     deriving (Eq, Show)
 
@@ -966,7 +967,7 @@ instance Storable AstHeadLiteral where
                 pure $! AstHeadLitAggregate loc payload
             AstHeadLiteralTypeHeadAggregate -> do
                 payload <- (#{peek clingo_ast_head_literal_t, head_aggregate} p)
-                pure $! AstHeadLiteral loc payload
+                pure $! AstHeadHeadAggregate loc payload
             AstHeadLiteralTypeTheoryAtom -> do
                 payload <- (#{peek clingo_ast_head_literal_t, theory_atom} p)
                 pure $! AstHeadTheoryAtom loc payload
@@ -984,6 +985,10 @@ instance Storable AstHeadLiteral where
             (#{poke clingo_ast_head_literal_t, location}) p l
             (#{poke clingo_ast_head_literal_t, type}) p (AstHeadLiteralTypeLiteral :: AstHeadLiteralType)
             (#{poke clingo_ast_head_literal_t, aggregate}) p x
+        AstHeadHeadAggregate l x -> do
+            (#{poke clingo_ast_head_literal_t, location}) p l
+            (#{poke clingo_ast_head_literal_t, type}) p (AstHeadLiteralTypeLiteral :: AstHeadLiteralType)
+            (#{poke clingo_ast_head_literal_t, head_aggregate}) p x
         AstHeadTheoryAtom l x -> do
             (#{poke clingo_ast_head_literal_t, location}) p l
             (#{poke clingo_ast_head_literal_t, type}) p (AstHeadLiteralTypeLiteral :: AstHeadLiteralType)
