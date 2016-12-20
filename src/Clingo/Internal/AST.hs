@@ -1,18 +1,22 @@
-{-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Clingo.Internal.AST where
 
 import Control.Monad
 import Data.Text (Text, unpack, pack)
+import Data.Text.Lazy (fromStrict)
 import Data.Bifunctor
 import Data.Bifoldable
 import Data.Bitraversable
 import Numeric.Natural
 import Foreign hiding (Pool, freePool)
 import Foreign.C
+
+import Text.PrettyPrint.Leijen.Text hiding ((<$>))
+import qualified Text.PrettyPrint.Leijen.Text as PP
 
 import Clingo.Internal.Types (Location, rawLocation, freeRawLocation, 
                               fromRawLocation, Symbol (..), Signature (..))
@@ -46,6 +50,11 @@ fromIndirect p f = peek p >>= f
 data Sign = NoSign | NegationSign | DoubleNegationSign
     deriving (Eq, Show, Ord)
 
+instance Pretty Sign where
+    pretty NoSign = empty
+    pretty NegationSign = text "not"
+    pretty DoubleNegationSign = text "not not"
+
 rawSign :: Sign -> AstSign
 rawSign s = case s of
     NoSign -> AstSignNone
@@ -62,6 +71,9 @@ fromRawSign s = case s of
 data UnaryOperation a = UnaryOperation UnaryOperator (Term a)
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
+instance Pretty a => Pretty (UnaryOperation a) where
+    pretty (UnaryOperation o t) = pretty o <+> pretty t
+
 rawUnaryOperation :: UnaryOperation (Symbol s) -> IO AstUnaryOperation
 rawUnaryOperation (UnaryOperation o t) = 
     AstUnaryOperation <$> pure (rawUnaryOperator o) <*> rawTerm t
@@ -76,6 +88,10 @@ fromRawUnaryOperation (AstUnaryOperation o t) = UnaryOperation
 
 data UnaryOperator = UnaryMinus | Negation | Absolute
     deriving (Eq, Show, Ord)
+
+instance Pretty UnaryOperator where
+    pretty UnaryMinus = text "-"
+    pretty _ = text "<unaryOp>"         -- TODO
 
 rawUnaryOperator :: UnaryOperator -> AstUnaryOperator
 rawUnaryOperator o = case o of
@@ -93,6 +109,9 @@ fromRawUnaryOperator o = case o of
 data BinaryOperation a = BinaryOperation BinaryOperator (Term a) (Term a)
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
+instance Pretty a => Pretty (BinaryOperation a) where
+    pretty (BinaryOperation o a b) = pretty a <+> pretty o <+> pretty b
+
 rawBinaryOperation :: BinaryOperation (Symbol s) -> IO AstBinaryOperation
 rawBinaryOperation (BinaryOperation o l r) =
     AstBinaryOperation <$> pure (rawBinaryOperator o) 
@@ -107,6 +126,17 @@ fromRawBinaryOperation (AstBinaryOperation o a b) = BinaryOperation
 
 data BinaryOperator = Xor | Or | And | Plus | Minus | Mult | Div | Mod
     deriving (Eq, Show, Ord)
+
+instance Pretty BinaryOperator where
+    pretty o = text $ case o of
+        Xor -> "^"
+        Or -> "|"
+        And -> "&"
+        Plus -> "+"
+        Minus -> "-"
+        Mult -> "*"
+        Div -> "/"
+        Mod -> "%"
 
 rawBinaryOperator :: BinaryOperator -> AstBinaryOperator
 rawBinaryOperator o = case o of
@@ -134,6 +164,9 @@ fromRawBinaryOperator o = case o of
 data Interval a = Interval (Term a) (Term a)
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
+instance Pretty a => Pretty (Interval a) where
+    pretty (Interval a b) = pretty a <> text ".." <> pretty b
+
 rawInterval :: Interval (Symbol s) -> IO AstInterval
 rawInterval (Interval a b) = AstInterval <$> rawTerm a <*> rawTerm b
 
@@ -145,6 +178,10 @@ fromRawInterval (AstInterval a b) = Interval <$> fromRawTerm a <*> fromRawTerm b
 
 data Function a = Function Text [Term a]
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
+
+instance Pretty a => Pretty (Function a) where
+    pretty (Function t []) = text . fromStrict $ t
+    pretty (Function t xs) = (text . fromStrict $ t) <> tupled (map pretty xs)
 
 rawFunction :: Function (Symbol s) -> IO AstFunction
 rawFunction (Function n ts) = do
@@ -164,6 +201,9 @@ fromRawFunction (AstFunction s ts n) = Function
 
 data Pool a = Pool [Term a]
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
+
+instance Pretty a => Pretty (Pool a) where
+    pretty (Pool xs) = text "<pool>"  -- TODO!
 
 rawPool :: Pool (Symbol s) -> IO AstPool
 rawPool (Pool ts) = do
@@ -187,6 +227,16 @@ data Term a
     | TermExtFunction Location (Function a)
     | TermPool Location (Pool a)
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
+
+instance Pretty a => Pretty (Term a) where
+    pretty (TermSymbol _ a) = pretty a
+    pretty (TermVariable _ t) = text . fromStrict $ t
+    pretty (TermUOp _ o) = pretty o
+    pretty (TermBOp _ o) = pretty o
+    pretty (TermInterval _ i) = pretty i
+    pretty (TermFunction _ f) = pretty f
+    pretty (TermExtFunction _ f) = pretty f
+    pretty (TermPool _ p) = pretty p
 
 rawTerm :: Term (Symbol s) -> IO AstTerm
 rawTerm (TermSymbol l s) = AstTermSymbol <$> rawLocation l 
@@ -300,6 +350,15 @@ data ComparisonOperator = GreaterThan | LessThan | LessEqual | GreaterEqual
                         | NotEqual | Equal
     deriving (Eq, Show, Ord)
 
+instance Pretty ComparisonOperator where
+    pretty c = text $ case c of
+        GreaterThan -> ">"
+        LessThan -> "<"
+        LessEqual -> "<="
+        GreaterEqual -> ">="
+        NotEqual -> "!="
+        Equal -> "="
+
 rawComparisonOperator :: ComparisonOperator -> AstComparisonOperator
 rawComparisonOperator o = case o of
     GreaterThan -> AstComparisonOperatorGreaterThan
@@ -341,6 +400,9 @@ fromRawCspLiteral (AstCspLiteral t gs n) = CspLiteral
 data Identifier = Identifier Location Text
     deriving (Eq, Show, Ord)
 
+instance Pretty Identifier where
+    pretty (Identifier _ t) = text . fromStrict $ t
+
 rawIdentifier :: Identifier -> IO AstId
 rawIdentifier (Identifier l t) = do
     l' <- rawLocation l
@@ -357,6 +419,9 @@ fromRawIdentifier (AstId l n) = Identifier
 
 data Comparison a = Comparison ComparisonOperator (Term a) (Term a)
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
+
+instance Pretty a => Pretty (Comparison a) where
+    pretty (Comparison o a b) = pretty a <+> pretty o <+> pretty b
 
 rawComparison :: Comparison (Symbol s) -> IO AstComparison
 rawComparison (Comparison o a b) = AstComparison
@@ -375,6 +440,12 @@ data Literal a
     | LiteralComp Location Sign (Comparison a)
     | LiteralCSPL Location Sign (CspLiteral a)
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
+
+instance Pretty a => Pretty (Literal a) where
+    pretty (LiteralBool _ s b) = pretty s <+> pretty b
+    pretty (LiteralTerm _ s t) = pretty s <+> pretty t
+    pretty (LiteralComp _ s c) = pretty s <+> pretty c
+    pretty _ = undefined -- TODO
 
 rawLiteral :: Literal (Symbol s) -> IO AstLiteral
 rawLiteral (LiteralBool l s b) = AstLiteralBool 
@@ -411,6 +482,16 @@ fromRawLiteral (AstLiteralCSPL l s b) = LiteralCSPL
 data AggregateGuard a = AggregateGuard ComparisonOperator (Term a)
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
+-- | Instance describing left-guards.
+instance Pretty a => Pretty (AggregateGuard a) where
+    pretty (AggregateGuard o t) = pretty t <+> pretty o
+
+aguardPRight :: Pretty a => AggregateGuard a -> Doc
+aguardPRight (AggregateGuard o t) = pretty o <+> pretty t
+
+aguardPLeft :: Pretty a => AggregateGuard a -> Doc
+aguardPLeft = pretty
+
 rawAggregateGuard :: AggregateGuard (Symbol s) -> IO AstAggregateGuard
 rawAggregateGuard (AggregateGuard o t) = AstAggregateGuard
     <$> pure (rawComparisonOperator o) <*> rawTerm t
@@ -429,6 +510,10 @@ fromRawAggregateGuard (AstAggregateGuard o t) = AggregateGuard
 
 data ConditionalLiteral a = ConditionalLiteral (Literal a) [Literal a]
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
+
+instance Pretty a => Pretty (ConditionalLiteral a) where
+    pretty (ConditionalLiteral l xs) = 
+        pretty l <+> colon <+> cat (punctuate comma (map pretty xs))
 
 rawConditionalLiteral :: ConditionalLiteral (Symbol s) 
                       -> IO AstConditionalLiteral
@@ -453,6 +538,11 @@ data Aggregate a = Aggregate [ConditionalLiteral a]
                              (Maybe (AggregateGuard a))
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
+instance Pretty a => Pretty (Aggregate a) where
+    pretty (Aggregate xs l r) = 
+        pretty l <+> body <+> pretty (fmap aguardPRight r)
+        where body = braces . cat $ punctuate semi (map pretty xs)
+
 rawAggregate :: Aggregate (Symbol s) -> IO AstAggregate
 rawAggregate (Aggregate ls a b) = do
     ls' <- newArray' =<< mapM rawConditionalLiteral ls
@@ -474,6 +564,12 @@ fromRawAggregate (AstAggregate ls n a b) = Aggregate
 
 data BodyAggregateElement a = BodyAggregateElement [Term a] [Literal a]
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
+
+instance Pretty a => Pretty (BodyAggregateElement a) where
+    pretty (BodyAggregateElement ts ls) =
+        let ts' = map pretty ts
+            ls' = map pretty ls
+         in hcat (punctuate comma ts') <+> colon <+> hcat (punctuate comma ls')
 
 rawBodyAggregateElement :: BodyAggregateElement (Symbol s) 
                         -> IO AstBodyAggregateElement
@@ -500,6 +596,11 @@ data BodyAggregate a = BodyAggregate AggregateFunction [BodyAggregateElement a]
                                    (Maybe (AggregateGuard a))
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
+instance Pretty a => Pretty (BodyAggregate a) where
+    pretty (BodyAggregate f xs l r) =
+        pretty f <+> pretty l <+> body <+> pretty (fmap aguardPRight r)
+        where body = braces . cat $ punctuate semi (map pretty xs)
+
 rawBodyAggregate :: BodyAggregate (Symbol s) -> IO AstBodyAggregate
 rawBodyAggregate (BodyAggregate f es a b) = AstBodyAggregate
     <$> pure (rawAggregateFunction f)
@@ -524,6 +625,14 @@ fromRawBodyAggregate (AstBodyAggregate f es n a b) = BodyAggregate
 data AggregateFunction = Count | Sum | Sump | Min | Max
     deriving (Eq, Show, Ord)
 
+instance Pretty AggregateFunction where
+    pretty c = text $ case c of
+        Count -> "#count"
+        Sum -> "#sum"
+        Sump -> "#sump"
+        Min -> "#min"
+        Max -> "#max"
+
 rawAggregateFunction :: AggregateFunction -> AstAggregateFunction
 rawAggregateFunction f = case f of
     Count -> AstAggregateFunctionCount
@@ -544,6 +653,11 @@ fromRawAggregateFunction f = case f of
 data HeadAggregateElement a = 
     HeadAggregateElement [Term a] (ConditionalLiteral a)
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
+
+instance Pretty a => Pretty (HeadAggregateElement a) where
+    pretty (HeadAggregateElement ts l) =
+        let ts' = map pretty ts
+         in hcat (punctuate comma ts') <+> colon <+> pretty l
 
 rawHeadAggregateElement :: HeadAggregateElement (Symbol s) 
                         -> IO AstHeadAggregateElement
@@ -570,6 +684,11 @@ data HeadAggregate a = HeadAggregate AggregateFunction
                                    (Maybe (AggregateGuard a))
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
+instance Pretty a => Pretty (HeadAggregate a) where
+    pretty (HeadAggregate f xs l r) =
+        pretty f <+> pretty l <+> body <+> pretty (fmap aguardPRight r)
+        where body = braces . cat $ punctuate semi (map pretty xs)
+
 rawHeadAggregate :: HeadAggregate (Symbol s) -> IO AstHeadAggregate
 rawHeadAggregate (HeadAggregate f es a b) = AstHeadAggregate
     <$> pure (rawAggregateFunction f)
@@ -593,6 +712,9 @@ fromRawHeadAggregate (AstHeadAggregate f es n a b) = HeadAggregate
 
 data Disjunction a = Disjunction [ConditionalLiteral a]
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
+
+instance Pretty a => Pretty (Disjunction a) where
+    pretty (Disjunction xs) = hcat (punctuate (char '|') $ map pretty xs)
 
 rawDisjunction :: Disjunction (Symbol s) -> IO AstDisjunction
 rawDisjunction (Disjunction ls) = AstDisjunction 
@@ -859,6 +981,13 @@ data HeadLiteral a
     | HeadTheoryAtom Location (TheoryAtom a)
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
+instance Pretty a => Pretty (HeadLiteral a) where
+    pretty (HeadLiteral _ l) = pretty l
+    pretty (HeadDisjunction _ d) = pretty d
+    pretty (HeadLitAggregate _ a) = pretty a
+    pretty (HeadHeadAggregate _ a) = pretty a
+    pretty (HeadTheoryAtom _ a) = text "<theoryAtom>" -- TODO!
+
 rawHeadLiteral :: HeadLiteral (Symbol s) -> IO AstHeadLiteral
 rawHeadLiteral (HeadLiteral l x) = AstHeadLiteral
     <$> rawLocation l <*> (new =<< rawLiteral x)
@@ -908,6 +1037,14 @@ data BodyLiteral a
     | BodyTheoryAtom Location Sign (TheoryAtom a)
     | BodyDisjoint Location Sign (Disjoint a)
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
+
+instance Pretty a => Pretty (BodyLiteral a) where
+    pretty (BodyLiteral _ s l) = pretty s <+> pretty l
+    pretty (BodyConditional _ c) = pretty c
+    pretty (BodyLitAggregate _ s a) = pretty s <+> pretty a
+    pretty (BodyBodyAggregate _ s a) = pretty s <+> pretty a
+    pretty (BodyTheoryAtom _ s a) = pretty s <+> text "<theoryAtom>" -- TODO
+    pretty (BodyDisjoint _ s _) = pretty s <+> text "<disjoint>" -- TODO
 
 rawBodyLiteral :: BodyLiteral (Symbol s) -> IO AstBodyLiteral
 rawBodyLiteral (BodyLiteral l s x) = AstBodyLiteral
@@ -1136,6 +1273,10 @@ fromRawTheoryDefinition (AstTheoryDefinition s ts nt as na) = TheoryDefinition
 
 data Rule a = Rule (HeadLiteral a) [BodyLiteral a]
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
+
+instance Pretty a => Pretty (Rule a) where
+    pretty (Rule h bs) = 
+        pretty h <+> text ":-" <+> sep (punctuate comma (map pretty bs))
 
 rawRule :: Rule (Symbol s) -> IO AstRule
 rawRule (Rule h bs) = AstRule
@@ -1381,6 +1522,11 @@ data Statement a b
     | StmtSignature Location b
     | StmtTheoryDefinition Location TheoryDefinition
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
+
+instance (Pretty a, Pretty b) => Pretty (Statement a b) where
+    pretty (StmtRule _ r) = pretty r
+    pretty (StmtSignature _ s) = pretty s
+    pretty _ = text "<stmt>" -- TODO
 
 instance Bifunctor Statement where
     bimap f g s = case s of

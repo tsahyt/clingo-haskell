@@ -65,6 +65,7 @@ library
                        mtl == 2.2.*,
                        exceptions == 0.8.*,
                        text == 1.2.*,
+                       wl-pprint-text,
                        deepseq == 1.4.*,
                        StateVar == 1.1.*
   extra-libraries:     clingo
