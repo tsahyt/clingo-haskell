@@ -1,6 +1,7 @@
 -- | Functions for handling symbols and signatures with clingo.
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 module Clingo.Symbol
 (
@@ -56,9 +57,12 @@ where
 
 import Data.Maybe (fromJust)
 import Data.Text (Text, unpack)
+import Data.Text.Lazy (fromStrict)
 import Numeric.Natural
 import Foreign.C
 import Foreign
+
+import Text.PrettyPrint.Leijen.Text hiding ((<$>))
 
 import GHC.Generics
 
@@ -164,6 +168,16 @@ data PureSymbol
     | PureString Text
     deriving (Eq, Show, Ord, Generic)
 
+instance Pretty PureSymbol where
+    pretty c = case c of
+        PureInfimum -> text "inf"
+        PureSupremum -> text "sup"
+        PureNumber x -> pretty x
+        PureFunction x vs s -> s' <+> text (fromStrict x) <> vs'
+            where s'  = if s then empty else text "not"
+                  vs' = tupled (map pretty vs)
+        PureString s -> text (fromStrict s)
+
 -- | Create a 'Symbol' in the solver from a 'PureSymbol'
 unpureSymbol :: (Monad (m s), MonadSymbol m) => PureSymbol -> m s (Symbol s)
 unpureSymbol PureInfimum = createInfimum
@@ -189,6 +203,12 @@ toPureSymbol s = case symType s of
 -- handled 'Signature' type of the clingo library.
 data PureSignature = PureSignature Text Natural Bool
     deriving (Eq, Show, Ord, Generic)
+
+instance Pretty PureSignature where
+    pretty (PureSignature s a b) = 
+        b' <+> text (fromStrict s) <> char '/' 
+            <> pretty (fromIntegral a :: Integer)
+        where b' = if b then empty else text "not"
 
 -- | Create a 'Signature' in the solver from a 'PureSignature'
 unpureSignature :: MonadSymbol m => PureSignature -> m s (Signature s)
