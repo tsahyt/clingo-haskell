@@ -8,8 +8,6 @@ module Clingo.Iterative
 )
 where
 
-import Control.Monad.IO.Class
-import Control.Monad.Catch
 import Foreign
 
 import qualified Clingo.Raw as Raw
