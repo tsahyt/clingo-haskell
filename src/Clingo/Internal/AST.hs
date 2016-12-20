@@ -512,6 +512,7 @@ data ConditionalLiteral a = ConditionalLiteral (Literal a) [Literal a]
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 instance Pretty a => Pretty (ConditionalLiteral a) where
+    pretty (ConditionalLiteral l []) = pretty l
     pretty (ConditionalLiteral l xs) = 
         pretty l <+> colon <+> cat (punctuate comma (map pretty xs))
 
@@ -541,7 +542,8 @@ data Aggregate a = Aggregate [ConditionalLiteral a]
 instance Pretty a => Pretty (Aggregate a) where
     pretty (Aggregate xs l r) = 
         pretty l <+> body <+> pretty (fmap aguardPRight r)
-        where body = braces . cat $ punctuate semi (map pretty xs)
+        where body = braces . align . cat $ 
+                         punctuate (semi <> space) (map pretty xs)
 
 rawAggregate :: Aggregate (Symbol s) -> IO AstAggregate
 rawAggregate (Aggregate ls a b) = do
@@ -599,7 +601,7 @@ data BodyAggregate a = BodyAggregate AggregateFunction [BodyAggregateElement a]
 instance Pretty a => Pretty (BodyAggregate a) where
     pretty (BodyAggregate f xs l r) =
         pretty f <+> pretty l <+> body <+> pretty (fmap aguardPRight r)
-        where body = braces . cat $ punctuate semi (map pretty xs)
+        where body = braces . align . cat $ punctuate semi (map pretty xs)
 
 rawBodyAggregate :: BodyAggregate (Symbol s) -> IO AstBodyAggregate
 rawBodyAggregate (BodyAggregate f es a b) = AstBodyAggregate
@@ -687,7 +689,7 @@ data HeadAggregate a = HeadAggregate AggregateFunction
 instance Pretty a => Pretty (HeadAggregate a) where
     pretty (HeadAggregate f xs l r) =
         pretty f <+> pretty l <+> body <+> pretty (fmap aguardPRight r)
-        where body = braces . cat $ punctuate semi (map pretty xs)
+        where body = braces . align . sep $ punctuate semi (map pretty xs)
 
 rawHeadAggregate :: HeadAggregate (Symbol s) -> IO AstHeadAggregate
 rawHeadAggregate (HeadAggregate f es a b) = AstHeadAggregate
@@ -1275,8 +1277,10 @@ data Rule a = Rule (HeadLiteral a) [BodyLiteral a]
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 instance Pretty a => Pretty (Rule a) where
+    pretty (Rule h []) = pretty h
     pretty (Rule h bs) = 
-        pretty h <+> text ":-" <+> sep (punctuate comma (map pretty bs))
+        pretty h <+> text ":-" 
+                 <+> align (sep (punctuate comma (map pretty bs)))
 
 rawRule :: Rule (Symbol s) -> IO AstRule
 rawRule (Rule h bs) = AstRule
@@ -1407,6 +1411,10 @@ fromRawScriptType t = case t of
 data Program = Program Text [Identifier]
     deriving (Eq, Show, Ord)
 
+instance Pretty Program where
+    pretty (Program n is) = 
+        text "#program" <+> text (fromStrict n) <+> tupled (map pretty is)
+
 rawProgram :: Program -> IO AstProgram
 rawProgram (Program n is) = AstProgram
     <$> newCString (unpack n)
@@ -1524,8 +1532,9 @@ data Statement a b
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 instance (Pretty a, Pretty b) => Pretty (Statement a b) where
-    pretty (StmtRule _ r) = pretty r
-    pretty (StmtSignature _ s) = pretty s
+    pretty (StmtRule _ r) = pretty r <> dot
+    pretty (StmtSignature _ s) = pretty s <> dot
+    pretty (StmtProgram _ p) = pretty p <> dot
     pretty _ = text "<stmt>" -- TODO
 
 instance Bifunctor Statement where
