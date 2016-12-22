@@ -65,6 +65,7 @@ import Control.Monad.Reader
 import Control.Monad.Catch
 import Data.Text (Text, pack)
 import Data.Bits
+import Data.Hashable
 import Foreign
 import Foreign.C
 import GHC.Generics
@@ -115,6 +116,9 @@ instance Eq (Symbol s) where
 instance Ord (Symbol s) where
     a <= b = toBool (Raw.symbolIsLessThan (rawSymbol a) (rawSymbol b))
 
+instance Hashable (Symbol s) where
+    hashWithSalt s sym = hashWithSalt s (symHash sym)
+
 class Signed a where
     positive :: a -> Bool
     positive = not . negative
@@ -128,6 +132,9 @@ instance Signed Bool where
 data SymbolicLiteral s 
     = SLPositive (Symbol s)
     | SLNegative (Symbol s)
+    deriving (Generic, Eq, Ord)
+
+instance Hashable (SymbolicLiteral s)
 
 symLitSymbol :: SymbolicLiteral s -> Symbol s
 symLitSymbol (SLPositive s) = s
@@ -162,10 +169,19 @@ instance Signed (Signature s) where
     positive = toBool . Raw.signatureIsPositive . rawSignature
     negative = toBool . Raw.signatureIsNegative . rawSignature
 
+instance Hashable (Signature s) where
+    hashWithSalt s sig = hashWithSalt s (sigHash sig)
+
 newtype Literal s = Literal { rawLiteral :: Raw.Literal }
-    deriving (Ord, Show, Eq, NFData)
+    deriving (Ord, Show, Eq, NFData, Generic)
+
+instance Hashable (Literal s)
 
 data WeightedLiteral s = WeightedLiteral (Literal s) Integer
+    deriving (Eq, Show, Ord, Generic)
+
+instance Hashable (WeightedLiteral s)
+instance NFData (WeightedLiteral s)
 
 rawWeightedLiteral :: WeightedLiteral s -> Raw.WeightedLiteral
 rawWeightedLiteral (WeightedLiteral l w) = 
@@ -176,7 +192,9 @@ fromRawWeightedLiteral (Raw.WeightedLiteral l w) =
     WeightedLiteral (Literal l) (fromIntegral w)
 
 data ExternalType = ExtFree | ExtTrue | ExtFalse | ExtRelease
-    deriving (Show, Eq, Ord, Enum, Read)
+    deriving (Show, Eq, Ord, Enum, Read, Generic)
+
+instance Hashable ExternalType
 
 rawExtT :: ExternalType -> Raw.ExternalType
 rawExtT ExtFree = Raw.ExternalFree
@@ -193,7 +211,9 @@ fromRawExtT _ = error "unknown external_type"
 
 data HeuristicType = HeuristicLevel | HeuristicSign | HeuristicFactor 
                    | HeuristicInit  | HeuristicTrue | HeuristicFalse
-    deriving (Show, Eq, Ord, Enum, Read)
+    deriving (Show, Eq, Ord, Enum, Read, Generic)
+
+instance Hashable HeuristicType
 
 rawHeuT :: HeuristicType -> Raw.HeuristicType
 rawHeuT HeuristicLevel = Raw.HeuristicLevel
@@ -216,10 +236,14 @@ negateLiteral :: Literal s -> Literal s
 negateLiteral (Literal a) = Literal (negate a)
 
 newtype AspifLiteral s = AspifLiteral { rawAspifLiteral :: Raw.Literal }
-    deriving (Ord, Show, Eq, NFData)
+    deriving (Ord, Show, Eq, NFData, Generic)
+
+instance Hashable (AspifLiteral s)
 
 newtype Atom s = Atom { rawAtom :: Raw.Atom }
-    deriving (Show)
+    deriving (Show, Ord, Eq, NFData, Generic)
+
+instance Hashable (Atom s)
 
 newtype AsyncSolver s = AsyncSolver Raw.AsyncSolver
 
@@ -269,7 +293,10 @@ fromRawLocation l = Location
     <*> pure (fromIntegral . Raw.locEndCol $ l)
 
 data SolveResult = Satisfiable Bool | Unsatisfiable Bool | Interrupted
-    deriving (Eq, Show, Read)
+    deriving (Eq, Show, Read, Generic)
+
+instance NFData SolveResult
+instance Hashable SolveResult
 
 exhausted :: SolveResult -> Bool
 exhausted (Satisfiable b) = b

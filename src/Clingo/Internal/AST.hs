@@ -442,7 +442,7 @@ data Literal a
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 instance Pretty a => Pretty (Literal a) where
-    pretty (LiteralBool _ s b) = pretty s <+> pretty b
+    pretty (LiteralBool _ s b) = pretty s <+> if b then text "true" else empty
     pretty (LiteralTerm _ s t) = pretty s <+> pretty t
     pretty (LiteralComp _ s c) = pretty s <+> pretty c
     pretty _ = undefined -- TODO
@@ -514,7 +514,7 @@ data ConditionalLiteral a = ConditionalLiteral (Literal a) [Literal a]
 instance Pretty a => Pretty (ConditionalLiteral a) where
     pretty (ConditionalLiteral l []) = pretty l
     pretty (ConditionalLiteral l xs) = 
-        pretty l <+> colon <+> cat (punctuate comma (map pretty xs))
+        pretty l <+> colon <+> cat (punctuate (comma <> space) (map pretty xs))
 
 rawConditionalLiteral :: ConditionalLiteral (Symbol s) 
                       -> IO AstConditionalLiteral
@@ -1412,8 +1412,10 @@ data Program = Program Text [Identifier]
     deriving (Eq, Show, Ord)
 
 instance Pretty Program where
+    pretty (Program n []) =
+        text "#program" <+> text (fromStrict n)
     pretty (Program n is) = 
-        text "#program" <+> text (fromStrict n) <+> tupled (map pretty is)
+        text "#program" <+> text (fromStrict n) <> tupled (map pretty is)
 
 rawProgram :: Program -> IO AstProgram
 rawProgram (Program n is) = AstProgram
