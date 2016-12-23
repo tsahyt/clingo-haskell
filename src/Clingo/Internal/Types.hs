@@ -340,6 +340,7 @@ newtype SymbolicAtoms s = SymbolicAtoms Raw.SymbolicAtoms
 newtype TheoryAtoms s = TheoryAtoms Raw.TheoryAtoms
 
 newtype TruthValue = TruthValue { rawTruthValue :: Raw.TruthValue }
+    deriving (Eq, Show, Ord)
 
 pattern TruthFree = TruthValue Raw.TruthFree
 pattern TruthFalse = TruthValue Raw.TruthFalse
