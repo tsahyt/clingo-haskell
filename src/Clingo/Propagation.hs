@@ -62,7 +62,13 @@ module Clingo.Propagation
     levelOf,
     decision,
     isFixed,
-    truthValue
+    truthValue,
+
+    -- * Truth Values
+    TruthValue,
+    pattern TruthFree,
+    pattern TruthFalse,
+    pattern TruthTrue
 )
 where
 
