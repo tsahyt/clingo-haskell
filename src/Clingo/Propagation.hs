@@ -56,13 +56,13 @@ module Clingo.Propagation
     assignment,
 
     -- * Assignment
-    P.decisionLevel,
-    P.hasConflict,
-    P.hasLiteral,
-    P.levelOf,
-    P.decision,
-    P.isFixed,
-    P.truthValue
+    decisionLevel,
+    hasConflict,
+    hasLiteral,
+    levelOf,
+    decision,
+    isFixed,
+    truthValue
 )
 where
 
@@ -71,6 +71,8 @@ import Control.Monad.IO.Class
 import Control.Monad.Catch
 import Control.Monad.Reader
 import Control.Monad.Trans.Maybe
+
+import Numeric.Natural
 
 import Clingo.Internal.Types
 import Clingo.Internal.Symbol
@@ -209,3 +211,31 @@ propagate = ask >>= P.propagate >>= handleStop
 -- | Obtain the current (partial) assignment.
 assignment :: Propagation 'Solving s (Assignment s)
 assignment = ask >>= P.assignment
+
+-- | Get the current decision level.
+decisionLevel :: Assignment s -> Propagation 'Solving s Natural
+decisionLevel = P.decisionLevel
+
+-- | Determine whether assignment has a conflict.
+hasConflict :: Assignment s -> Propagation 'Solving s Bool
+hasConflict = P.hasConflict
+
+-- | Determine whether a literal is part of an assignment.
+hasLiteral :: Assignment s -> Literal s -> Propagation 'Solving s Bool
+hasLiteral = P.hasLiteral
+
+-- | Find the decision level of a given literal in an assignment.
+levelOf :: Assignment s -> Literal s -> Propagation 'Solving s Natural
+levelOf = P.levelOf
+
+-- | Determine the decision literal given a decision level.
+decision :: Assignment s -> Natural -> Propagation 'Solving s (Literal s)
+decision = P.decision
+
+-- | Check if a literal has a fixed truth value.
+isFixed :: Assignment s -> Literal s -> Propagation 'Solving s Bool
+isFixed = P.isFixed
+
+-- | Obtain the truth value of a literal
+truthValue :: Assignment s -> Literal s -> Propagation 'Solving s TruthValue
+truthValue = P.truthValue
