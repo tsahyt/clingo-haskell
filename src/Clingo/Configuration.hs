@@ -12,6 +12,11 @@ module Clingo.Configuration
     (>=>),
     fromConfig,
     fromConfigMany,
+
+    -- * Re-exported from StateVar
+    StateVar,
+    ($=),
+    get
 )
 where
 
