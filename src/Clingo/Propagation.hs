@@ -177,11 +177,11 @@ countThreads = ask >>= P.countThreads
 solverLiteral :: AspifLiteral s -> Propagation 'Init s (Literal s)
 solverLiteral l = ask >>= flip P.solverLiteral l
 
--- | Obtain a handle to the symbolic atoms, see -- 'Clingo.Inspection.Symbolic'
+-- | Obtain a handle to the symbolic atoms, see 'Clingo.Inspection.Symbolic'
 propSymbolicAtoms :: Propagation 'Init s (SymbolicAtoms s)
 propSymbolicAtoms = ask >>= P.symbolicAtoms
 
--- | Obtain a handle to the theory atoms, see -- 'Clingo.Inspection.Theory'
+-- | Obtain a handle to the theory atoms, see 'Clingo.Inspection.Theory'
 propTheoryAtoms :: Propagation 'Init s (TheoryAtoms s)
 propTheoryAtoms = ask >>= P.theoryAtoms
 

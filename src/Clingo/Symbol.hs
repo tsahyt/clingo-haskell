@@ -173,7 +173,8 @@ instance Pretty PureSymbol where
         PureInfimum -> text "inf"
         PureSupremum -> text "sup"
         PureNumber x -> pretty x
-        PureFunction x vs s -> s' <+> text (fromStrict x) <> vs'
+        PureFunction x vs s -> s' <+> text (fromStrict x) 
+                                   <> if null vs then mempty else vs'
             where s'  = if s then empty else text "not"
                   vs' = tupled (map pretty vs)
         PureString s -> text (fromStrict s)

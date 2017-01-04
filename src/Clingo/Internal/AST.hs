@@ -1473,6 +1473,16 @@ fromRawEdge (AstEdge a b ls n) = Edge
 data Heuristic a = Heuristic (Term a) [BodyLiteral a] (Term a) (Term a) (Term a)
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
+instance Pretty a => Pretty (Heuristic a) where
+    pretty (Heuristic t1 [] t2 t3 t4) = 
+        text "#heuristic" <+> pretty t1
+                          <> dot <+> char '[' <+> pretty t2 <> char '@' 
+                          <> pretty t3 <+> comma <+> pretty t4 <+> char ']'
+    pretty (Heuristic t1 cs t2 t3 t4) = 
+        text "#heuristic" <+> pretty t1 <+> colon <+> list (map pretty cs) 
+                          <> dot <+> char '[' <+> pretty t2 <> char '@' 
+                          <> pretty t3 <+> comma <+> pretty t4 <+> char ']'
+
 rawHeuristic :: Heuristic (Symbol s) -> IO AstHeuristic
 rawHeuristic (Heuristic a ls b c d) = AstHeuristic
     <$> rawTerm a
@@ -1537,6 +1547,7 @@ instance (Pretty a, Pretty b) => Pretty (Statement a b) where
     pretty (StmtRule _ r) = pretty r <> dot
     pretty (StmtSignature _ s) = pretty s <> dot
     pretty (StmtProgram _ p) = pretty p <> dot
+    pretty (StmtHeuristic _ p) = pretty p
     pretty _ = text "<stmt>" -- TODO
 
 instance Bifunctor Statement where
