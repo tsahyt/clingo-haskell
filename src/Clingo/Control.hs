@@ -36,10 +36,11 @@ module Clingo.Control
     symbolicAtoms,
     theoryAtoms,
 
-    TruthValue (..),
+    TruthValue,
     pattern TruthTrue,
     pattern TruthFalse,
     pattern TruthFree,
+    negateTruth,
     assignExternal,
     releaseExternal,
     getConst,

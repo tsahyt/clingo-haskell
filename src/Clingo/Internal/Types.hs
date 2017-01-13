@@ -50,6 +50,7 @@ module Clingo.Internal.Types
     pattern TruthFree,
     pattern TruthFalse,
     pattern TruthTrue,
+    negateTruth,
     IOPropagator (..),
     rawPropagator,
     PropagateCtrl (..),
@@ -345,6 +346,11 @@ newtype TruthValue = TruthValue { rawTruthValue :: Raw.TruthValue }
 pattern TruthFree = TruthValue Raw.TruthFree
 pattern TruthFalse = TruthValue Raw.TruthFalse
 pattern TruthTrue = TruthValue Raw.TruthTrue
+
+negateTruth :: TruthValue -> TruthValue
+negateTruth TruthFree = TruthFree
+negateTruth TruthTrue = TruthFalse
+negateTruth TruthFalse = TruthTrue
 
 data IOPropagator s = IOPropagator
     { propagatorInit      :: Maybe (PropagateInit s -> IO ())

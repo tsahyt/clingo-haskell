@@ -68,7 +68,8 @@ module Clingo.Propagation
     TruthValue,
     pattern TruthFree,
     pattern TruthFalse,
-    pattern TruthTrue
+    pattern TruthTrue,
+    negateTruth
 )
 where
 
