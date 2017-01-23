@@ -1434,6 +1434,12 @@ fromRawProgram (AstProgram s es n) = Program
 data External a = External (Term a) [BodyLiteral a]
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
+instance Pretty a => Pretty (External a) where
+    pretty (External n []) =
+        text "#external" <+> pretty n
+    pretty (External n is) = 
+        text "#external" <+> pretty n <> tupled (map pretty is)
+
 rawExternal :: External (Symbol s) -> IO AstExternal
 rawExternal (External t ls) = AstExternal
     <$> rawTerm t
@@ -1547,6 +1553,7 @@ instance (Pretty a, Pretty b) => Pretty (Statement a b) where
     pretty (StmtRule _ r) = pretty r <> dot
     pretty (StmtSignature _ s) = pretty s <> dot
     pretty (StmtProgram _ p) = pretty p <> dot
+    pretty (StmtExternal _ p) = pretty p <> dot
     pretty (StmtHeuristic _ p) = pretty p
     pretty _ = text "<stmt>" -- TODO
 
