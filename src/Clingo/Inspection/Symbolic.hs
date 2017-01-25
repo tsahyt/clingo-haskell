@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 module Clingo.Inspection.Symbolic
 (
+    SymbolicAtoms,
     SymbolicAtom (..),
     AspifLiteral,
     fromSymbolicAtoms,
@@ -32,15 +33,15 @@ instance NFData (SymbolicAtom s)
 
 fromSymbolicAtoms :: (MonadIO m, MonadThrow m, NFData a)
                   => SymbolicAtoms s 
-                  -> ([SymbolicAtom s] -> [a]) 
-                  -> m [a]
+                  -> ([SymbolicAtom s] -> a) 
+                  -> m a
 fromSymbolicAtoms s f = force . f <$> buildSAtoms Nothing s
 
 fromSymbolicAtomsSig :: (MonadIO m, MonadThrow m, NFData a)
                      => SymbolicAtoms s
                      -> Signature s
-                     -> ([SymbolicAtom s] -> [a])
-                     -> m [a]
+                     -> ([SymbolicAtom s] -> a)
+                     -> m a
 fromSymbolicAtomsSig s sig f = force . f <$> buildSAtoms (Just sig) s
 
 getSAtom :: (MonadIO m, MonadThrow m)
