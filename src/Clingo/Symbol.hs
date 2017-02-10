@@ -10,6 +10,7 @@ module Clingo.Symbol
     warningString,
     Symbol,
     Location,
+    Signed (..),
 
     -- * Symbol types
     SymbolType (..),

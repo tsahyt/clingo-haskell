@@ -12,6 +12,7 @@ module Clingo.Propagation
     PropagationPhase (..),
     Assignment,
     Literal,
+    Signed (..),
     negateLiteral,
 
     -- | A propagator is defined by four functions. The first is executed during

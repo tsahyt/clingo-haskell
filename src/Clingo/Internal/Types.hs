@@ -178,6 +178,10 @@ newtype Literal s = Literal { rawLiteral :: Raw.Literal }
 
 instance Hashable (Literal s)
 
+instance Signed (Literal s) where
+    positive = (> 0) . rawLiteral
+    negative = (< 0) . rawLiteral
+
 data WeightedLiteral s = WeightedLiteral (Literal s) Integer
     deriving (Eq, Show, Ord, Generic)
 
@@ -240,6 +244,10 @@ newtype AspifLiteral s = AspifLiteral { rawAspifLiteral :: Raw.Literal }
     deriving (Ord, Show, Eq, NFData, Generic)
 
 instance Hashable (AspifLiteral s)
+
+instance Signed (AspifLiteral s) where
+    positive = (> 0) . rawAspifLiteral
+    negative = (< 0) . rawAspifLiteral
 
 newtype Atom s = Atom { rawAtom :: Raw.Atom }
     deriving (Show, Ord, Eq, NFData, Generic)
