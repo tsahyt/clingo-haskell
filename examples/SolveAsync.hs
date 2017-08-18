@@ -8,21 +8,15 @@ import Control.Monad.Random
 import Control.Monad.Loops
 import Control.Monad.IO.Class
 import Clingo.Control
-import Clingo.Asynchronous
 import Clingo.Symbol
+import Clingo.Solving
 import Clingo.Model
 import Data.IORef
 
 import Text.Printf
 import qualified Data.Text.IO as T
 
-onModel :: Model s -> IOSym s Continue
-onModel m = do
-    syms <- map prettySymbol
-        <$> modelSymbols m (selectNone { selectShown = True }) 
-    liftIO (putStr "Model: " >> print syms)
-    return Continue
-
+-- | Approximate Pi with a rather literal translation of the C example.
 approxPi :: MonadIO m => MVar Bool -> m Double
 approxPi running = liftIO $ do
     let rmax = 512
@@ -40,17 +34,19 @@ approxPi running = liftIO $ do
     
 main :: IO ()
 main = withDefaultClingo $ do
-    addProgram "base" [] $ mconcat 
-        [ "#const n = 17."
-        , "1 { p(X); q(X) } 1 :- X = 1..n."
-        , ":- not n+1 { p(1..n); q(1..n) }." ]
+    addProgram "base" [] $
+        "#const n = 17.\
+       \ 1 { p(X); q(X) } 1 :- X = 1..n.\
+       \ :- not n+1 { p(1..n); q(1..n) }."
     ground [Part "base" []] Nothing
 
     running <- liftIO (newMVar True)
-    async <- solveAsync onModel 
-                (\_ -> void (liftIO (swapMVar running False)))
-                []
+    solver  <- solve SolveModeAsync [] $ Just $ \_ -> do
+                   void (liftIO (swapMVar running False))
+                   return Continue
 
     pi <- approxPi running
     liftIO (putStrLn $ "pi = " ++ show pi)
-    liftIO . print =<< asyncGet async
+    liftIO . print =<< getResult solver
+
+    solverClose solver

@@ -3,6 +3,7 @@ module Main where
 
 import Control.Monad.IO.Class
 import Clingo.Symbol
+import Clingo.Solving
 import Clingo.Control
 import Clingo.Configuration
 import Clingo.Model
@@ -20,12 +21,11 @@ instance Pretty v => Pretty (StatsTree v) where
         where go (k,t) = text (fromStrict k) <> colon <> line 
                       <> nest 1 (pretty t)
 
-onModel :: Model s -> IOSym s Continue
-onModel m = do
+printModel :: (MonadIO (m s), MonadModel m) => Model s -> m s ()
+printModel m = do
     syms <- map prettySymbol
         <$> modelSymbols m (selectNone { selectShown = True }) 
     liftIO (putStr "Model: " >> print syms)
-    return Continue
 
 main :: IO ()
 main = withDefaultClingo $ do
@@ -36,7 +36,7 @@ main = withDefaultClingo $ do
     -- Ground and solve a simple program
     addProgram "base" [] "a :- not b. b :- not a."
     ground [Part "base" []] Nothing
-    _ <- solve (Just onModel) []
+    _ <- withSolver [] (allModels >=> mapM_ printModel)
     stats <- statistics
 
     -- Print whole stats tree

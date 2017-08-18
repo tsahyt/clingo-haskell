@@ -9,13 +9,13 @@ import Clingo.Control
 import Clingo.Model
 import Clingo.ProgramBuilding
 import Clingo.Symbol
+import Clingo.Solving
 
-onModel :: Model s -> IOSym s Continue
-onModel m = do
+printModel :: (MonadIO (m s), MonadModel m) => Model s -> m s ()
+printModel m = do
     syms <- map prettySymbol
         <$> modelSymbols m (selectNone { selectShown = True }) 
     liftIO (putStr "Model: " >> print syms)
-    return Continue
 
 rewrite :: Term a -> Statement a b -> Statement a b
 rewrite a@(TermSymbol loc sym) (StmtRule l (Rule h b)) = 
@@ -42,12 +42,12 @@ main = withDefaultClingo $ do
     ground [Part "base" []] Nothing
 
     liftIO $ putStrLn "Solving with enable = false..."
-    void $ solve (Just onModel) []
+    withSolver [] (allModels >=> mapM_ printModel)
 
     liftIO $ putStrLn "Solving with enable = true..."
     assignExternal sym TruthTrue
-    void $ solve (Just onModel) []
+    withSolver [] (allModels >=> mapM_ printModel)
 
     liftIO $ putStrLn "Solving with enable = false..."
     assignExternal sym TruthFalse
-    void $ solve (Just onModel) []
+    withSolver [] (allModels >=> mapM_ printModel)

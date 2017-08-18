@@ -6,6 +6,7 @@ import Control.Monad.IO.Class
 import Control.Monad
 import Control.Concurrent
 import Clingo.Control
+import Clingo.Solving
 import Clingo.Propagation
 import Clingo.Inspection.Symbolic
 
@@ -38,5 +39,5 @@ main = withDefaultClingo $ do
         }
     loadProgram path
     ground [Part "base" []] Nothing
-    solve Nothing []
+    withSolver [] (void . allModels)
     liftIO (putChar '\n')

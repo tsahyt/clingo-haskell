@@ -5,6 +5,7 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Clingo.Control
 import Clingo.Symbol
+import Clingo.Solving
 import Clingo.Model
 import Clingo.ProgramBuilding
 import Clingo.Inspection.Symbolic
@@ -12,12 +13,11 @@ import Clingo.Inspection.Symbolic
 import Text.Printf
 import qualified Data.Text.IO as T
 
-onModel :: Model s -> IOSym s Continue
-onModel m = do
+printModel :: (MonadIO (m s), MonadModel m) => Model s -> m s ()
+printModel m = do
     syms <- map prettySymbol
         <$> modelSymbols m (selectNone { selectShown = True }) 
     liftIO (putStr "Model: " >> print syms)
-    return Continue
     
 main :: IO ()
 main = withDefaultClingo $ do
@@ -34,4 +34,4 @@ main = withDefaultClingo $ do
                   , atoms !! 2]
             ]
 
-    void $ solve (Just onModel) []
+    withSolver [] (allModels >=> mapM_ printModel)

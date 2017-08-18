@@ -2,7 +2,8 @@ module Clingo.Solving
 (
     ResultReady(..),
     MonadSolve(..),
-    solverClose
+    solverClose,
+    allModels
 )
 where
 
@@ -51,6 +52,16 @@ instance MonadSolve Clingo where
     solverWait = solverWait'
     solverResume = solverResume'
     solverCancel = solverCancel'
+
+-- | Convenience method to get all models. Note that this is dependent on the
+-- solver configuration!
+allModels :: (Monad (m s), MonadSolve m) => Solver s -> m s [Model s]
+allModels solver = do
+    solverResume solver
+    m <- getModel solver
+    case m of
+        Nothing -> pure []
+        Just x  -> (x :) <$> allModels solver
 
 getResult' :: (MonadThrow m, MonadIO m) => Solver s -> m SolveResult
 getResult' (Solver s) = fromRawSolveResult <$> marshall1 (Raw.solveHandleGet s)

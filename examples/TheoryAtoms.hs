@@ -6,6 +6,7 @@ import Control.Monad.IO.Class
 import Data.Maybe
 import Clingo.Control
 import Clingo.Symbol
+import Clingo.Solving
 import Clingo.Model
 import Clingo.ProgramBuilding
 
@@ -14,12 +15,11 @@ import qualified Data.Text as T
 
 import Clingo.Inspection.Theory
 
-onModel :: Model s -> IOSym s Continue
-onModel m = do
+printModel :: (MonadIO (m s), MonadModel m) => Model s -> m s ()
+printModel m = do
     syms <- map prettySymbol
         <$> modelSymbols m (selectNone { selectShown = True }) 
     liftIO (putStr "Model: " >> print syms)
-    return Continue
 
 theory :: TheoryAtoms s -> Clingo s (AspifLiteral s)
 theory t = do
@@ -51,4 +51,4 @@ main = withDefaultClingo $ do
     ground [Part "base" []] Nothing
     lit <- theory =<< theoryAtoms
     flip addGroundStatements [ assume [lit] ] =<< backend
-    void $ solve (Just onModel) []
+    withSolver [] (allModels >=> mapM_ printModel)

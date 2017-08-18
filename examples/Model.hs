@@ -6,6 +6,7 @@ import Control.Monad.IO.Class
 import Clingo.Control
 import Clingo.Symbol
 import Clingo.Model
+import Clingo.Solving
 import Data.List (intersperse)
 import Data.Text (Text)
 import System.Environment (getArgs)
@@ -20,8 +21,8 @@ printModel m label s = do
         T.putStr (label `mappend` ": ")
         T.putStrLn . mconcat $ intersperse " " syms
 
-onModel :: Model s -> IOSym s Continue
-onModel m = do  
+printSolution :: Model s -> IOSym s ()
+printSolution m = do  
     t <- modelType m
     n <- modelNumber m
     let tstring = case t of
@@ -37,12 +38,10 @@ onModel m = do
         , (" ~atoms", selectNone { selectAtoms = True
                                  , useComplement = True })
         ]
-
-    return Continue
     
 main :: IO ()
 main = getArgs >>= \args -> 
     withClingo (defaultClingo { clingoArgs = args }) $ do
         addProgram "base" [] "1 {a; b} 1. #show c : b. #show a/0."
         ground [Part "base" []] Nothing
-        void $ solve (Just onModel) []
+        withSolver [] (allModels >=> mapM_ printSolution)

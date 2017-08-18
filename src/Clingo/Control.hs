@@ -28,6 +28,9 @@ module Clingo.Control
     Solver,
     solve,
     withSolver,
+    SolveMode,
+    pattern SolveModeAsync,
+    pattern SolveModeYield,
 
     statistics,
     programBuilder,
@@ -52,6 +55,7 @@ module Clingo.Control
 where
 
 import Control.Monad.IO.Class
+import Control.Monad.Trans
 import Control.Monad.Catch
 import Data.Text (Text, pack, unpack)
 import Data.Foldable
@@ -65,6 +69,7 @@ import qualified Clingo.Raw as Raw
 import Clingo.Internal.Utils
 import Clingo.Internal.Symbol
 import Clingo.Internal.Types
+import Clingo.Solving (solverClose)
 import Clingo.Propagation (Propagator, propagatorToIO)
 
 -- | Data type to encapsulate the settings for clingo.
@@ -219,8 +224,13 @@ solve mode assumptions onEvent = do
                     arr (fromIntegral len) eventCB nullPtr 
                     x
 
-withSolver :: [SymbolicLiteral s] -> (forall s1. Solver s1 -> IOSym s1 r) -> r
-withSolver assumptions f = undefined
+withSolver :: [SymbolicLiteral s] 
+    -> (forall s1. Solver s1 -> IOSym s1 r) 
+    -> Clingo s r
+withSolver assumptions f = do
+    x <- solve SolveModeYield assumptions Nothing
+    Clingo (lift (f x)) 
+        `finally` solverClose x
 
 wrapCBEvent :: MonadIO m
             => (Maybe (Model s) -> IOSym s Continue) 

@@ -6,6 +6,7 @@ where
 
 import Clingo.Control as X
 import Clingo.Model as X
+import Clingo.Solving as X
 import Clingo.Symbol as X
 import Clingo.Propagation as X
 import Clingo.Statistics as X

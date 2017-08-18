@@ -9,6 +9,7 @@ import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 import Clingo.Control
 import Clingo.Symbol
+import Clingo.Solving
 import Clingo.Model
 import Clingo.Propagation
 import Clingo.Inspection.Symbolic
@@ -67,7 +68,7 @@ main = withDefaultClingo $ do
     propState <- liftIO newEmptyMVar
     registerPropagator False (pigeonator propState)
 
-    solveRet <- solve (Just onModel) []
+    solveRet <- withSolver [] getResult
     liftIO (print solveRet)
 
 -- TODO: Propagator with symbol inspection methods?
