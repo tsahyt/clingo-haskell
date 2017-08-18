@@ -1,22 +1,5 @@
 #include <clingo.h>
 
-bool clingo_control_register_propagator_ptr(
-        clingo_control_t *control, clingo_propagator_t *propagator, 
-        void *data, bool sequential
-        )
-{
-    clingo_propagator_t x = *propagator;
-    return clingo_control_register_propagator(control, x, data, sequential);
-}
-
-bool clingo_control_register_observer_ptr(
-        clingo_control_t *control, clingo_ground_program_observer_t *obs,
-        void *data)
-{
-    clingo_ground_program_observer_t x = *obs;
-    return clingo_control_register_observer(control, x, data);
-}
-
 typedef bool clingo_ground_callback_ptr_t (clingo_location_t *location, char const *name, clingo_symbol_t const *arguments, size_t arguments_size, void *data, clingo_symbol_callback_t *symbol_callback, void *symbol_callback_data);
 
 typedef struct {

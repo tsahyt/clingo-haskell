@@ -84,7 +84,6 @@ import Numeric.Natural
 
 import Clingo.Internal.Types
 import Clingo.Internal.Symbol
-import Clingo.Symbol
 import qualified Clingo.Internal.Propagation as P
 import Clingo.Internal.Propagation (Assignment, Clause)
 

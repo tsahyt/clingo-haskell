@@ -16,7 +16,6 @@ import Foreign hiding (Pool, freePool)
 import Foreign.C
 
 import Text.PrettyPrint.Leijen.Text hiding ((<$>))
-import qualified Text.PrettyPrint.Leijen.Text as PP
 
 import Clingo.Internal.Types (Location, rawLocation, freeRawLocation, 
                               fromRawLocation, Symbol (..), Signature (..))
@@ -203,7 +202,7 @@ data Pool a = Pool [Term a]
     deriving (Eq, Show, Ord, Functor, Foldable, Traversable)
 
 instance Pretty a => Pretty (Pool a) where
-    pretty (Pool xs) = text "<pool>"  -- TODO!
+    pretty (Pool _) = text "<pool>"  -- TODO!
 
 rawPool :: Pool (Symbol s) -> IO AstPool
 rawPool (Pool ts) = do
@@ -988,7 +987,7 @@ instance Pretty a => Pretty (HeadLiteral a) where
     pretty (HeadDisjunction _ d) = pretty d
     pretty (HeadLitAggregate _ a) = pretty a
     pretty (HeadHeadAggregate _ a) = pretty a
-    pretty (HeadTheoryAtom _ a) = text "<theoryAtom>" -- TODO!
+    pretty (HeadTheoryAtom _ _) = text "<theoryAtom>" -- TODO!
 
 rawHeadLiteral :: HeadLiteral (Symbol s) -> IO AstHeadLiteral
 rawHeadLiteral (HeadLiteral l x) = AstHeadLiteral
@@ -1045,7 +1044,7 @@ instance Pretty a => Pretty (BodyLiteral a) where
     pretty (BodyConditional _ c) = pretty c
     pretty (BodyLitAggregate _ s a) = pretty s <+> pretty a
     pretty (BodyBodyAggregate _ s a) = pretty s <+> pretty a
-    pretty (BodyTheoryAtom _ s a) = pretty s <+> text "<theoryAtom>" -- TODO
+    pretty (BodyTheoryAtom _ s _) = pretty s <+> text "<theoryAtom>" -- TODO
     pretty (BodyDisjoint _ s _) = pretty s <+> text "<disjoint>" -- TODO
 
 rawBodyLiteral :: BodyLiteral (Symbol s) -> IO AstBodyLiteral

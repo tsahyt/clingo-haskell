@@ -359,6 +359,7 @@ negateTruth :: TruthValue -> TruthValue
 negateTruth TruthFree = TruthFree
 negateTruth TruthTrue = TruthFalse
 negateTruth TruthFalse = TruthTrue
+negateTruth _ = error "negateTruth: Invalid TruthValue"
 
 data IOPropagator s = IOPropagator
     { propagatorInit      :: Maybe (PropagateInit s -> IO ())

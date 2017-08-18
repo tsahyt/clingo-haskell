@@ -86,7 +86,7 @@ foreign import ccall "clingo.h clingo_control_assign_external"
 foreign import ccall "clingo.h clingo_control_release_external" 
                      controlReleaseExternalFFI ::
     Control -> Symbol -> IO CBool
-foreign import ccall "wrappers.h clingo_control_register_propagator_ptr" 
+foreign import ccall "clingo.h clingo_control_register_propagator"
                      controlRegisterPropagatorFFI ::
     Control -> Ptr (Propagator a) -> Ptr a -> CBool -> IO CBool
 foreign import ccall "clingo.h clingo_control_statistics" 
@@ -116,7 +116,7 @@ foreign import ccall "clingo.h clingo_control_symbolic_atoms"
 foreign import ccall "clingo.h clingo_control_theory_atoms" 
                      controlTheoryAtomsFFI ::
     Control -> Ptr TheoryAtoms -> IO CBool
-foreign import ccall "wrappers.h clingo_control_register_observer_ptr" 
+foreign import ccall "clingo.h clingo_control_register_observer"
                      controlRegisterObserverFFI ::
     Control -> Ptr (GroundProgramObserver a) -> Ptr a -> IO CBool
 foreign import ccall "clingo.h clingo_control_backend" 
