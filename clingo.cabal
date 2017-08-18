@@ -10,7 +10,6 @@ maintainer:          paul@tsahyt.com
 copyright:           2017 Paul Ogris
 category:            ASP, Symbolic Computation, Logic Programming, FFI
 build-type:          Simple
-extra-source-files:  cbits/wrappers.c
 cabal-version:       >=1.10
 
 flag examples
@@ -56,7 +55,6 @@ library
                        Clingo.Raw.Statistics
                        Clingo.Raw.Symbol
                        Clingo.Raw.Types
-  c-sources:           cbits/wrappers.c
   build-depends:       base >= 4.7 && < 5,
                        bifunctors >= 5.4 && < 6,
                        transformers == 0.5.*,
