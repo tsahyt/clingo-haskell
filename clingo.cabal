@@ -3,7 +3,7 @@ version:             0.1.0.0
 synopsis:            Haskell bindings to the Clingo ASP solver
 description:         Please see README.md
 homepage:            https://github.com/tsahyt/clingo-haskell#readme
-license:             GPL-3
+license:             MIT
 license-file:        LICENSE
 author:              Paul Ogris
 maintainer:          paul@tsahyt.com
