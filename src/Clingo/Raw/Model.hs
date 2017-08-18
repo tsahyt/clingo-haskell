@@ -13,7 +13,6 @@ module Clingo.Raw.Model
 
     -- * Adding Clauses
     modelContext,
-    solveControlThreadId,
     solveControlAddClause
 )
 where
@@ -43,9 +42,6 @@ foreign import ccall "clingo.h clingo_model_optimality_proven"
     Model -> Ptr CBool -> IO CBool
 foreign import ccall "clingo.h clingo_model_context" modelContextFFI ::
     Model -> Ptr SolveControl -> IO CBool
-foreign import ccall "clingo.h clingo_solve_control_thread_id" 
-    solveControlThreadIdFFI ::
-    SolveControl -> Ptr Identifier -> IO CBool
 foreign import ccall "clingo.h clingo_solve_control_add_clause" 
     solveControlAddClauseFFI ::
     SolveControl -> Ptr SymbolicLiteral -> CSize -> IO CBool
@@ -77,10 +73,6 @@ modelOptimalityProven a b = liftIO $ modelOptimalityProvenFFI a b
 
 modelContext :: MonadIO m => Model -> Ptr SolveControl -> m CBool
 modelContext a b = liftIO $ modelContextFFI a b
-
-solveControlThreadId :: MonadIO m => SolveControl -> Ptr Identifier 
-                     -> m CBool
-solveControlThreadId a b = liftIO $ solveControlThreadIdFFI a b
 
 solveControlAddClause :: MonadIO m => SolveControl -> Ptr SymbolicLiteral 
                                    -> CSize -> m CBool

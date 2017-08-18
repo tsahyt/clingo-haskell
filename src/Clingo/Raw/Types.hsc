@@ -20,9 +20,8 @@ module Clingo.Raw.Types
 
     -- * Model and Solving
     Model (..),
+    SolveHandle(..),
     SolveControl (..),
-    IterSolver (..),
-    AsyncSolver (..),
 
     -- * Symbolic and Theory Atoms
     SymbolicAtoms (..),
@@ -80,8 +79,8 @@ module Clingo.Raw.Types
     getCallbackSymbol,
     CallbackGround,
     mkCallbackGround,
-    CallbackModel,
-    mkCallbackModel,
+    CallbackEvent,
+    mkCallbackEvent,
     CallbackFinish,
     mkCallbackFinish
 )
@@ -155,10 +154,9 @@ instance Storable SymbolicLiteral where
         (#poke clingo_symbolic_literal_t, symbol) p (slitSymbol lit)
         (#poke clingo_symbolic_literal_t, positive) p (slitPositive lit)
 
+newtype SolveHandle = SolveHandle (Ptr SolveHandle) deriving Storable
 newtype SolveControl = SolveControl (Ptr SolveControl) deriving Storable
 newtype Model = Model (Ptr Model) deriving Storable
-newtype IterSolver = IterSolver (Ptr IterSolver) deriving Storable
-newtype AsyncSolver = AsyncSolver (Ptr AsyncSolver) deriving Storable
 newtype SymbolicAtoms = SymbolicAtoms (Ptr SymbolicAtoms) deriving Storable
 
 type SymbolicAtomIterator = #type clingo_symbolic_atom_iterator_t
@@ -380,7 +378,7 @@ type CallbackSymbol a = Ptr Symbol -> CSize -> Ptr a -> IO CBool
 type CallbackGround a = 
     Ptr Location -> Ptr CChar -> Ptr Symbol -> CSize -> Ptr a 
                  -> FunPtr (CallbackSymbol a) -> Ptr a -> IO CBool
-type CallbackModel a = Model -> Ptr a -> Ptr CBool -> IO CBool
+type CallbackEvent a = SolveEvent -> Ptr Model -> Ptr a -> Ptr CBool -> IO CBool
 type CallbackFinish a = SolveResult -> Ptr a -> IO CBool
 
 foreign import ccall "wrapper" mkCallbackGround ::
@@ -395,5 +393,5 @@ foreign import ccall "dynamic" getCallbackSymbol ::
 foreign import ccall "wrapper" mkCallbackFinish ::
     CallbackFinish a -> IO (FunPtr (CallbackFinish a))
 
-foreign import ccall "wrapper" mkCallbackModel ::
-    CallbackModel a -> IO (FunPtr (CallbackModel a))
+foreign import ccall "wrapper" mkCallbackEvent ::
+    CallbackEvent a -> IO (FunPtr (CallbackEvent a))

@@ -53,6 +53,14 @@ module Clingo.Raw.Enums
     pattern ResultExhausted,
     pattern ResultInterrupted,
 
+    SolveMode,
+    pattern SolveModeAsync,
+    pattern SolveModeYield,
+
+    SolveEvent,
+    pattern SolveEventModel,
+    pattern SolveEventFinish,
+
     TheoryTermType,
     pattern TheoryTuple,
     pattern TheoryList,
@@ -153,6 +161,15 @@ pattern ResultSatisfiable = #{const clingo_solve_result_satisfiable}
 pattern ResultUnsatisfiable = #{const clingo_solve_result_unsatisfiable}
 pattern ResultExhausted = #{const clingo_solve_result_exhausted}
 pattern ResultInterrupted = #{const clingo_solve_result_interrupted}
+
+type SolveMode = (#type clingo_solve_mode_bitset_t)
+
+pattern SolveModeAsync = #{const clingo_solve_mode_async}
+pattern SolveModeYield = #{const clingo_solve_mode_yield}
+
+type SolveEvent = (#type clingo_solve_event_type_t)
+pattern SolveEventModel = #{const clingo_solve_event_type_model}
+pattern SolveEventFinish = #{const clingo_solve_event_type_finish}
 
 type TheoryTermType = (#type clingo_theory_term_type_t)
 

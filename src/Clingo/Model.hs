@@ -79,8 +79,6 @@ class MonadSymbol m => MonadModel m where
     optimalityProven :: Model s -> m s Bool
     -- | Get the associated 'SolveControl' of a Model.
     context :: Model s -> m s (SolveControl s)
-    -- | Get the ID of the solver thread that found the model.
-    threadID :: SolveControl s -> m s Integer
     -- | Add a clause from the model callback.
     modelAddClause :: Foldable t 
                    => SolveControl s -> t (SymbolicLiteral s) -> m s ()
@@ -93,10 +91,9 @@ instance MonadModel IOSym where
     costVector = costVector'
     optimalityProven = optimalityProven'
     context = context'
-    threadID = threadID'
     modelAddClause = modelAddClause'
 
-instance MonadModel IterSolver where
+instance MonadModel Clingo where
     modelType = modelType'
     modelNumber = modelNumber'
     modelSymbols = modelSymbols'
@@ -104,7 +101,6 @@ instance MonadModel IterSolver where
     costVector = costVector'
     optimalityProven = optimalityProven'
     context = context'
-    threadID = threadID'
     modelAddClause = modelAddClause'
 
 modelType' :: (MonadIO m, MonadThrow m) => Model s -> m ModelType
@@ -138,10 +134,6 @@ optimalityProven' (Model m) = toBool <$> marshall1 (Raw.modelOptimalityProven m)
 
 context' :: (MonadIO m, MonadThrow m) => Model s -> m (SolveControl s)
 context' (Model m) = SolveControl <$> marshall1 (Raw.modelContext m)
-
-threadID' :: (MonadIO m, MonadThrow m) => SolveControl s -> m Integer
-threadID' (SolveControl s) = fromIntegral <$>
-    marshall1 (Raw.solveControlThreadId s)
 
 modelAddClause' :: (MonadIO m, MonadThrow m, Foldable t)
                 => SolveControl s -> t (SymbolicLiteral s) -> m ()

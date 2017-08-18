@@ -171,11 +171,3 @@ instance MonadSymbol Clingo where
     createInfimum = createInfimum'
     createString = createString'
     createFunction = createFunction'
-
-instance MonadSymbol IterSolver where
-    createSignature = createSignature'
-    createNumber = createNumber'
-    createSupremum = createSupremum'
-    createInfimum = createInfimum'
-    createString = createString'
-    createFunction = createFunction'

@@ -25,9 +25,9 @@ module Clingo.Control
     SymbolicLiteral (..),
     SolveResult (..),
     exhausted,
+    Solver,
     solve,
-    solveAsync,
-    solveIterative,
+    withSolver,
 
     statistics,
     programBuilder,
@@ -194,56 +194,49 @@ continueBool :: Continue -> Bool
 continueBool Continue = True
 continueBool Stop = False
 
--- | Solve the currently grounded program, with an optional on-model callback.
-solve :: Maybe (Model s -> IOSym s Continue)
-      -> [SymbolicLiteral s] 
-      -> Clingo s SolveResult
-solve onModel assumptions = askC >>= \ctrl -> 
-    fromRawSolveResult <$> marshall1 (go ctrl)
-    where go ctrl x = 
+-- | Solve the currently grounded logic program enumerating its models. Takes an
+-- optional event callback. Since Clingo 5.2, the callback is no longer the only
+-- way to interact with models. The callback can still be used to obtain the
+-- same functionality as before. It will be called with 'Nothing' when there is
+-- no more model.
+--
+-- Furthermore, asynchronous solving and iterative solving is also controlled
+-- from this function. See "Clingo.Solving" for more details.
+--
+-- The 'Solver' must be closed explicitly after use. See 'withSolver' for a
+-- bracketed version.
+solve :: SolveMode -> [SymbolicLiteral s]
+      -> Maybe (Maybe (Model s) -> IOSym s Continue)
+      -> Clingo s (Solver s)
+solve mode assumptions onEvent = do
+    ctrl <- askC
+    Solver <$> marshall1 (go ctrl)
+    where go ctrl x =
               withArrayLen (map rawSymLit assumptions) $ \len arr -> do
-              modelCB <- maybe (pure nullFunPtr) wrapCBModel onModel
-              Raw.controlSolve ctrl modelCB nullPtr 
-                               arr (fromIntegral len) x
+                  eventCB <- maybe (pure nullFunPtr) wrapCBEvent onEvent
+                  Raw.controlSolve 
+                    ctrl (rawSolveMode mode) 
+                    arr (fromIntegral len) eventCB nullPtr 
+                    x
 
--- | Start asynchronous solving of the currently grounded program.
-solveAsync :: (Model s -> IOSym s Continue)
-           -> (SolveResult -> IOSym s ())
-           -> [SymbolicLiteral s]
-           -> Clingo s (AsyncSolver s)
-solveAsync onModel onFinish assumptions = askC >>= \ctrl ->
-    AsyncSolver <$> marshall1 (go ctrl)
-    where go ctrl x = withArrayLen (map rawSymLit assumptions) $ \len arr -> do
-                      modelCB <- wrapCBModel onModel
-                      finishCB <- wrapCBFinish onFinish
-                      Raw.controlSolveAsync ctrl modelCB nullPtr
-                                                 finishCB nullPtr
-                                                 arr (fromIntegral len) x
+withSolver :: [SymbolicLiteral s] -> (forall s1. Solver s1 -> IOSym s1 r) -> r
+withSolver assumptions f = undefined
 
--- | Start iterative solving of the currently grounded program.
-solveIterative :: [SymbolicLiteral s] -> IterSolver s a -> Clingo s a
-solveIterative assumptions action = askC >>= \ctrl -> do
-    h <- marshall1 (go ctrl)
-    liftIO $ finally (runIterSolver h action) (close h)
-    where go ctrl x = withArrayLen (map rawSymLit assumptions) $ \len arr ->
-                          Raw.controlSolveIter ctrl arr (fromIntegral len) x
-
-          close h = marshall0 (Raw.solveIterativelyClose h)
-
-wrapCBModel :: MonadIO m
-            => (Model s -> IOSym s Continue) 
-            -> m (FunPtr (Raw.CallbackModel ()))
-wrapCBModel f = liftIO $ Raw.mkCallbackModel go
-    where go :: Raw.Model -> Ptr a -> Ptr Raw.CBool -> IO Raw.CBool
-          go m _ r = reraiseIO $ 
-              poke r . fromBool . continueBool =<< iosym (f (Model m))
-
-wrapCBFinish :: MonadIO m
-             => (SolveResult -> IOSym s ())
-             -> m (FunPtr (Raw.CallbackFinish ()))
-wrapCBFinish f = liftIO $ Raw.mkCallbackFinish go
-    where go :: Raw.SolveResult -> Ptr () -> IO Raw.CBool
-          go s _ = reraiseIO $ iosym (f (fromRawSolveResult s))
+wrapCBEvent :: MonadIO m
+            => (Maybe (Model s) -> IOSym s Continue) 
+            -> m (FunPtr (Raw.CallbackEvent ()))
+wrapCBEvent f = liftIO $ Raw.mkCallbackEvent go
+    where go :: Raw.SolveEvent 
+             -> Ptr Raw.Model 
+             -> Ptr a 
+             -> Ptr Raw.CBool 
+             -> IO Raw.CBool
+          go ev m _ r = reraiseIO $ do
+              m' <- case ev of
+                        Raw.SolveEventModel  -> Just . Model <$> peek m
+                        Raw.SolveEventFinish -> pure Nothing
+                        _ -> error "wrapCBEvent: Invalid solve event"
+              poke r . fromBool. continueBool =<< iosym (f m')
 
 -- | Obtain statistics handle. See 'Clingo.Statistics'.
 statistics :: Clingo s (Statistics s)

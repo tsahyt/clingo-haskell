@@ -26,10 +26,6 @@ module Clingo.Internal.Types
     negateLiteral,
     AspifLiteral (..),
     Atom (..),
-    AsyncSolver (..),
-    IterSolver (..),
-    runIterSolver,
-    askIter,
     Model (..),
     Location (..),
     rawLocation,
@@ -38,6 +34,11 @@ module Clingo.Internal.Types
     SolveResult (..),
     rawSolveResult,
     fromRawSolveResult,
+    SolveMode (..),
+    fromRawSolveMode,
+    pattern SolveModeAsync,
+    pattern SolveModeYield,
+    Solver (..),
     exhausted,
     wrapCBLogger,
     Statistics (..),
@@ -254,19 +255,6 @@ newtype Atom s = Atom { rawAtom :: Raw.Atom }
 
 instance Hashable (Atom s)
 
-newtype AsyncSolver s = AsyncSolver Raw.AsyncSolver
-
-newtype IterSolver s a = IterSolver 
-    { iterSolver :: ReaderT Raw.IterSolver (IOSym s) a }
-    deriving ( Functor, Applicative, Monad, MonadMask, MonadThrow
-             , MonadCatch, MonadIO )
-
-runIterSolver :: Raw.IterSolver -> IterSolver s a -> IO a
-runIterSolver h a = iosym (runReaderT (iterSolver a) h)
-
-askIter :: IterSolver s Raw.IterSolver
-askIter = IterSolver ask
-
 newtype Model s = Model Raw.Model
 
 data Location = Location
@@ -327,6 +315,17 @@ fromRawSolveResult r
     | r == Raw.ResultUnsatisfiable = Unsatisfiable False
     | r == Raw.ResultInterrupted = Interrupted
     | otherwise = error "Malformed clingo_solve_result_bitset_t"
+
+newtype SolveMode = SolveMode { rawSolveMode :: Raw.SolveMode }
+    deriving (Eq, Show, Read, Ord)
+
+fromRawSolveMode :: Raw.SolveMode -> SolveMode
+fromRawSolveMode = SolveMode
+
+newtype Solver s = Solver Raw.SolveHandle
+
+pattern SolveModeAsync = SolveMode Raw.SolveModeAsync
+pattern SolveModeYield = SolveMode Raw.SolveModeYield
 
 wrapCBLogger :: MonadIO m
              => (ClingoWarning -> Text -> IO ())

@@ -11,8 +11,6 @@ module Clingo.Raw.Control
 
     -- * Solving
     controlSolve,
-    controlSolveIter,
-    controlSolveAsync,
     controlCleanup,
     controlAssignExternal,
     controlReleaseExternal,
@@ -66,17 +64,10 @@ foreign import ccall "clingo.h clingo_control_ground_ptr"
                 -> IO CBool
 foreign import ccall "clingo.h clingo_control_solve" 
                      controlSolveFFI ::
-    Control -> FunPtr (CallbackModel a) -> Ptr a -> Ptr SymbolicLiteral 
-                -> CSize -> Ptr SolveResult -> IO CBool
-foreign import ccall "clingo.h clingo_control_solve_iteratively" 
-                     controlSolveIterFFI ::
-    Control -> Ptr SymbolicLiteral -> CSize -> Ptr IterSolver
-                -> IO CBool
-foreign import ccall "clingo.h clingo_control_solve_async" 
-                     controlSolveAsyncFFI ::
-    Control -> FunPtr (CallbackModel a) -> Ptr a 
-                -> FunPtr (CallbackFinish b) -> Ptr b -> Ptr SymbolicLiteral 
-                -> CSize -> Ptr AsyncSolver -> IO CBool
+    Control -> SolveMode 
+            -> Ptr SymbolicLiteral -> CSize
+            -> FunPtr (CallbackEvent a) -> Ptr a
+            -> Ptr SolveHandle -> IO CBool
 foreign import ccall "clingo.h clingo_control_cleanup" 
                      controlCleanupFFI ::
     Control -> IO CBool
@@ -145,21 +136,12 @@ controlGround :: MonadIO m => Control -> Ptr Part -> CSize
                            -> FunPtr (CallbackGround a) -> Ptr a -> m CBool
 controlGround a b c d e = liftIO $ controlGroundFFI a b c d e
 
-controlSolve :: MonadIO m => Control -> FunPtr (CallbackModel a) -> Ptr a 
-                          -> Ptr SymbolicLiteral -> CSize -> Ptr SolveResult 
-                          -> m CBool
-controlSolve a b c d e f = liftIO $ controlSolveFFI a b c d e f
-
-controlSolveIter :: MonadIO m => Control -> Ptr SymbolicLiteral -> CSize 
-                              -> Ptr IterSolver -> m CBool
-controlSolveIter a b c d = liftIO $ controlSolveIterFFI a b c d
-
-controlSolveAsync :: MonadIO m => Control -> FunPtr (CallbackModel a) 
-                               -> Ptr a -> FunPtr (CallbackFinish b) -> Ptr b 
-                               -> Ptr SymbolicLiteral -> CSize 
-                               -> Ptr AsyncSolver -> m CBool
-controlSolveAsync a b c d e f g h = 
-    liftIO $ controlSolveAsyncFFI a b c d e f g h
+controlSolve :: MonadIO m 
+             => Control -> SolveMode 
+             -> Ptr SymbolicLiteral -> CSize
+             -> FunPtr (CallbackEvent a) -> Ptr a
+             -> Ptr SolveHandle -> m CBool
+controlSolve a b c d e f g = liftIO $ controlSolveFFI a b c d e f g
 
 controlCleanup :: MonadIO m => Control -> m CBool
 controlCleanup a = liftIO $ controlCleanupFFI a

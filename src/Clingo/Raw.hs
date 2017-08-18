@@ -16,17 +16,16 @@ module Clingo.Raw
 where
 
 import Clingo.Raw.AST as X
-import Clingo.Raw.Asynchronous as X
 import Clingo.Raw.Basic as X
 import Clingo.Raw.Configuration as X
 import Clingo.Raw.Control as X
 import Clingo.Raw.Enums as X
 import Clingo.Raw.Inspection.Symbolic as X
 import Clingo.Raw.Inspection.Theory as X
-import Clingo.Raw.Iterative as X
 import Clingo.Raw.Model as X
 import Clingo.Raw.ProgramBuilding as X
 import Clingo.Raw.Propagation as X
+import Clingo.Raw.Solving as X
 import Clingo.Raw.Statistics as X
 import Clingo.Raw.Symbol as X
 import Clingo.Raw.Types as X
