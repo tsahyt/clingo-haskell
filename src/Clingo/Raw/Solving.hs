@@ -1,4 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE InterruptibleFFI #-}
 module Clingo.Raw.Solving
 (
     solveHandleGet,
@@ -21,7 +22,7 @@ import Clingo.Raw.Enums
 foreign import ccall "clingo.h clingo_solve_handle_get" 
                      solveHandleGetFFI ::
     SolveHandle -> Ptr SolveResult -> IO CBool
-foreign import ccall "clingo.h clingo_solve_handle_wait"
+foreign import ccall interruptible "clingo.h clingo_solve_handle_wait"
                      solveHandleWaitFFI ::
     SolveHandle -> CDouble -> Ptr CBool -> IO ()
 foreign import ccall "clingo.h clingo_solve_handle_model"
