@@ -10,6 +10,7 @@ import Clingo.Model
 import Clingo.ProgramBuilding
 import Clingo.Symbol
 import Clingo.Solving
+import Clingo.Inspection.Symbolic
 
 printModel :: (MonadIO (m s), MonadModel m) => Model s -> m s ()
 printModel m = do
@@ -41,13 +42,18 @@ main = withDefaultClingo $ do
 
     ground [Part "base" []] Nothing
 
+    -- get the literal associated to sym
+    lit <- do
+        s <- symbolicAtoms
+        literal <$> symbolicAtomFromSymbol s sym
+        
     liftIO $ putStrLn "Solving with enable = false..."
     withSolver [] (allModels >=> mapM_ printModel)
 
     liftIO $ putStrLn "Solving with enable = true..."
-    assignExternal sym TruthTrue
+    assignExternal lit TruthTrue
     withSolver [] (allModels >=> mapM_ printModel)
 
     liftIO $ putStrLn "Solving with enable = false..."
-    assignExternal sym TruthFalse
+    assignExternal lit TruthFalse
     withSolver [] (allModels >=> mapM_ printModel)

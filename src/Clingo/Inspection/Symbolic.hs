@@ -6,6 +6,7 @@ module Clingo.Inspection.Symbolic
     AspifLiteral,
     fromSymbolicAtoms,
     fromSymbolicAtomsSig,
+    symbolicAtomFromSymbol,
     S.symbolicAtomsSignatures
 )
 where
@@ -63,3 +64,8 @@ buildSAtoms sig s = do
               if abort then return []
               else let next = S.symbolicAtomsNext s i
                     in (:) <$> getSAtom s i <*> (go end =<< next)
+
+symbolicAtomFromSymbol :: (MonadIO m, MonadThrow m) => S.SymbolicAtoms s -> Symbol s -> m (SymbolicAtom s)
+symbolicAtomFromSymbol s sym = do
+    it <- S.symbolicAtomsFind s sym
+    getSAtom s it

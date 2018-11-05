@@ -209,21 +209,21 @@ continueBool Stop = False
 --
 -- The 'Solver' must be closed explicitly after use. See 'withSolver' for a
 -- bracketed version.
-solve :: SolveMode -> [Literal s]
+solve :: SolveMode -> [AspifLiteral s]
       -> Maybe (Maybe (Model s) -> IOSym s Continue)
       -> Clingo s (Solver s)
 solve mode assumptions onEvent = do
     ctrl <- askC
     Solver <$> marshall1 (go ctrl)
     where go ctrl x =
-              withArrayLen (map rawLiteral assumptions) $ \len arr -> do
+              withArrayLen (map rawAspifLiteral assumptions) $ \len arr -> do
                   eventCB <- maybe (pure nullFunPtr) wrapCBEvent onEvent
                   Raw.controlSolve 
                     ctrl (rawSolveMode mode) 
                     arr (fromIntegral len) eventCB nullPtr 
                     x
 
-withSolver :: [Literal s] 
+withSolver :: [AspifLiteral s] 
     -> (forall s1. Solver s1 -> IOSym s1 r) 
     -> Clingo s r
 withSolver assumptions f = do
@@ -288,18 +288,18 @@ useEnumAssumption b = askC >>= \ctrl ->
 -- | Assign a truth value to an external atom.
 -- 
 -- If the atom does not exist or is not external, this is a noop.
-assignExternal :: Symbol s -> TruthValue -> Clingo s ()
+assignExternal :: AspifLiteral s -> TruthValue -> Clingo s ()
 assignExternal s t = askC >>= \ctrl -> 
-    marshall0 $ Raw.controlAssignExternal ctrl (rawSymbol s) (rawTruthValue t)
+    marshall0 $ Raw.controlAssignExternal ctrl (rawAspifLiteral s) (rawTruthValue t)
 
 -- | Release an external atom.
 -- 
 -- After this call, an external atom is no longer external and subject to
 -- program simplifications.  If the atom does not exist or is not external,
 -- this is a noop.
-releaseExternal :: Symbol s -> Clingo s ()
+releaseExternal :: AspifLiteral s -> Clingo s ()
 releaseExternal s = askC >>= \ctrl -> 
-    marshall0 $ Raw.controlReleaseExternal ctrl (rawSymbol s)
+    marshall0 $ Raw.controlReleaseExternal ctrl (rawAspifLiteral s)
 
 -- | Get the symbol for a constant definition @#const name = symbol@.
 getConst :: Text -> Clingo s (Symbol s)

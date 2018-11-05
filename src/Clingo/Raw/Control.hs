@@ -73,10 +73,10 @@ foreign import ccall "clingo.h clingo_control_cleanup"
     Control -> IO CBool
 foreign import ccall "clingo.h clingo_control_assign_external" 
                      controlAssignExternalFFI ::
-    Control -> Symbol -> TruthValue -> IO CBool
+    Control -> Literal -> TruthValue -> IO CBool
 foreign import ccall "clingo.h clingo_control_release_external" 
                      controlReleaseExternalFFI ::
-    Control -> Symbol -> IO CBool
+    Control -> Literal -> IO CBool
 foreign import ccall "clingo.h clingo_control_register_propagator"
                      controlRegisterPropagatorFFI ::
     Control -> Ptr (Propagator a) -> Ptr a -> CBool -> IO CBool
@@ -146,11 +146,11 @@ controlSolve a b c d e f g = liftIO $ controlSolveFFI a b c d e f g
 controlCleanup :: MonadIO m => Control -> m CBool
 controlCleanup a = liftIO $ controlCleanupFFI a
 
-controlAssignExternal :: MonadIO m => Control -> Symbol -> TruthValue 
+controlAssignExternal :: MonadIO m => Control -> Literal -> TruthValue 
                                    -> m CBool
 controlAssignExternal a b c = liftIO $ controlAssignExternalFFI a b c
 
-controlReleaseExternal :: MonadIO m => Control -> Symbol -> m CBool
+controlReleaseExternal :: MonadIO m => Control -> Literal -> m CBool
 controlReleaseExternal a b = liftIO $ controlReleaseExternalFFI a b
 
 controlRegisterPropagator :: MonadIO m => Control -> Ptr (Propagator a) 
