@@ -42,7 +42,7 @@ foreign import ccall "clingo.h clingo_backend_heuristic" backendHeuristicFFI ::
 foreign import ccall "clingo.h clingo_backend_acyc_edge" backendAcycEdgeFFI ::
     Backend -> CInt -> CInt -> Ptr Literal -> CSize -> IO CBool
 foreign import ccall "clingo.h clingo_backend_add_atom" backendAddAtomFFI ::
-    Backend -> Ptr Atom -> IO CBool
+    Backend -> Ptr Symbol -> Ptr Atom -> IO CBool
 foreign import ccall "clingo.h clingo_program_builder_begin" programBuilderBeginFFI ::
     ProgramBuilder -> IO CBool
 foreign import ccall "clingo.h clingo_program_builder_add" programBuilderAddFFI ::
@@ -74,8 +74,8 @@ backendHeuristic a b c d e f g = liftIO $ backendHeuristicFFI a b c d e f g
 backendAcycEdge :: MonadIO m => Backend -> CInt -> CInt -> Ptr Literal -> CSize -> m CBool
 backendAcycEdge a b c d e = liftIO $ backendAcycEdgeFFI a b c d e
 
-backendAddAtom :: MonadIO m => Backend -> Ptr Atom -> m CBool
-backendAddAtom a b = liftIO $ backendAddAtomFFI a b
+backendAddAtom :: MonadIO m => Backend -> Ptr Symbol -> Ptr Atom -> m CBool
+backendAddAtom a b c = liftIO $ backendAddAtomFFI a b c
 
 programBuilderBegin :: MonadIO m => ProgramBuilder -> m CBool
 programBuilderBegin a = liftIO $ programBuilderBeginFFI a

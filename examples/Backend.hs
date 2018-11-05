@@ -26,7 +26,8 @@ main = withDefaultClingo $ do
 
     atoms <- flip fromSymbolicAtoms (map literal) =<< symbolicAtoms
     backend >>= \b -> do
-        atomD <- atom b
+        atomD <- atom b Nothing
+        liftIO $ print atomD
         addGroundStatements b
             [ rule False [atomD] (take 2 atoms)
             , rule False [] 

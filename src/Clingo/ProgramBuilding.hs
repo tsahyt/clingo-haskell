@@ -69,8 +69,11 @@ acycEdge a b lits = GStmt $ \(Backend h) -> marshall0 $
 
 -- | Obtain a fresh atom to be used in aspif directives.
 atom :: (MonadIO m, MonadThrow m)
-     => Backend s -> m (Atom s)
-atom (Backend h) = Atom <$> marshall1 (Raw.backendAddAtom h)
+     => Backend s -> Maybe (Symbol s) -> m (Atom s)
+atom (Backend h) (Just s) =
+    liftIO $
+    with (rawSymbol s) $ \ptr -> Atom <$> marshall1 (Raw.backendAddAtom h ptr)
+atom (Backend h) Nothing = Atom <$> marshall1 (Raw.backendAddAtom h nullPtr)
 
 -- | Use an Atom as a positive AspifLiteral
 atomAspifLiteral :: Atom s -> AspifLiteral s
