@@ -65,7 +65,7 @@ foreign import ccall "clingo.h clingo_control_ground"
 foreign import ccall "clingo.h clingo_control_solve" 
                      controlSolveFFI ::
     Control -> SolveMode 
-            -> Ptr SymbolicLiteral -> CSize
+            -> Ptr Literal -> CSize
             -> FunPtr (CallbackEvent a) -> Ptr a
             -> Ptr SolveHandle -> IO CBool
 foreign import ccall "clingo.h clingo_control_cleanup" 
@@ -138,7 +138,7 @@ controlGround a b c d e = liftIO $ controlGroundFFI a b c d e
 
 controlSolve :: MonadIO m 
              => Control -> SolveMode 
-             -> Ptr SymbolicLiteral -> CSize
+             -> Ptr Literal -> CSize
              -> FunPtr (CallbackEvent a) -> Ptr a
              -> Ptr SolveHandle -> m CBool
 controlSolve a b c d e f g = liftIO $ controlSolveFFI a b c d e f g

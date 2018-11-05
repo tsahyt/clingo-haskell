@@ -44,7 +44,7 @@ foreign import ccall "clingo.h clingo_model_context" modelContextFFI ::
     Model -> Ptr SolveControl -> IO CBool
 foreign import ccall "clingo.h clingo_solve_control_add_clause" 
     solveControlAddClauseFFI ::
-    SolveControl -> Ptr SymbolicLiteral -> CSize -> IO CBool
+    SolveControl -> Ptr Literal -> CSize -> IO CBool
 
 modelType :: MonadIO m => Model -> Ptr ModelType -> m CBool
 modelType a b = liftIO $ modelTypeFFI a b
@@ -74,6 +74,6 @@ modelOptimalityProven a b = liftIO $ modelOptimalityProvenFFI a b
 modelContext :: MonadIO m => Model -> Ptr SolveControl -> m CBool
 modelContext a b = liftIO $ modelContextFFI a b
 
-solveControlAddClause :: MonadIO m => SolveControl -> Ptr SymbolicLiteral 
+solveControlAddClause :: MonadIO m => SolveControl -> Ptr Literal 
                                    -> CSize -> m CBool
 solveControlAddClause a b c = liftIO $ solveControlAddClauseFFI a b c

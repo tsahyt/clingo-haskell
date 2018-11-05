@@ -4,7 +4,6 @@ module Clingo.Model
 (
     Model,
     SolveControl,
-    SymbolicLiteral,
     SymbolSelection (..),
 
     ModelType,
@@ -58,7 +57,6 @@ rawSymbolSelection s = foldr ((.|.) . fst) zeroBits . filter snd $
     , (Raw.ShowShown, selectShown s)
     , (Raw.ShowAtoms, selectAtoms s)
     , (Raw.ShowTerms, selectTerms s)
-    , (Raw.ShowExtra, selectExtra s)
     , (Raw.ShowComplement, useComplement s) ]
 
 selectNone :: SymbolSelection
@@ -81,7 +79,7 @@ class MonadSymbol m => MonadModel m where
     context :: Model s -> m s (SolveControl s)
     -- | Add a clause from the model callback.
     modelAddClause :: Foldable t 
-                   => SolveControl s -> t (SymbolicLiteral s) -> m s ()
+                   => SolveControl s -> t (Literal s) -> m s ()
 
 instance MonadModel IOSym where
     modelType = modelType'
@@ -136,7 +134,7 @@ context' :: (MonadIO m, MonadThrow m) => Model s -> m (SolveControl s)
 context' (Model m) = SolveControl <$> marshall1 (Raw.modelContext m)
 
 modelAddClause' :: (MonadIO m, MonadThrow m, Foldable t)
-                => SolveControl s -> t (SymbolicLiteral s) -> m ()
+                => SolveControl s -> t (Literal s) -> m ()
 modelAddClause' (SolveControl s) lits = marshall0 $ 
-    withArrayLen (map rawSymLit . toList $ lits) $ \len arr ->
+    withArrayLen (map rawLiteral . toList $ lits) $ \len arr ->
         Raw.solveControlAddClause s arr (fromIntegral len)

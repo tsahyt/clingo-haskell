@@ -59,7 +59,7 @@ library
                        bifunctors >= 5.4 && < 6,
                        transformers == 0.5.*,
                        mtl == 2.2.*,
-                       exceptions == 0.8.*,
+                       exceptions == 0.10.*,
                        text == 1.2.*,
                        wl-pprint-text,
                        deepseq == 1.4.*,

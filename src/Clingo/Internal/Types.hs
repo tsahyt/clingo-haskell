@@ -11,8 +11,6 @@ module Clingo.Internal.Types
     Signed (..),
     Symbol (..),
     Signature (..),
-    SymbolicLiteral (..),
-    rawSymLit,
     Literal (..),
     WeightedLiteral (..),
     rawWeightedLiteral,
@@ -130,29 +128,6 @@ class Signed a where
 
 instance Signed Bool where
     positive x = x
-
-data SymbolicLiteral s 
-    = SLPositive (Symbol s)
-    | SLNegative (Symbol s)
-    deriving (Generic, Eq, Ord)
-
-instance Hashable (SymbolicLiteral s)
-
-symLitSymbol :: SymbolicLiteral s -> Symbol s
-symLitSymbol (SLPositive s) = s
-symLitSymbol (SLNegative s) = s
-
-symLitPositive :: SymbolicLiteral s -> Bool
-symLitPositive (SLPositive _) = True
-symLitPositive _ = False
-
-instance Signed (SymbolicLiteral s) where
-    positive = symLitPositive
-
-rawSymLit :: SymbolicLiteral s -> Raw.SymbolicLiteral
-rawSymLit sl = Raw.SymbolicLiteral
-    { Raw.slitSymbol   = rawSymbol (symLitSymbol sl)
-    , Raw.slitPositive = fromBool (symLitPositive sl) }
 
 data Signature s = Signature 
     { rawSignature :: Raw.Signature

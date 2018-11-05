@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
+
 module Clingo.Raw.Enums
 (
     ClingoError,
@@ -43,7 +44,6 @@ module Clingo.Raw.Enums
     pattern ShowShown,
     pattern ShowAtoms,
     pattern ShowTerms,
-    pattern ShowExtra,
     pattern ShowAll,
     pattern ShowComplement,
 
@@ -151,7 +151,6 @@ pattern ShowCSP = #{const clingo_show_type_csp}
 pattern ShowShown = #{const clingo_show_type_shown}
 pattern ShowAtoms = #{const clingo_show_type_atoms}
 pattern ShowTerms = #{const clingo_show_type_terms}
-pattern ShowExtra = #{const clingo_show_type_extra}
 pattern ShowAll = #{const clingo_show_type_all}
 pattern ShowComplement = #{const clingo_show_type_complement}
 

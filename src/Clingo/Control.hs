@@ -22,7 +22,6 @@ module Clingo.Control
     registerPropagator,
     registerUnsafePropagator,
     Continue (..),
-    SymbolicLiteral (..),
     SolveResult (..),
     exhausted,
     Solver,
@@ -210,21 +209,21 @@ continueBool Stop = False
 --
 -- The 'Solver' must be closed explicitly after use. See 'withSolver' for a
 -- bracketed version.
-solve :: SolveMode -> [SymbolicLiteral s]
+solve :: SolveMode -> [Literal s]
       -> Maybe (Maybe (Model s) -> IOSym s Continue)
       -> Clingo s (Solver s)
 solve mode assumptions onEvent = do
     ctrl <- askC
     Solver <$> marshall1 (go ctrl)
     where go ctrl x =
-              withArrayLen (map rawSymLit assumptions) $ \len arr -> do
+              withArrayLen (map rawLiteral assumptions) $ \len arr -> do
                   eventCB <- maybe (pure nullFunPtr) wrapCBEvent onEvent
                   Raw.controlSolve 
                     ctrl (rawSolveMode mode) 
                     arr (fromIntegral len) eventCB nullPtr 
                     x
 
-withSolver :: [SymbolicLiteral s] 
+withSolver :: [Literal s] 
     -> (forall s1. Solver s1 -> IOSym s1 r) 
     -> Clingo s r
 withSolver assumptions f = do
