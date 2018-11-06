@@ -1,5 +1,5 @@
 name:                clingo
-version:             0.2.0.0
+version:             0.3.0.0
 synopsis:            Haskell bindings to the Clingo ASP solver
 description:         Please see README.md
 homepage:            https://github.com/tsahyt/clingo-haskell#readme
