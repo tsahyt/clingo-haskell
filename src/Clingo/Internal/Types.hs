@@ -5,9 +5,12 @@
 module Clingo.Internal.Types
 (
     IOSym (..),
+    ClingoSetting (..),
     Clingo (..),
     runClingo,
     askC,
+    mkClingo,
+    freeClingo,
     Signed (..),
     Symbol (..),
     Signature (..),
@@ -95,6 +98,33 @@ runClingo ctrl a = iosym (runReaderT (clingo a) ctrl)
 -- can be done with this!
 askC :: Clingo s Raw.Control
 askC = Clingo ask
+
+-- | Data type to encapsulate the settings for clingo.
+data ClingoSetting = ClingoSetting
+    { clingoArgs   :: [String]
+    , clingoLogger :: Maybe (ClingoWarning -> Text -> IO ())
+    , msgLimit     :: Natural }
+
+-- | Wrapper function to create a raw handle. Arbitrarily unsafe things can be
+-- done with this! Note that the handle must be freed after you are done with it!
+mkClingo :: ClingoSetting -> IO Raw.Control
+mkClingo settings = do
+    let argc = length (clingoArgs settings)
+    argv <- liftIO $ mapM newCString (clingoArgs settings)
+    ctrl <- marshall1 $ \x ->
+        withArray argv $ \argvArr -> do
+            logCB <- maybe (pure nullFunPtr) wrapCBLogger 
+                         (clingoLogger settings)
+            let argv' = case clingoArgs settings of
+                            [] -> nullPtr
+                            _  -> argvArr
+            Raw.controlNew argv' (fromIntegral argc)
+                           logCB nullPtr (fromIntegral . msgLimit $ settings) x
+    liftIO $ mapM_ free argv
+    pure ctrl
+
+freeClingo :: Raw.Control -> IO ()
+freeClingo = Raw.controlFree
 
 data Symbol s = Symbol 
     { rawSymbol :: Raw.Symbol 

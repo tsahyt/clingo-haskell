@@ -71,12 +71,6 @@ import Clingo.Internal.Types
 import Clingo.Solving (solverClose)
 import Clingo.Propagation (Propagator, propagatorToIO)
 
--- | Data type to encapsulate the settings for clingo.
-data ClingoSetting = ClingoSetting
-    { clingoArgs   :: [String]
-    , clingoLogger :: Maybe (ClingoWarning -> Text -> IO ())
-    , msgLimit     :: Natural }
-
 -- | Default settings for clingo. This is like calling clingo with no arguments,
 -- and no logger.
 defaultClingo :: ClingoSetting
@@ -87,20 +81,8 @@ defaultClingo = ClingoSetting [] Nothing 0
 -- mechanism, derived handles cannot be passed out either.
 withClingo :: ClingoSetting -> (forall s. Clingo s r) -> IO r
 withClingo settings action = do
-    let argc = length (clingoArgs settings)
-    argv <- liftIO $ mapM newCString (clingoArgs settings)
-    ctrl <- marshall1 $ \x ->
-        withArray argv $ \argvArr -> do
-            logCB <- maybe (pure nullFunPtr) wrapCBLogger 
-                         (clingoLogger settings)
-            let argv' = case clingoArgs settings of
-                            [] -> nullPtr
-                            _  -> argvArr
-            Raw.controlNew argv' (fromIntegral argc)
-                           logCB nullPtr (fromIntegral . msgLimit $ settings) x
-    finally (runClingo ctrl action) $ do
-        Raw.controlFree ctrl
-        liftIO $ mapM_ free argv
+    ctrl <- mkClingo settings
+    finally (runClingo ctrl action) (freeClingo ctrl)
 
 -- | Equal to @withClingo defaultClingo@
 withDefaultClingo :: (forall s. Clingo s r) -> IO r
