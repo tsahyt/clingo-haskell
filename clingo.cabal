@@ -193,7 +193,7 @@ executable propagator
 
 executable ground-callback
   if flag(examples)
-      build-depends:   base, clingo, text
+      build-depends:   base, clingo, text, mtl
   else 
       buildable:       False
 
