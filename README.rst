@@ -1,6 +1,8 @@
 clingo Haskell bindings
 =======================
 
+[![Hackage](https://img.shields.io/hackage/v/clingo.svg)](https://hackage.haskell.org/package/clingo)
+
 This library provides bindings to the clingo_ C API in Haskell. The aim is to
 provide both a high-level idiomatic Haskell library as well as low-level
 bindings. A low level (raw) binding is provided through the ``Clingo.Raw``
