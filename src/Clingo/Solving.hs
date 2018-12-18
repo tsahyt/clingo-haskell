@@ -64,25 +64,25 @@ allModels solver = do
         Just x  -> (x :) <$> allModels solver
 
 getResult' :: (MonadThrow m, MonadIO m) => Solver s -> m SolveResult
-getResult' (Solver s) = fromRawSolveResult <$> marshall1 (Raw.solveHandleGet s)
+getResult' (Solver s) = fromRawSolveResult <$> marshal1 (Raw.solveHandleGet s)
 
 getModel' :: (MonadThrow m, MonadIO m) => Solver s -> m (Maybe (Model s))
 getModel' (Solver s) = do
-    m@(Raw.Model x) <- marshall1 $ Raw.solveHandleModel s
+    m@(Raw.Model x) <- marshal1 $ Raw.solveHandleModel s
     pure $ if x == nullPtr then Nothing else Just (Model m)
 
 solverWait' :: MonadIO m => Solver s -> Double -> m ResultReady
 solverWait' (Solver s) timeout = do
-    x <- marshall1V $ Raw.solveHandleWait s (realToFrac timeout)
+    x <- marshal1V $ Raw.solveHandleWait s (realToFrac timeout)
     pure . toRR . toBool $ x
 
 solverResume' :: (MonadThrow m, MonadIO m) => Solver s -> m ()
-solverResume' (Solver s) = marshall0 $ Raw.solveHandleResume s
+solverResume' (Solver s) = marshal0 $ Raw.solveHandleResume s
 
 solverCancel' :: (MonadThrow m, MonadIO m) => Solver s -> m ()
-solverCancel' (Solver s) = marshall0 $ Raw.solveHandleCancel s
+solverCancel' (Solver s) = marshal0 $ Raw.solveHandleCancel s
 
 -- | Stops the running search and releases the handle. Blocks until search is
 -- stopped.
 solverClose :: Solver s -> Clingo s ()
-solverClose (Solver s) = marshall0 $ Raw.solveHandleClose s
+solverClose (Solver s) = marshal0 $ Raw.solveHandleClose s

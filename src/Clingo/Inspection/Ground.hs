@@ -137,4 +137,4 @@ registerGroundObserver :: (Bool -> IOSym s ())
 registerGroundObserver i k = do
     ctrl <- askC
     gpo  <- mkRawGPO i k
-    marshall0 $ with gpo $ \ptr -> Raw.controlRegisterObserver ctrl ptr nullPtr
+    marshal0 $ with gpo $ \ptr -> Raw.controlRegisterObserver ctrl ptr nullPtr

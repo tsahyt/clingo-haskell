@@ -92,7 +92,7 @@ withDefaultClingo = withClingo defaultClingo
 -- | Load a logic program from a file.
 loadProgram :: FilePath -> Clingo s ()
 loadProgram path = askC >>= \ctrl ->
-    marshall0 (withCString path (Raw.controlLoad ctrl))
+    marshal0 (withCString path (Raw.controlLoad ctrl))
 
 -- | Add an ungrounded logic program to the solver as a 'Text'. This function
 -- can be used in order to utilize clingo's parser. See 'parseProgram' for when
@@ -102,7 +102,7 @@ addProgram :: Foldable t
            -> t Text                    -- ^ Part Arguments
            -> Text                      -- ^ Program Code
            -> Clingo s ()
-addProgram name params code = askC >>= \ctrl -> marshall0 $ 
+addProgram name params code = askC >>= \ctrl -> marshal0 $ 
     withCString (unpack name) $ \n ->
         withCString (unpack code) $ \c -> do
             ptrs <- mapM (newCString . unpack) (toList params)
@@ -135,7 +135,7 @@ ground ::
        [Part s] -- ^ Parts to be grounded
     -> Maybe SymbolInjection -- ^ Callback for injecting symbols
     -> Clingo s ()
-ground parts extFun = askC >>= \ctrl -> marshall0 $ do
+ground parts extFun = askC >>= \ctrl -> marshal0 $ do
     rparts <- mapM rawPart parts
     res <- withArrayLen rparts $ \len arr -> do
         groundCB <- maybe (pure nullFunPtr) wrapCBGround extFun
@@ -168,7 +168,7 @@ wrapCBGround f = liftIO $ Raw.mkCallbackGround go
 unwrapCBSymbol :: Raw.CallbackSymbol a -> Ptr a -> ([PureSymbol] -> IO ())
 unwrapCBSymbol f d syms = do
     syms' <- iosym $ mapM (fmap rawSymbol . unpureSymbol) syms
-    withArrayLen syms' $ \len arr -> marshall0 (f arr (fromIntegral len) d)
+    withArrayLen syms' $ \len arr -> marshal0 (f arr (fromIntegral len) d)
 
 -- | Interrupt the current solve call.
 interrupt :: Clingo s ()
@@ -182,7 +182,7 @@ interrupt = Raw.controlInterrupt =<< askC
 -- groundings because less rules have to be instantiated and more
 -- simplifications can be applied.
 cleanup :: Clingo s ()
-cleanup = marshall0 . Raw.controlCleanup =<< askC
+cleanup = marshal0 . Raw.controlCleanup =<< askC
 
 -- | A datatype that can be used to indicate whether solving shall continue or
 -- not.
@@ -209,7 +209,7 @@ solve :: SolveMode -> [AspifLiteral s]
       -> Clingo s (Solver s)
 solve mode assumptions onEvent = do
     ctrl <- askC
-    Solver <$> marshall1 (go ctrl)
+    Solver <$> marshal1 (go ctrl)
     where go ctrl x =
               withArrayLen (map rawAspifLiteral assumptions) $ \len arr -> do
                   eventCB <- maybe (pure nullFunPtr) wrapCBEvent onEvent
@@ -244,30 +244,30 @@ wrapCBEvent f = liftIO $ Raw.mkCallbackEvent go
 
 -- | Obtain statistics handle. See 'Clingo.Statistics'.
 statistics :: Clingo s (Statistics s)
-statistics = fmap Statistics . marshall1 . Raw.controlStatistics =<< askC
+statistics = fmap Statistics . marshal1 . Raw.controlStatistics =<< askC
 
 -- | Obtain program builder handle. See 'Clingo.ProgramBuilding'.
 programBuilder :: Clingo s (ProgramBuilder s)
-programBuilder = fmap ProgramBuilder . marshall1 
+programBuilder = fmap ProgramBuilder . marshal1 
                . Raw.controlProgramBuilder =<< askC
 
 -- | Obtain backend handle. See 'Clingo.ProgramBuilding'.
 backend :: Clingo s (Backend s)
-backend = fmap Backend . marshall1 . Raw.controlBackend =<< askC
+backend = fmap Backend . marshal1 . Raw.controlBackend =<< askC
 
 -- | Obtain configuration handle. See 'Clingo.Configuration'.
 configuration :: Clingo s (Configuration s)
-configuration = fmap Configuration . marshall1 
+configuration = fmap Configuration . marshal1 
               . Raw.controlConfiguration =<< askC
 
 -- | Obtain symbolic atoms handle. See 'Clingo.Inspection.SymbolicAtoms'.
 symbolicAtoms :: Clingo s (SymbolicAtoms s)
-symbolicAtoms = fmap SymbolicAtoms . marshall1 
+symbolicAtoms = fmap SymbolicAtoms . marshal1 
               . Raw.controlSymbolicAtoms =<< askC
 
 -- | Obtain theory atoms handle. See 'Clingo.Inspection.TheoryAtoms'.
 theoryAtoms :: Clingo s (TheoryAtoms s)
-theoryAtoms = fmap TheoryAtoms . marshall1 . Raw.controlTheoryAtoms =<< askC
+theoryAtoms = fmap TheoryAtoms . marshal1 . Raw.controlTheoryAtoms =<< askC
 
 -- | Configure how learnt constraints are handled during enumeration.
 -- 
@@ -278,14 +278,14 @@ theoryAtoms = fmap TheoryAtoms . marshall1 . Raw.controlTheoryAtoms =<< askC
 -- as clauses added with clingo_solve_control_add_clause().
 useEnumAssumption :: Bool -> Clingo s ()
 useEnumAssumption b = askC >>= \ctrl -> 
-    marshall0 $ Raw.controlUseEnumAssumption ctrl (fromBool b)
+    marshal0 $ Raw.controlUseEnumAssumption ctrl (fromBool b)
 
 -- | Assign a truth value to an external atom.
 -- 
 -- If the atom does not exist or is not external, this is a noop.
 assignExternal :: AspifLiteral s -> TruthValue -> Clingo s ()
 assignExternal s t = askC >>= \ctrl -> 
-    marshall0 $ Raw.controlAssignExternal ctrl (rawAspifLiteral s) (rawTruthValue t)
+    marshal0 $ Raw.controlAssignExternal ctrl (rawAspifLiteral s) (rawTruthValue t)
 
 -- | Release an external atom.
 -- 
@@ -294,17 +294,17 @@ assignExternal s t = askC >>= \ctrl ->
 -- this is a noop.
 releaseExternal :: AspifLiteral s -> Clingo s ()
 releaseExternal s = askC >>= \ctrl -> 
-    marshall0 $ Raw.controlReleaseExternal ctrl (rawAspifLiteral s)
+    marshal0 $ Raw.controlReleaseExternal ctrl (rawAspifLiteral s)
 
 -- | Get the symbol for a constant definition @#const name = symbol@.
 getConst :: Text -> Clingo s (Symbol s)
-getConst name = askC >>= \ctrl -> pureSymbol =<< marshall1 (go ctrl)
+getConst name = askC >>= \ctrl -> pureSymbol =<< marshal1 (go ctrl)
     where go ctrl x = withCString (unpack name) $ \cstr -> 
                           Raw.controlGetConst ctrl cstr x
 
 -- | Check if there is a constant definition for the given constant.
 hasConst :: Text -> Clingo s Bool
-hasConst name = askC >>= \ctrl -> toBool <$> marshall1 (go ctrl)
+hasConst name = askC >>= \ctrl -> toBool <$> marshal1 (go ctrl)
     where go ctrl x = withCString (unpack name) $ \cstr ->
                           Raw.controlHasConst ctrl cstr x
 
@@ -335,5 +335,5 @@ registerUnsafePropagator sequ prop = do
 -- | Get clingo version.
 version :: MonadIO m => m (Int, Int, Int)
 version = do 
-    (a,b,c) <- marshall3V Raw.version
+    (a,b,c) <- marshal3V Raw.version
     return (fromIntegral a, fromIntegral b, fromIntegral c)

@@ -92,7 +92,7 @@ parseProgram :: Text                                    -- ^ Program
              -> T.Clingo s [Statement (T.Symbol s) (T.Signature s)]
 parseProgram prog logger limit = do
     ref <- liftIO (newIORef [])
-    marshall0 $
+    marshal0 $
         withCString (unpack prog) $ \p -> do
             logCB <- maybe (pure nullFunPtr) T.wrapCBLogger logger
             astCB <- wrapCBAst (\s -> modifyIORef ref (s :))

@@ -37,11 +37,11 @@ newtype SIterator s = SIterator Raw.SymbolicAtomIterator
 symbolicAtomsSize :: (MonadIO m, MonadThrow m)
                   => SymbolicAtoms s -> m Natural
 symbolicAtomsSize (SymbolicAtoms s) = 
-    fromIntegral <$> marshall1 (Raw.symbolicAtomsSize s)
+    fromIntegral <$> marshal1 (Raw.symbolicAtomsSize s)
 
 symbolicAtomsBegin :: (MonadIO m, MonadThrow m)
                    => SymbolicAtoms s -> Maybe (Signature s) -> m (SIterator s)
-symbolicAtomsBegin (SymbolicAtoms s) sig = SIterator <$> marshall1 go
+symbolicAtomsBegin (SymbolicAtoms s) sig = SIterator <$> marshal1 go
     where go x = case sig of
                      Nothing -> Raw.symbolicAtomsBegin s nullPtr x
                      Just y  -> with (rawSignature y) $ \ptr ->
@@ -49,54 +49,54 @@ symbolicAtomsBegin (SymbolicAtoms s) sig = SIterator <$> marshall1 go
 
 symbolicAtomsEnd :: (MonadIO m, MonadThrow m)
                    => SymbolicAtoms s -> m (SIterator s)
-symbolicAtomsEnd (SymbolicAtoms s) = SIterator <$> marshall1 go
+symbolicAtomsEnd (SymbolicAtoms s) = SIterator <$> marshal1 go
     where go = Raw.symbolicAtomsEnd s
 
 symbolicAtomsFind :: (MonadIO m, MonadThrow m)
                   => SymbolicAtoms s -> Symbol s -> m (SIterator s)
-symbolicAtomsFind (SymbolicAtoms s) sym = SIterator <$> marshall1
+symbolicAtomsFind (SymbolicAtoms s) sym = SIterator <$> marshal1
     (Raw.symbolicAtomsFind s (rawSymbol sym))
 
 symbolicAtomsIteratorEq :: (MonadIO m, MonadThrow m)
                         => SymbolicAtoms s -> SIterator s -> SIterator s
                         -> m Bool
 symbolicAtomsIteratorEq (SymbolicAtoms s) (SIterator a) (SIterator b) =
-    toBool <$> marshall1 (Raw.symbolicAtomsIteratorIsEqualTo s a b)
+    toBool <$> marshal1 (Raw.symbolicAtomsIteratorIsEqualTo s a b)
 
 symbolicAtomsSymbol :: (MonadIO m, MonadThrow m)
                     => SymbolicAtoms s -> SIterator s -> m (Symbol s)
 symbolicAtomsSymbol (SymbolicAtoms s) (SIterator i) =
-    pureSymbol =<< marshall1 (Raw.symbolicAtomsSymbol s i)
+    pureSymbol =<< marshal1 (Raw.symbolicAtomsSymbol s i)
 
 symbolicAtomsIsFact :: (MonadIO m, MonadThrow m)
                     => SymbolicAtoms s -> SIterator s -> m Bool
 symbolicAtomsIsFact (SymbolicAtoms s) (SIterator i) = 
-    toBool <$> marshall1 (Raw.symbolicAtomsIsFact s i)
+    toBool <$> marshal1 (Raw.symbolicAtomsIsFact s i)
 
 symbolicAtomsIsExternal :: (MonadIO m, MonadThrow m)
                         => SymbolicAtoms s -> SIterator s -> m Bool
 symbolicAtomsIsExternal (SymbolicAtoms s) (SIterator i) = 
-    toBool <$> marshall1 (Raw.symbolicAtomsIsExternal s i)
+    toBool <$> marshal1 (Raw.symbolicAtomsIsExternal s i)
 
 symbolicAtomsLiteral :: (MonadIO m, MonadThrow m)
                      => SymbolicAtoms s -> SIterator s -> m (AspifLiteral s)
 symbolicAtomsLiteral (SymbolicAtoms s) (SIterator i) =
-    AspifLiteral <$> marshall1 (Raw.symbolicAtomsLiteral s i)
+    AspifLiteral <$> marshal1 (Raw.symbolicAtomsLiteral s i)
 
 symbolicAtomsSignatures :: (MonadIO m, MonadThrow m)
                         => SymbolicAtoms s -> m [Signature s]
 symbolicAtomsSignatures (SymbolicAtoms s) = do
-    len <- marshall1 (Raw.symbolicAtomsSignaturesSize s)
+    len <- marshal1 (Raw.symbolicAtomsSignaturesSize s)
     liftIO $ allocaArray (fromIntegral len) $ \arr -> do
-        marshall0 (Raw.symbolicAtomsSignatures s arr len)
+        marshal0 (Raw.symbolicAtomsSignatures s arr len)
         mapM pureSignature =<< peekArray (fromIntegral len) arr
 
 symbolicAtomsNext :: (MonadIO m, MonadThrow m)
                   => SymbolicAtoms s -> SIterator s -> m (SIterator s)
 symbolicAtomsNext (SymbolicAtoms s) (SIterator i) = SIterator <$>
-    marshall1 (Raw.symbolicAtomsNext s i)
+    marshal1 (Raw.symbolicAtomsNext s i)
 
 symbolicAtomsIsValid :: (MonadIO m, MonadThrow m)
                      => SymbolicAtoms s -> SIterator s -> m Bool
 symbolicAtomsIsValid (SymbolicAtoms s) (SIterator i) = toBool <$>
-    marshall1 (Raw.symbolicAtomsIsValid s i)
+    marshal1 (Raw.symbolicAtomsIsValid s i)

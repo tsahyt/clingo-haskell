@@ -77,24 +77,24 @@ hasLiteral (Assignment a) lit = toBool <$> Raw.assignmentHasLiteral a
 
 -- | Find the decision level of a given literal in an assignment.
 levelOf :: (MonadIO m, MonadThrow m) => Assignment s -> Literal s -> m Natural
-levelOf (Assignment a) lit = fromIntegral <$> marshall1 go
+levelOf (Assignment a) lit = fromIntegral <$> marshal1 go
     where go = Raw.assignmentLevel a (rawLiteral lit)
 
 -- | Determine the decision literal given a decision level.
 decision :: (MonadIO m, MonadThrow m) 
          => Assignment s -> Natural -> m (Literal s)
-decision (Assignment a) level = Literal <$> marshall1 go
+decision (Assignment a) level = Literal <$> marshal1 go
     where go = Raw.assignmentDecision a (fromIntegral level)
 
 -- | Check if a literal has a fixed truth value.
 isFixed :: (MonadIO m, MonadThrow m) => Assignment s -> Literal s -> m Bool
-isFixed (Assignment a) lit = toBool <$> marshall1 go
+isFixed (Assignment a) lit = toBool <$> marshal1 go
     where go = Raw.assignmentIsFixed a (rawLiteral lit)
 
 -- | Obtain the truth value of a literal
 truthValue :: (MonadIO m, MonadThrow m) 
            => Assignment s -> Literal s -> m TruthValue
-truthValue (Assignment a) lit = TruthValue <$> marshall1 go
+truthValue (Assignment a) lit = TruthValue <$> marshal1 go
     where go = Raw.assignmentTruthValue a (rawLiteral lit)
 
 data Clause s = Clause [Literal s] ClauseType
@@ -122,14 +122,14 @@ pstopFromBool False = Stop
 addClause :: (MonadIO m, MonadThrow m)
           => PropagateCtrl s -> Clause s -> m PropagationStop
 addClause (PropagateCtrl c) (Clause ls t) = pstopFromBool . toBool <$> 
-    marshall1 go
+    marshal1 go
     where go x = withArrayLen (map rawLiteral ls) $ \len arr ->
                      Raw.propagateControlAddClause c arr (fromIntegral len)
                                                    (rawClauseType t) x
 
 addLiteral :: (MonadIO m, MonadThrow m)
            => PropagateCtrl s -> m (Literal s)
-addLiteral (PropagateCtrl c) = Literal <$> marshall1 
+addLiteral (PropagateCtrl c) = Literal <$> marshal1 
     (Raw.propagateControlAddLiteral c)
 
 getThreadId :: MonadIO m => PropagateCtrl s -> m Integer
@@ -137,7 +137,7 @@ getThreadId (PropagateCtrl c) = fromIntegral <$> Raw.propagateControlThreadId c
 
 addWatch :: (MonadIO m, MonadThrow m) => PropagateCtrl s -> Literal s -> m ()
 addWatch (PropagateCtrl c) lit = 
-    marshall0 (Raw.propagateControlAddWatch c (rawLiteral lit))
+    marshal0 (Raw.propagateControlAddWatch c (rawLiteral lit))
 
 hasWatch :: (MonadIO m) => PropagateCtrl s -> Literal s -> m Bool
 hasWatch (PropagateCtrl c) lit = 
@@ -149,7 +149,7 @@ removeWatch (PropagateCtrl c) lit =
 
 propagate :: (MonadIO m, MonadThrow m) => PropagateCtrl s -> m PropagationStop
 propagate (PropagateCtrl c) = pstopFromBool . toBool <$>
-    marshall1 (Raw.propagateControlPropagate c)
+    marshal1 (Raw.propagateControlPropagate c)
 
 assignment :: (MonadIO m) => PropagateCtrl s -> m (Assignment s)
 assignment (PropagateCtrl c) = Assignment <$> Raw.propagateControlAssignment c
@@ -157,7 +157,7 @@ assignment (PropagateCtrl c) = Assignment <$> Raw.propagateControlAssignment c
 initAddWatch :: (MonadIO m, MonadThrow m) 
              => PropagateInit s -> Literal s -> m ()
 initAddWatch (PropagateInit c) lit = 
-    marshall0 (Raw.propagateInitAddWatch c (rawLiteral lit))
+    marshal0 (Raw.propagateInitAddWatch c (rawLiteral lit))
 
 countThreads :: MonadIO m => PropagateInit s -> m Integer
 countThreads (PropagateInit c) = fromIntegral <$> 
@@ -165,15 +165,15 @@ countThreads (PropagateInit c) = fromIntegral <$>
 
 solverLiteral :: (MonadIO m, MonadThrow m) 
               => PropagateInit s -> AspifLiteral s -> m (Literal s)
-solverLiteral (PropagateInit c) lit = Literal <$> marshall1
+solverLiteral (PropagateInit c) lit = Literal <$> marshal1
     (Raw.propagateInitSolverLiteral c (rawAspifLiteral lit))
 
 symbolicAtoms :: (MonadIO m, MonadThrow m)
               => PropagateInit s -> m (SymbolicAtoms s)
-symbolicAtoms (PropagateInit c) = SymbolicAtoms <$> marshall1
+symbolicAtoms (PropagateInit c) = SymbolicAtoms <$> marshal1
     (Raw.propagateInitSymbolicAtoms c)
 
 theoryAtoms :: (MonadIO m, MonadThrow m)
               => PropagateInit s -> m (TheoryAtoms s)
-theoryAtoms (PropagateInit c) = TheoryAtoms <$> marshall1
+theoryAtoms (PropagateInit c) = TheoryAtoms <$> marshal1
     (Raw.propagateInitTheoryAtoms c)

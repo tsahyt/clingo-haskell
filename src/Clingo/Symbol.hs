@@ -98,9 +98,9 @@ functionSymbol s = case symbolType s of
 
 instance Signed (FunctionSymbol s) where
     positive s = unsafePerformIO $ 
-        toBool <$> marshall1 (Raw.symbolIsPositive . rawSymbol . unFuncSym $ s)
+        toBool <$> marshal1 (Raw.symbolIsPositive . rawSymbol . unFuncSym $ s)
     negative s = unsafePerformIO $ 
-        toBool <$> marshall1 (Raw.symbolIsNegative . rawSymbol . unFuncSym $ s)
+        toBool <$> marshal1 (Raw.symbolIsNegative . rawSymbol . unFuncSym $ s)
 
 -- | Construct a symbol representing an id.
 createId :: MonadSymbol m => Text -> Bool -> m s (Symbol s)
@@ -111,7 +111,7 @@ parseTerm :: Text                                       -- ^ Term as 'Text'
           -> Maybe (ClingoWarning -> Text -> IO ())     -- ^ Logger callback
           -> Natural                                    -- ^ Callback limit
           -> Clingo s (Symbol s)
-parseTerm t logger limit = pureSymbol =<< marshall1 go
+parseTerm t logger limit = pureSymbol =<< marshal1 go
     where go x = withCString (unpack t) $ \cstr -> do
                      logCB <- maybe (pure nullFunPtr) wrapCBLogger logger
                      Raw.parseTerm cstr logCB nullPtr (fromIntegral limit) x

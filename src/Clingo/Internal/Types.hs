@@ -111,7 +111,7 @@ mkClingo :: ClingoSetting -> IO Raw.Control
 mkClingo settings = do
     let argc = length (clingoArgs settings)
     argv <- liftIO $ mapM newCString (clingoArgs settings)
-    ctrl <- marshall1 $ \x ->
+    ctrl <- marshal1 $ \x ->
         withArray argv $ \argvArr -> do
             logCB <- maybe (pure nullFunPtr) wrapCBLogger 
                          (clingoLogger settings)

@@ -10,13 +10,13 @@ module Clingo.Internal.Utils
     warningString,
 
     checkAndThrow,
-    marshall0,
-    marshall1,
-    marshall1V,
-    marshall1A,
-    marshall1RT,
-    marshall2,
-    marshall3V,
+    marshal0,
+    marshal1,
+    marshal1V,
+    marshal1A,
+    marshal1RT,
+    marshal2,
+    marshal3V,
     reraiseIO
 )
 where
@@ -68,40 +68,40 @@ checkAndThrowRT a b
             _ -> throwM exc
 {-# INLINE checkAndThrowRT #-}
 
-marshall0 :: (MonadIO m, MonadThrow m) => IO Raw.CBool -> m ()
-marshall0 action = liftIO action >>= checkAndThrow
-{-# INLINE marshall0 #-}
+marshal0 :: (MonadIO m, MonadThrow m) => IO Raw.CBool -> m ()
+marshal0 action = liftIO action >>= checkAndThrow
+{-# INLINE marshal0 #-}
 
-marshall1 :: (Storable a, MonadIO m, MonadThrow m) 
+marshal1 :: (Storable a, MonadIO m, MonadThrow m) 
           => (Ptr a -> IO Raw.CBool) -> m a
-marshall1 action = do
+marshal1 action = do
     (res, a) <- liftIO $ alloca $ \ptr -> do
         res <- action ptr
         a <- peek ptr
         return (res, a)
     checkAndThrow res
     return a
-{-# INLINE marshall1 #-}
+{-# INLINE marshal1 #-}
 
-marshall1V :: (Storable a, MonadIO m) 
+marshal1V :: (Storable a, MonadIO m) 
            => (Ptr a -> IO ()) -> m a
-marshall1V action =
+marshal1V action =
     liftIO $ alloca $ \ptr -> do
         _ <- action ptr
         peek ptr
-{-# INLINE marshall1V #-}
+{-# INLINE marshal1V #-}
 
-marshall1RT :: (Storable a, MonadIO m)
+marshal1RT :: (Storable a, MonadIO m)
             => (Ptr a -> IO Raw.CBool) -> m (Maybe a)
-marshall1RT action =
+marshal1RT action =
     liftIO $ alloca $ \ptr -> do
         res <- action ptr
         checkAndThrowRT (peek ptr) res
-{-# INLINE marshall1RT #-}
+{-# INLINE marshal1RT #-}
 
-marshall2 :: (Storable a, Storable b, MonadIO m, MonadThrow m)
+marshal2 :: (Storable a, Storable b, MonadIO m, MonadThrow m)
           => (Ptr a -> Ptr b -> IO Raw.CBool) -> m (a,b)
-marshall2 action = do
+marshal2 action = do
     (res, (a,b)) <- liftIO $ alloca $ \ptr1 -> 
         alloca $ \ptr2 -> do
             res <- action ptr1 ptr2
@@ -110,11 +110,11 @@ marshall2 action = do
             return (res, (a,b))
     checkAndThrow res
     return (a,b)
-{-# INLINE marshall2 #-}
+{-# INLINE marshal2 #-}
 
-marshall1A :: (Storable a, MonadIO m, MonadThrow m)
+marshal1A :: (Storable a, MonadIO m, MonadThrow m)
            => (Ptr (Ptr a) -> Ptr CSize -> IO Raw.CBool) -> m [a]
-marshall1A action = do
+marshal1A action = do
     (res, as) <- liftIO $ alloca $ \ptr1 -> 
         alloca $ \ptr2 -> do
             res  <- action ptr1 ptr2
@@ -124,11 +124,11 @@ marshall1A action = do
             return (res, arr)
     checkAndThrow res
     return as
-{-# INLINE marshall1A #-}
+{-# INLINE marshal1A #-}
 
-marshall3V :: (Storable a, Storable b, Storable c, MonadIO m)
+marshal3V :: (Storable a, Storable b, Storable c, MonadIO m)
            => (Ptr a -> Ptr b -> Ptr c -> IO ()) -> m (a,b,c)
-marshall3V action = do
+marshal3V action = do
     (a,b,c) <- liftIO $ alloca $ \ptr1 -> 
         alloca $ \ptr2 -> 
             alloca $ \ptr3 -> do
@@ -138,7 +138,7 @@ marshall3V action = do
                 c <- peek ptr3
                 return (a,b,c)
     return (a,b,c)
-{-# INLINE marshall3V #-}
+{-# INLINE marshal3V #-}
 
 reraiseIO :: IO a -> IO Raw.CBool
 reraiseIO action = catch (action >> return (fromBool True)) $ 

@@ -52,13 +52,13 @@ symbolHash' = fromIntegral . Raw.symbolHash
 
 symbolNumber' :: (MonadIO m) => Raw.Symbol -> m (Maybe Integer)
 symbolNumber' s = case Raw.symbolType s of
-    Raw.SymNumber -> fmap fromIntegral <$> marshall1RT (Raw.symbolNumber s)
+    Raw.SymNumber -> fmap fromIntegral <$> marshal1RT (Raw.symbolNumber s)
     _ -> return Nothing
 
 symbolName' :: (MonadIO m) => Raw.Symbol -> m (Maybe Text)
 symbolName' s = case Raw.symbolType s of
     Raw.SymFunction -> do
-        x <- marshall1RT (Raw.symbolName s)
+        x <- marshal1RT (Raw.symbolName s)
         case x of
             Nothing   -> return Nothing
             Just cstr -> liftIO $ (Just . pack) <$> peekCString cstr
@@ -67,7 +67,7 @@ symbolName' s = case Raw.symbolType s of
 symbolString' :: (MonadIO m) => Raw.Symbol -> m (Maybe Text)
 symbolString' s = case Raw.symbolType s of
     Raw.SymString -> do
-        x <- marshall1RT (Raw.symbolString s)
+        x <- marshal1RT (Raw.symbolString s)
         case x of
             Nothing   -> return Nothing
             Just cstr -> liftIO $ (Just . pack) <$> peekCString cstr
@@ -75,12 +75,12 @@ symbolString' s = case Raw.symbolType s of
 
 symbolArguments' :: (MonadIO m, MonadThrow m) => Raw.Symbol -> m [Symbol s]
 symbolArguments' s = case Raw.symbolType s of
-    Raw.SymFunction -> mapM pureSymbol =<< marshall1A (Raw.symbolArguments s)
+    Raw.SymFunction -> mapM pureSymbol =<< marshal1A (Raw.symbolArguments s)
     _ -> return []
 
 prettySymbol' :: (MonadIO m, MonadThrow m) => Raw.Symbol -> m Text
 prettySymbol' s = do
-    len <- marshall1 (Raw.symbolToStringSize s)
+    len <- marshal1 (Raw.symbolToStringSize s)
     str <- liftIO $ allocaArray (fromIntegral len) $ \ptr -> do
         b <- Raw.symbolToString s ptr len
         x <- peekCString ptr
@@ -110,23 +110,23 @@ createSignature' :: (MonadIO m, MonadThrow m)
                  -> Natural                  -- ^ Arity
                  -> Bool                     -- ^ Positive
                  -> m (Signature s)
-createSignature' name arity pos = pureSignature =<< marshall1 go
+createSignature' name arity pos = pureSignature =<< marshal1 go
     where go x = withCString (unpack name) $ \cstr ->
                      Raw.signatureCreate cstr (fromIntegral arity) 
                                          (fromBool pos) x
 
 createNumber' :: (MonadIO m, MonadThrow m, Integral a) => a -> m (Symbol s)
 createNumber' a = pureSymbol =<< 
-    marshall1V (Raw.symbolCreateNumber (fromIntegral a))
+    marshal1V (Raw.symbolCreateNumber (fromIntegral a))
 
 createSupremum' :: (MonadIO m, MonadThrow m) => m (Symbol s)
-createSupremum' = pureSymbol =<< marshall1V Raw.symbolCreateSupremum
+createSupremum' = pureSymbol =<< marshal1V Raw.symbolCreateSupremum
 
 createInfimum' :: (MonadIO m, MonadThrow m) => m (Symbol s)
-createInfimum' = pureSymbol =<< marshall1V Raw.symbolCreateInfimum
+createInfimum' = pureSymbol =<< marshal1V Raw.symbolCreateInfimum
 
 createString' :: (MonadIO m, MonadThrow m) => Text -> m (Symbol s)
-createString' str = pureSymbol =<< marshall1 go
+createString' str = pureSymbol =<< marshal1 go
     where go = withCString (unpack str) . flip Raw.symbolCreateString
 
 createFunction' :: (MonadIO m, MonadThrow m)
@@ -134,7 +134,7 @@ createFunction' :: (MonadIO m, MonadThrow m)
                 -> [Symbol s]    -- ^ Arguments
                 -> Bool          -- ^ Positive sign
                 -> m (Symbol s)
-createFunction' name args pos = pureSymbol =<< marshall1 go 
+createFunction' name args pos = pureSymbol =<< marshal1 go 
     where go x = withCString (unpack name) $ \cstr -> 
                      withArrayLen (map rawSymbol args) $ \len syms -> 
                          Raw.symbolCreateFunction cstr syms 

@@ -102,39 +102,39 @@ instance MonadModel Clingo where
     modelAddClause = modelAddClause'
 
 modelType' :: (MonadIO m, MonadThrow m) => Model s -> m ModelType
-modelType' (Model m) = ModelType <$> marshall1 (Raw.modelType m)
+modelType' (Model m) = ModelType <$> marshal1 (Raw.modelType m)
 
 modelNumber' :: (MonadIO m, MonadThrow m) => Model s -> m Natural
-modelNumber' (Model m) = fromIntegral <$> marshall1 (Raw.modelNumber m)
+modelNumber' (Model m) = fromIntegral <$> marshal1 (Raw.modelNumber m)
 
 modelSymbols' :: (MonadIO m) => Model s -> SymbolSelection -> m [Symbol s]
 modelSymbols' (Model m) selection = liftIO $ do
     let flags = rawSymbolSelection selection
-    len <- marshall1 (Raw.modelSymbolsSize m flags)
+    len <- marshal1 (Raw.modelSymbolsSize m flags)
     allocaArray (fromIntegral len) $ \arr -> do
-        marshall0 (Raw.modelSymbols m flags arr len)
+        marshal0 (Raw.modelSymbols m flags arr len)
         as <- peekArray (fromIntegral len) arr
         mapM pureSymbol as
 
 contains' :: (MonadIO m, MonadThrow m) => Model s -> Symbol s -> m Bool
-contains' (Model m) s = toBool <$> marshall1 (Raw.modelContains m (rawSymbol s))
+contains' (Model m) s = toBool <$> marshal1 (Raw.modelContains m (rawSymbol s))
 
 costVector' :: (MonadIO m) => Model s -> m [Integer]
 costVector' (Model m) = liftIO $ do
-    len <- marshall1 (Raw.modelCostSize m)
+    len <- marshal1 (Raw.modelCostSize m)
     allocaArray (fromIntegral len) $ \arr -> do
-        marshall0 (Raw.modelCost m arr len)
+        marshal0 (Raw.modelCost m arr len)
         as <- peekArray (fromIntegral len) arr
         return $ fmap fromIntegral as
 
 optimalityProven' :: (MonadIO m, MonadThrow m) => Model s -> m Bool
-optimalityProven' (Model m) = toBool <$> marshall1 (Raw.modelOptimalityProven m)
+optimalityProven' (Model m) = toBool <$> marshal1 (Raw.modelOptimalityProven m)
 
 context' :: (MonadIO m, MonadThrow m) => Model s -> m (SolveControl s)
-context' (Model m) = SolveControl <$> marshall1 (Raw.modelContext m)
+context' (Model m) = SolveControl <$> marshal1 (Raw.modelContext m)
 
 modelAddClause' :: (MonadIO m, MonadThrow m, Foldable t)
                 => SolveControl s -> t (Literal s) -> m ()
-modelAddClause' (SolveControl s) lits = marshall0 $ 
+modelAddClause' (SolveControl s) lits = marshal0 $ 
     withArrayLen (map rawLiteral . toList $ lits) $ \len arr ->
         Raw.solveControlAddClause s arr (fromIntegral len)

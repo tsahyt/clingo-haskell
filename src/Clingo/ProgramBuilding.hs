@@ -62,7 +62,7 @@ newtype GroundStatement s =
 -- | Build an edge directive.
 acycEdge :: Foldable t
          => Node -> Node -> t (Literal s) -> GroundStatement s
-acycEdge a b lits = GStmt $ \(Backend h) -> marshall0 $
+acycEdge a b lits = GStmt $ \(Backend h) -> marshal0 $
     withArrayLen (map rawLiteral . toList $ lits) $ \len arr ->
         Raw.backendAcycEdge h (fromIntegral $ unNode a) 
             (fromIntegral $ unNode b) arr (fromIntegral len)
@@ -72,8 +72,8 @@ atom :: (MonadIO m, MonadThrow m)
      => Backend s -> Maybe (Symbol s) -> m (Atom s)
 atom (Backend h) (Just s) =
     liftIO $
-    with (rawSymbol s) $ \ptr -> Atom <$> marshall1 (Raw.backendAddAtom h ptr)
-atom (Backend h) Nothing = Atom <$> marshall1 (Raw.backendAddAtom h nullPtr)
+    with (rawSymbol s) $ \ptr -> Atom <$> marshal1 (Raw.backendAddAtom h ptr)
+atom (Backend h) Nothing = Atom <$> marshal1 (Raw.backendAddAtom h nullPtr)
 
 -- | Use an Atom as a positive AspifLiteral
 atomAspifLiteral :: Atom s -> AspifLiteral s
@@ -85,13 +85,13 @@ negateAspifLiteral (AspifLiteral x) = AspifLiteral (negate x)
 -- | Add an assumption directive.
 assume :: Foldable t
        => t (AspifLiteral s) -> GroundStatement s
-assume lits = GStmt $ \(Backend h) -> marshall0 $ 
+assume lits = GStmt $ \(Backend h) -> marshal0 $ 
     withArrayLen (map rawAspifLiteral . toList $ lits) $ \len arr ->
         Raw.backendAssume h arr (fromIntegral len)
 
 -- | Build an external statement.
 external :: Atom s -> ExternalType -> GroundStatement s
-external a t = GStmt $ \(Backend h) -> marshall0 $
+external a t = GStmt $ \(Backend h) -> marshal0 $
     Raw.backendExternal h (rawAtom a) (rawExtT t)
 
 -- | Build a heuristic directive.
@@ -102,7 +102,7 @@ heuristic :: (Foldable t)
           -> Natural                -- ^ Priority
           -> t (AspifLiteral s)     -- ^ Condition
           -> GroundStatement s
-heuristic a t bias pri cs = GStmt $ \(Backend h) -> marshall0 $
+heuristic a t bias pri cs = GStmt $ \(Backend h) -> marshal0 $
     withArrayLen (map rawAspifLiteral . toList $ cs) $ \len arr ->
         Raw.backendHeuristic h (rawAtom a) (rawHeuT t) 
             (fromIntegral bias) (fromIntegral pri) arr (fromIntegral len)
@@ -112,7 +112,7 @@ minimize :: Foldable t
          => Integer                 -- ^ Priority
          -> t (WeightedLiteral s)   -- ^ Literals to minimize
          -> GroundStatement s
-minimize priority lits = GStmt $ \(Backend h) -> marshall0 $
+minimize priority lits = GStmt $ \(Backend h) -> marshal0 $
     withArrayLen (map rawWeightedLiteral . toList $ lits) $ \len arr ->
         Raw.backendMinimize h (fromIntegral priority) arr (fromIntegral len)
 
@@ -122,7 +122,7 @@ rule :: Foldable t
      -> t (Atom s)           -- ^ Head
      -> t (AspifLiteral s)   -- ^ Body
      -> GroundStatement s
-rule choice hd bd = GStmt $ \(Backend h) -> marshall0 $
+rule choice hd bd = GStmt $ \(Backend h) -> marshal0 $
     withArrayLen (map rawAtom . toList $ hd) $ \hlen harr ->
         withArrayLen (map rawAspifLiteral . toList $ bd) $ \blen barr ->
             Raw.backendRule h (fromBool choice) harr (fromIntegral hlen) 
@@ -135,7 +135,7 @@ weightedRule :: Foldable t
              -> Natural                 -- ^ Lower Bound
              -> t (WeightedLiteral s)   -- ^ Body
              -> GroundStatement s
-weightedRule choice hd weight bd = GStmt $ \(Backend h) -> marshall0 $
+weightedRule choice hd weight bd = GStmt $ \(Backend h) -> marshal0 $
     withArrayLen (map rawAtom . toList $ hd) $ \hlen harr ->
         withArrayLen (map rawWeightedLiteral . toList $ bd) $ \blen barr ->
             Raw.backendWeightRule h (fromBool choice) harr (fromIntegral hlen) 
@@ -145,7 +145,7 @@ weightedRule choice hd weight bd = GStmt $ \(Backend h) -> marshall0 $
 -- | Build a projection directive
 project :: Foldable t
         => t (Atom s) -> GroundStatement s
-project atoms = GStmt $ \(Backend h) -> marshall0 $
+project atoms = GStmt $ \(Backend h) -> marshal0 $
     withArrayLen (map rawAtom . toList $ atoms) $ \len arr ->
         Raw.backendProject h arr (fromIntegral len)
 
@@ -163,12 +163,12 @@ addStatements :: Traversable t
               -> t (Statement (Symbol s) (Signature s)) 
               -> Clingo s ()
 addStatements (ProgramBuilder b) stmts = do
-    marshall0 (Raw.programBuilderBegin b)
-    mapM_ go stmts `finally` marshall0 (Raw.programBuilderEnd b)
+    marshal0 (Raw.programBuilderBegin b)
+    mapM_ go stmts `finally` marshal0 (Raw.programBuilderEnd b)
 
     where go stmt = do
               stmt' <- liftIO (rawStatement stmt)
-              marshall0 $
+              marshal0 $
                   with stmt' $ \ptr ->
                       Raw.programBuilderAdd b ptr
               liftIO (freeStatement stmt')
