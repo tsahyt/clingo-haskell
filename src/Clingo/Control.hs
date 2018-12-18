@@ -16,6 +16,7 @@ module Clingo.Control
 
     loadProgram,
     addProgram,
+    SymbolInjection,
     ground,
     interrupt,
     cleanup,
@@ -57,18 +58,18 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans
 import Control.Monad.Catch
 import Data.Text (Text, pack, unpack)
+import Data.List.NonEmpty (NonEmpty)
 import Data.Foldable
 
 import Foreign
 import Foreign.C
-
-import Numeric.Natural
 
 import qualified Clingo.Raw as Raw
 import Clingo.Internal.Utils
 import Clingo.Internal.Symbol
 import Clingo.Internal.Types
 import Clingo.Solving (solverClose)
+import Clingo.Symbol (PureSymbol(..), toPureSymbol, unpureSymbol)
 import Clingo.Propagation (Propagator, propagatorToIO)
 
 -- | Default settings for clingo. This is like calling clingo with no arguments,
@@ -125,13 +126,15 @@ freeRawPart p = do
     free (Raw.partName p)
     free (Raw.partParams p)
 
+type SymbolInjection
+     = Location -> Text -> [PureSymbol] -> IO (Either Text (NonEmpty PureSymbol))
+
 -- | Ground logic program parts. A callback can be provided to inject symbols
 -- when needed.
-ground :: [Part s]      -- ^ Parts to be grounded
-       -> Maybe 
-          (Location -> Text -> [Symbol s] -> ([Symbol s] -> IO ()) -> IO ())
-                        -- ^ Callback for injecting symbols
-       -> Clingo s ()
+ground ::
+       [Part s] -- ^ Parts to be grounded
+    -> Maybe SymbolInjection -- ^ Callback for injecting symbols
+    -> Clingo s ()
 ground parts extFun = askC >>= \ctrl -> marshall0 $ do
     rparts <- mapM rawPart parts
     res <- withArrayLen rparts $ \len arr -> do
@@ -140,22 +143,32 @@ ground parts extFun = askC >>= \ctrl -> marshall0 $ do
     mapM_ freeRawPart rparts
     return res
 
-wrapCBGround :: MonadIO m
-             => (Location -> Text -> [Symbol s] 
-                          -> ([Symbol s] -> IO ()) -> IO ())
-             -> m (FunPtr (Raw.CallbackGround ()))
+wrapCBGround ::
+       MonadIO m
+    => SymbolInjection
+    -> m (FunPtr (Raw.CallbackGround ()))
 wrapCBGround f = liftIO $ Raw.mkCallbackGround go
-    where go :: Raw.CallbackGround ()
-          go loc name arg args _ cbSym _ = reraiseIO $ do
-              loc'  <- fromRawLocation =<< peek loc
-              name' <- pack <$> peekCString name
-              syms  <- mapM pureSymbol =<< peekArray (fromIntegral args) arg
-              f loc' name' syms (unwrapCBSymbol $ Raw.getCallbackSymbol cbSym)
+  where
+    go :: Raw.CallbackGround ()
+    go loc name arg args _ cbSym cbSymD =
+        reraiseIO $ do
+            loc' <- fromRawLocation =<< peek loc
+            name' <- pack <$> peekCString name
+            syms <-
+                mapM (fmap toPureSymbol . pureSymbol) =<<
+                peekArray (fromIntegral args) arg
+            res <- f loc' name' syms
+            case res of
+                Left err -> throwM $ ClingoException ErrorRuntime (unpack err)
+                Right newSyms ->
+                    let inject =
+                            unwrapCBSymbol (Raw.getCallbackSymbol cbSym) cbSymD
+                     in inject (toList newSyms)
 
-unwrapCBSymbol :: Raw.CallbackSymbol () -> ([Symbol s] -> IO ())
-unwrapCBSymbol f syms =
-    withArrayLen (map rawSymbol syms) $ \len arr -> 
-        marshall0 (f arr (fromIntegral len) nullPtr)
+unwrapCBSymbol :: Raw.CallbackSymbol a -> Ptr a -> ([PureSymbol] -> IO ())
+unwrapCBSymbol f d syms = do
+    syms' <- iosym $ mapM (fmap rawSymbol . unpureSymbol) syms
+    withArrayLen syms' $ \len arr -> marshall0 (f arr (fromIntegral len) d)
 
 -- | Interrupt the current solve call.
 interrupt :: Clingo s ()
@@ -294,7 +307,6 @@ hasConst :: Text -> Clingo s Bool
 hasConst name = askC >>= \ctrl -> toBool <$> marshall1 (go ctrl)
     where go ctrl x = withCString (unpack name) $ \cstr ->
                           Raw.controlHasConst ctrl cstr x
-
 
 -- | Register a custom propagator with the solver.
 --

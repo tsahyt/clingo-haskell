@@ -1,8 +1,10 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE PatternSynonyms #-}
 module Clingo.Internal.Utils
 (
-    ClingoException,
+    ClingoException (..),
+    pattern Raw.ErrorRuntime,
     getException,
     ClingoWarning (..),
     warningString,
