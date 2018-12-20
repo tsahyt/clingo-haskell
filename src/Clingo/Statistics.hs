@@ -69,19 +69,26 @@ instance AMVTree StatsTree where
 -- | Get a statistics value from the tree. If any lookup fails, the result will
 -- be 'Nothing'. The tree will be traversed lazily, but the result is evaluated
 -- before returning!
-fromStats :: NFData w
-          => Statistics s -> (StatsTree Double -> Maybe w) -> Clingo s (Maybe w)
+fromStats ::
+       (NFData w, MonadThrow m, MonadIO m)
+    => Statistics s
+    -> (StatsTree Double -> Maybe w)
+    -> ClingoT m s (Maybe w)
 fromStats s f = head <$> fromStatsMany s [f]
 
 -- | Like 'fromTree' but supporting multiple paths.
-fromStatsMany :: NFData w
-              => Statistics s -> [StatsTree Double -> Maybe w] 
-              -> Clingo s [Maybe w]
+fromStatsMany ::
+       (NFData w, MonadThrow m, MonadIO m)
+    => Statistics s
+    -> [StatsTree Double -> Maybe w]
+    -> ClingoT m s [Maybe w]
 fromStatsMany s fs = getTree s >>= \t -> return (force (fs <*> [t]))
 
 -- | Get an entire subtree from the statistics. The entire subtree will be
 -- evaluated before returning!
-subStats :: NFData w
-         => Statistics s -> (StatsTree Double -> Maybe (StatsTree w))
-         -> Clingo s (Maybe (StatsTree w))
+subStats ::
+       (NFData w, MonadThrow m, MonadIO m)
+    => Statistics s
+    -> (StatsTree Double -> Maybe (StatsTree w))
+    -> ClingoT m s (Maybe (StatsTree w))
 subStats s f = force . f <$> getTree s

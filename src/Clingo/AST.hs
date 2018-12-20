@@ -69,6 +69,7 @@ module Clingo.AST
 where
 
 import Control.Monad.IO.Class
+import Control.Monad.Catch
 
 import Data.Bifunctor
 import Data.Bitraversable
@@ -86,10 +87,12 @@ import qualified Clingo.Internal.Types as T
 import qualified Clingo.Raw as Raw
 
 -- | Parse a logic program into a list of statements.
-parseProgram :: Text                                    -- ^ Program
-             -> Maybe (ClingoWarning -> Text -> IO ())  -- ^ Logger Callback
-             -> Natural                                 -- ^ Logger Call Limit
-             -> T.Clingo s [Statement (T.Symbol s) (T.Signature s)]
+parseProgram ::
+       (MonadThrow m, MonadIO m)
+    => Text -- ^ Program
+    -> Maybe (ClingoWarning -> Text -> IO ()) -- ^ Logger Callback
+    -> Natural -- ^ Logger Call Limit
+    -> T.ClingoT m s [Statement (T.Symbol s) (T.Signature s)]
 parseProgram prog logger limit = do
     ref <- liftIO (newIORef [])
     marshal0 $

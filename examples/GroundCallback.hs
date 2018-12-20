@@ -15,7 +15,7 @@ groundCallback _ "gcd" [PureNumber a, PureNumber b] =
     pure (pure (PureNumber $ gcd a b))
 groundCallback _ _ _ = throwError "function not found"
 
-printModel :: (MonadIO (m s), MonadModel m) => Model s -> m s ()
+printModel :: Model s -> IOSym s ()
 printModel m = do
     syms <-
         map prettySymbol <$> modelSymbols m (selectNone {selectShown = True})

@@ -4,6 +4,7 @@
 module Clingo.Control
 (
     IOSym,
+    ClingoT,
     Clingo,
     ClingoWarning,
     warningString,
@@ -55,7 +56,6 @@ module Clingo.Control
 where
 
 import Control.Monad.IO.Class
-import Control.Monad.Trans
 import Control.Monad.Catch
 import Data.Text (Text, pack, unpack)
 import Data.List.NonEmpty (NonEmpty)
@@ -80,34 +80,41 @@ defaultClingo = ClingoSetting [] Nothing 0
 -- | The entry point into a computation utilizing clingo. Inside, a handle to
 -- the clingo solver is available, which can not leave scope. By the same
 -- mechanism, derived handles cannot be passed out either.
-withClingo :: ClingoSetting -> (forall s. Clingo s r) -> IO r
+withClingo ::
+       (MonadMask m, MonadIO m)
+    => ClingoSetting
+    -> (forall s. ClingoT m s r)
+    -> m r
 withClingo settings action = do
     ctrl <- mkClingo settings
-    finally (runClingo ctrl action) (freeClingo ctrl)
+    finally (runClingoT ctrl action) (freeClingo ctrl)
 
 -- | Equal to @withClingo defaultClingo@
-withDefaultClingo :: (forall s. Clingo s r) -> IO r
+withDefaultClingo :: (MonadIO m, MonadMask m) => (forall s. ClingoT m s r) -> m r
 withDefaultClingo = withClingo defaultClingo
 
 -- | Load a logic program from a file.
-loadProgram :: FilePath -> Clingo s ()
+loadProgram :: (MonadThrow m, MonadIO m) => FilePath -> ClingoT m s ()
 loadProgram path = askC >>= \ctrl ->
     marshal0 (withCString path (Raw.controlLoad ctrl))
 
 -- | Add an ungrounded logic program to the solver as a 'Text'. This function
 -- can be used in order to utilize clingo's parser. See 'parseProgram' for when
 -- you want to modify the AST before adding it.
-addProgram :: Foldable t
-           => Text                      -- ^ Part Name
-           -> t Text                    -- ^ Part Arguments
-           -> Text                      -- ^ Program Code
-           -> Clingo s ()
-addProgram name params code = askC >>= \ctrl -> marshal0 $ 
-    withCString (unpack name) $ \n ->
-        withCString (unpack code) $ \c -> do
-            ptrs <- mapM (newCString . unpack) (toList params)
-            withArrayLen ptrs $ \s ps ->
-                Raw.controlAdd ctrl n ps (fromIntegral s) c
+addProgram ::
+       (MonadIO m, MonadThrow m, Foldable t)
+    => Text -- ^ Part Name
+    -> t Text -- ^ Part Arguments
+    -> Text -- ^ Program Code
+    -> ClingoT m s ()
+addProgram name params code =
+    askC >>= \ctrl ->
+        marshal0 $
+        withCString (unpack name) $ \n ->
+            withCString (unpack code) $ \c -> do
+                ptrs <- mapM (newCString . unpack) (toList params)
+                withArrayLen ptrs $ \s ps ->
+                    Raw.controlAdd ctrl n ps (fromIntegral s) c
 
 -- | A 'Part' is one building block of a logic program in clingo. Parts can be
 -- grounded separately and can have arguments, which need to be initialized with
@@ -132,16 +139,25 @@ type SymbolInjection
 -- | Ground logic program parts. A callback can be provided to inject symbols
 -- when needed.
 ground ::
-       [Part s] -- ^ Parts to be grounded
+       (MonadThrow m, MonadIO m)
+    => [Part s] -- ^ Parts to be grounded
     -> Maybe SymbolInjection -- ^ Callback for injecting symbols
-    -> Clingo s ()
-ground parts extFun = askC >>= \ctrl -> marshal0 $ do
-    rparts <- mapM rawPart parts
-    res <- withArrayLen rparts $ \len arr -> do
-        groundCB <- maybe (pure nullFunPtr) wrapCBGround extFun
-        Raw.controlGround ctrl arr (fromIntegral len) groundCB nullPtr
-    mapM_ freeRawPart rparts
-    return res
+    -> ClingoT m s ()
+ground parts extFun =
+    askC >>= \ctrl ->
+        marshal0 $ do
+            rparts <- mapM rawPart parts
+            res <-
+                withArrayLen rparts $ \len arr -> do
+                    groundCB <- maybe (pure nullFunPtr) wrapCBGround extFun
+                    Raw.controlGround
+                        ctrl
+                        arr
+                        (fromIntegral len)
+                        groundCB
+                        nullPtr
+            mapM_ freeRawPart rparts
+            return res
 
 wrapCBGround ::
        MonadIO m
@@ -171,7 +187,7 @@ unwrapCBSymbol f d syms = do
     withArrayLen syms' $ \len arr -> marshal0 (f arr (fromIntegral len) d)
 
 -- | Interrupt the current solve call.
-interrupt :: Clingo s ()
+interrupt :: MonadIO m => ClingoT m s ()
 interrupt = Raw.controlInterrupt =<< askC
 
 -- | Clean up the domains of clingo's grounding component using the solving
@@ -181,7 +197,7 @@ interrupt = Raw.controlInterrupt =<< askC
 -- facts that are true.  With multi-shot solving, this can result in smaller
 -- groundings because less rules have to be instantiated and more
 -- simplifications can be applied.
-cleanup :: Clingo s ()
+cleanup :: (MonadThrow m, MonadIO m) => ClingoT m s ()
 cleanup = marshal0 . Raw.controlCleanup =<< askC
 
 -- | A datatype that can be used to indicate whether solving shall continue or
@@ -204,27 +220,36 @@ continueBool Stop = False
 --
 -- The 'Solver' must be closed explicitly after use. See 'withSolver' for a
 -- bracketed version.
-solve :: SolveMode -> [AspifLiteral s]
-      -> Maybe (Maybe (Model s) -> IOSym s Continue)
-      -> Clingo s (Solver s)
+solve ::
+       (MonadThrow m, MonadIO m)
+    => SolveMode
+    -> [AspifLiteral s]
+    -> Maybe (Maybe (Model s) -> IOSym s Continue)
+    -> ClingoT m s (Solver s)
 solve mode assumptions onEvent = do
     ctrl <- askC
     Solver <$> marshal1 (go ctrl)
-    where go ctrl x =
-              withArrayLen (map rawAspifLiteral assumptions) $ \len arr -> do
-                  eventCB <- maybe (pure nullFunPtr) wrapCBEvent onEvent
-                  Raw.controlSolve 
-                    ctrl (rawSolveMode mode) 
-                    arr (fromIntegral len) eventCB nullPtr 
-                    x
+  where
+    go ctrl x =
+        withArrayLen (map rawAspifLiteral assumptions) $ \len arr -> do
+            eventCB <- maybe (pure nullFunPtr) wrapCBEvent onEvent
+            Raw.controlSolve
+                ctrl
+                (rawSolveMode mode)
+                arr
+                (fromIntegral len)
+                eventCB
+                nullPtr
+                x
 
-withSolver :: [AspifLiteral s] 
-    -> (forall s1. Solver s1 -> IOSym s1 r) 
-    -> Clingo s r
+withSolver ::
+       (MonadMask m, MonadThrow m, MonadIO m)
+    => [AspifLiteral s]
+    -> (forall s1. Solver s1 -> IOSym s1 r)
+    -> ClingoT m s r
 withSolver assumptions f = do
     x <- solve SolveModeYield assumptions Nothing
-    Clingo (lift (f x)) 
-        `finally` solverClose x
+    Clingo (liftIO . iosym $ (f x)) `finally` solverClose x
 
 wrapCBEvent :: MonadIO m
             => (Maybe (Model s) -> IOSym s Continue) 
@@ -243,30 +268,30 @@ wrapCBEvent f = liftIO $ Raw.mkCallbackEvent go
               poke r . fromBool. continueBool =<< iosym (f m')
 
 -- | Obtain statistics handle. See 'Clingo.Statistics'.
-statistics :: Clingo s (Statistics s)
+statistics :: (MonadThrow m, MonadIO m) => ClingoT m s (Statistics s)
 statistics = fmap Statistics . marshal1 . Raw.controlStatistics =<< askC
 
 -- | Obtain program builder handle. See 'Clingo.ProgramBuilding'.
-programBuilder :: Clingo s (ProgramBuilder s)
-programBuilder = fmap ProgramBuilder . marshal1 
-               . Raw.controlProgramBuilder =<< askC
+programBuilder :: (MonadThrow m, MonadIO m) => ClingoT m s (ProgramBuilder s)
+programBuilder =
+    fmap ProgramBuilder . marshal1 . Raw.controlProgramBuilder =<< askC
 
 -- | Obtain backend handle. See 'Clingo.ProgramBuilding'.
-backend :: Clingo s (Backend s)
+backend :: (MonadThrow m, MonadIO m) => ClingoT m s (Backend s)
 backend = fmap Backend . marshal1 . Raw.controlBackend =<< askC
 
 -- | Obtain configuration handle. See 'Clingo.Configuration'.
-configuration :: Clingo s (Configuration s)
-configuration = fmap Configuration . marshal1 
-              . Raw.controlConfiguration =<< askC
+configuration :: (MonadThrow m, MonadIO m) => ClingoT m s (Configuration s)
+configuration =
+    fmap Configuration . marshal1 . Raw.controlConfiguration =<< askC
 
 -- | Obtain symbolic atoms handle. See 'Clingo.Inspection.SymbolicAtoms'.
-symbolicAtoms :: Clingo s (SymbolicAtoms s)
-symbolicAtoms = fmap SymbolicAtoms . marshal1 
-              . Raw.controlSymbolicAtoms =<< askC
+symbolicAtoms :: (MonadThrow m, MonadIO m) => ClingoT m s (SymbolicAtoms s)
+symbolicAtoms =
+    fmap SymbolicAtoms . marshal1 . Raw.controlSymbolicAtoms =<< askC
 
 -- | Obtain theory atoms handle. See 'Clingo.Inspection.TheoryAtoms'.
-theoryAtoms :: Clingo s (TheoryAtoms s)
+theoryAtoms :: (MonadThrow m, MonadIO m) => ClingoT m s (TheoryAtoms s)
 theoryAtoms = fmap TheoryAtoms . marshal1 . Raw.controlTheoryAtoms =<< askC
 
 -- | Configure how learnt constraints are handled during enumeration.
@@ -276,37 +301,46 @@ theoryAtoms = fmap TheoryAtoms . marshal1 . Raw.controlTheoryAtoms =<< askC
 -- includes enumeration of cautious or brave consequences, enumeration of
 -- answer sets with or without projection, or finding optimal models, as well
 -- as clauses added with clingo_solve_control_add_clause().
-useEnumAssumption :: Bool -> Clingo s ()
+useEnumAssumption :: (MonadThrow m, MonadIO m) => Bool -> ClingoT m s ()
 useEnumAssumption b = askC >>= \ctrl -> 
     marshal0 $ Raw.controlUseEnumAssumption ctrl (fromBool b)
 
 -- | Assign a truth value to an external atom.
 -- 
 -- If the atom does not exist or is not external, this is a noop.
-assignExternal :: AspifLiteral s -> TruthValue -> Clingo s ()
-assignExternal s t = askC >>= \ctrl -> 
-    marshal0 $ Raw.controlAssignExternal ctrl (rawAspifLiteral s) (rawTruthValue t)
+assignExternal ::
+       (MonadThrow m, MonadIO m)
+    => AspifLiteral s
+    -> TruthValue
+    -> ClingoT m s ()
+assignExternal s t =
+    askC >>= \ctrl ->
+        marshal0 $
+        Raw.controlAssignExternal ctrl (rawAspifLiteral s) (rawTruthValue t)
 
 -- | Release an external atom.
 -- 
 -- After this call, an external atom is no longer external and subject to
 -- program simplifications.  If the atom does not exist or is not external,
 -- this is a noop.
-releaseExternal :: AspifLiteral s -> Clingo s ()
-releaseExternal s = askC >>= \ctrl -> 
-    marshal0 $ Raw.controlReleaseExternal ctrl (rawAspifLiteral s)
+releaseExternal :: (MonadThrow m, MonadIO m) => AspifLiteral s -> ClingoT m s ()
+releaseExternal s =
+    askC >>= \ctrl ->
+        marshal0 $ Raw.controlReleaseExternal ctrl (rawAspifLiteral s)
 
 -- | Get the symbol for a constant definition @#const name = symbol@.
-getConst :: Text -> Clingo s (Symbol s)
+getConst :: (MonadThrow m, MonadIO m) => Text -> ClingoT m s (Symbol s)
 getConst name = askC >>= \ctrl -> pureSymbol =<< marshal1 (go ctrl)
-    where go ctrl x = withCString (unpack name) $ \cstr -> 
-                          Raw.controlGetConst ctrl cstr x
+  where
+    go ctrl x =
+        withCString (unpack name) $ \cstr -> Raw.controlGetConst ctrl cstr x
 
 -- | Check if there is a constant definition for the given constant.
-hasConst :: Text -> Clingo s Bool
+hasConst :: (MonadThrow m, MonadIO m) => Text -> ClingoT m s Bool
 hasConst name = askC >>= \ctrl -> toBool <$> marshal1 (go ctrl)
-    where go ctrl x = withCString (unpack name) $ \cstr ->
-                          Raw.controlHasConst ctrl cstr x
+  where
+    go ctrl x =
+        withCString (unpack name) $ \cstr -> Raw.controlHasConst ctrl cstr x
 
 -- | Register a custom propagator with the solver.
 --
@@ -314,22 +348,28 @@ hasConst name = askC >>= \ctrl -> toBool <$> marshal1 (go ctrl)
 -- sequentially when solving with multiple threads.
 -- 
 -- See the 'Clingo.Propagation' module for more information.
-registerPropagator :: Bool -> Propagator s -> Clingo s ()
+registerPropagator ::
+       (MonadThrow m, MonadIO m) => Bool -> Propagator s -> ClingoT m s ()
 registerPropagator sequ prop = do
     ctrl <- askC
     prop' <- rawPropagator . propagatorToIO $ prop
-    res <- liftIO $ with prop' $ \ptr ->
-               Raw.controlRegisterPropagator ctrl ptr nullPtr (fromBool sequ)
+    res <-
+        liftIO $
+        with prop' $ \ptr ->
+            Raw.controlRegisterPropagator ctrl ptr nullPtr (fromBool sequ)
     checkAndThrow res
 
 -- | Like 'registerPropagator' but allows using 'IOPropagator's from
 -- 'Clingo.Internal.Propagation'. This function is unsafe!
-registerUnsafePropagator :: Bool -> IOPropagator s -> Clingo s ()
+registerUnsafePropagator ::
+       (MonadThrow m, MonadIO m) => Bool -> IOPropagator s -> ClingoT m s ()
 registerUnsafePropagator sequ prop = do
     ctrl <- askC
     prop' <- rawPropagator prop
-    res <- liftIO $ with prop' $ \ptr ->
-               Raw.controlRegisterPropagator ctrl ptr nullPtr (fromBool sequ)
+    res <-
+        liftIO $
+        with prop' $ \ptr ->
+            Raw.controlRegisterPropagator ctrl ptr nullPtr (fromBool sequ)
     checkAndThrow res
 
 -- | Get clingo version.

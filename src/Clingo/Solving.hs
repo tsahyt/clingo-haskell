@@ -46,7 +46,7 @@ instance MonadSolve IOSym where
     solverResume = solverResume'
     solverCancel = solverCancel'
 
-instance MonadSolve Clingo where
+instance (MonadThrow m, MonadIO m) => MonadSolve (ClingoT m) where
     getResult = getResult'
     getModel = getModel'
     solverWait = solverWait'
@@ -84,5 +84,5 @@ solverCancel' (Solver s) = marshal0 $ Raw.solveHandleCancel s
 
 -- | Stops the running search and releases the handle. Blocks until search is
 -- stopped.
-solverClose :: Solver s -> Clingo s ()
+solverClose :: (MonadThrow m, MonadIO m) => Solver s -> ClingoT m s ()
 solverClose (Solver s) = marshal0 $ Raw.solveHandleClose s

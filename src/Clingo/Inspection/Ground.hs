@@ -8,6 +8,7 @@ module Clingo.Inspection.Ground
 where
 
 import Control.Monad.IO.Class
+import Control.Monad.Catch
 import Data.Text (Text, pack)
 
 import Foreign
@@ -131,9 +132,11 @@ mkRawGPO inf k = liftIO $ Raw.GroundProgramObserver
               es' <- map ElementId <$> peekArray (fromIntegral n) es
               iosym (k (GTheoryAtomGuard i' t' es' a' b'))
 
-registerGroundObserver :: (Bool -> IOSym s ()) 
-                       -> (AspifStmt s -> IOSym s ())
-                       -> Clingo s ()
+registerGroundObserver ::
+       (MonadThrow m, MonadIO m)
+    => (Bool -> IOSym s ())
+    -> (AspifStmt s -> IOSym s ())
+    -> ClingoT m s ()
 registerGroundObserver i k = do
     ctrl <- askC
     gpo  <- mkRawGPO i k

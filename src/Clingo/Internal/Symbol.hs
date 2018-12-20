@@ -164,7 +164,7 @@ instance MonadSymbol IOSym where
     createString = createString'
     createFunction = createFunction'
 
-instance MonadSymbol Clingo where
+instance (MonadThrow m, MonadIO m) => MonadSymbol (ClingoT m) where
     createSignature = createSignature'
     createNumber = createNumber'
     createSupremum = createSupremum'

@@ -56,6 +56,8 @@ module Clingo.Symbol
 )
 where
 
+import Control.Monad.IO.Class
+import Control.Monad.Catch
 import Data.Maybe (fromJust)
 import Data.Text (Text, unpack)
 import Data.Text.Lazy (fromStrict)
@@ -107,10 +109,12 @@ createId :: MonadSymbol m => Text -> Bool -> m s (Symbol s)
 createId t = createFunction t []
 
 -- | Parse a term in string form. This does not return an AST Term!
-parseTerm :: Text                                       -- ^ Term as 'Text'
-          -> Maybe (ClingoWarning -> Text -> IO ())     -- ^ Logger callback
-          -> Natural                                    -- ^ Callback limit
-          -> Clingo s (Symbol s)
+parseTerm ::
+       (MonadThrow m, MonadIO m)
+    => Text -- ^ Term as 'Text'
+    -> Maybe (ClingoWarning -> Text -> IO ()) -- ^ Logger callback
+    -> Natural -- ^ Callback limit
+    -> ClingoT m s (Symbol s)
 parseTerm t logger limit = pureSymbol =<< marshal1 go
     where go x = withCString (unpack t) $ \cstr -> do
                      logCB <- maybe (pure nullFunPtr) wrapCBLogger logger

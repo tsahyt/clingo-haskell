@@ -6,7 +6,9 @@ module Clingo.Internal.Types
 (
     IOSym (..),
     ClingoSetting (..),
-    Clingo (..),
+    ClingoT(..),
+    runClingoT,
+    Clingo,
     runClingo,
     askC,
     mkClingo,
@@ -85,18 +87,23 @@ newtype IOSym s a = IOSym { iosym :: IO a }
 -- | The 'Clingo' monad provides a base monad for computations utilizing the
 -- clingo answer set solver. It uses an additional type parameter to ensure that
 -- values that are managed by the solver can not leave scope. 
-newtype Clingo s a = Clingo { clingo :: ReaderT Raw.Control (IOSym s) a }
+newtype ClingoT m s a = Clingo { clingo :: ReaderT Raw.Control m a }
     deriving (Functor, Applicative, Monad, MonadMask, MonadThrow
              , MonadCatch, MonadIO, MonadFix, MonadPlus, Alternative)
 
+type Clingo s a = ClingoT (IOSym s) s a
+
 -- | Run a clingo computation from an explicit handle. The handle must be
 -- cleaned up manually afterwards, or on failure!
+runClingoT :: Raw.Control -> ClingoT m s a -> m a
+runClingoT ctrl a = runReaderT (clingo a) ctrl
+
 runClingo :: Raw.Control -> Clingo s a -> IO a
-runClingo ctrl a = iosym (runReaderT (clingo a) ctrl)
+runClingo ctrl k = iosym (runClingoT ctrl k)
 
 -- | Get the control handle from the 'Clingo' monad. Arbitrarily unsafe things
 -- can be done with this!
-askC :: Clingo s Raw.Control
+askC :: Monad m => ClingoT m s Raw.Control
 askC = Clingo ask
 
 -- | Data type to encapsulate the settings for clingo.
@@ -107,8 +114,8 @@ data ClingoSetting = ClingoSetting
 
 -- | Wrapper function to create a raw handle. Arbitrarily unsafe things can be
 -- done with this! Note that the handle must be freed after you are done with it!
-mkClingo :: ClingoSetting -> IO Raw.Control
-mkClingo settings = do
+mkClingo :: MonadIO m => ClingoSetting -> m Raw.Control
+mkClingo settings = liftIO $ do
     let argc = length (clingoArgs settings)
     argv <- liftIO $ mapM newCString (clingoArgs settings)
     ctrl <- marshal1 $ \x ->
@@ -123,7 +130,7 @@ mkClingo settings = do
     liftIO $ mapM_ free argv
     pure ctrl
 
-freeClingo :: Raw.Control -> IO ()
+freeClingo :: MonadIO m => Raw.Control -> m ()
 freeClingo = Raw.controlFree
 
 data Symbol s = Symbol 

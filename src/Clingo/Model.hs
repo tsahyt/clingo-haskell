@@ -91,7 +91,7 @@ instance MonadModel IOSym where
     context = context'
     modelAddClause = modelAddClause'
 
-instance MonadModel Clingo where
+instance (MonadIO m, MonadThrow m) => MonadModel (ClingoT m) where
     modelType = modelType'
     modelNumber = modelNumber'
     modelSymbols = modelSymbols'

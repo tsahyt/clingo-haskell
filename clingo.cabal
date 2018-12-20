@@ -112,7 +112,7 @@ executable configuration
 
 executable theory-atoms
   if flag(examples)
-      build-depends:   base, clingo, text
+      build-depends:   base, clingo, text, exceptions
   else 
       buildable:       False
 

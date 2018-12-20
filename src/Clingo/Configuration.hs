@@ -108,13 +108,17 @@ instance AMVTree ConfTree where
 -- | Get a configuration option from the tree. If any lookup fails, the result
 -- will be 'Nothing'. The tree will be traversed lazily, but the result is
 -- evaluated before returning!
-fromConfig :: Configuration s 
-           -> (ConfTree (StateVar Text) -> Maybe w) 
-           -> Clingo s (Maybe w)
+fromConfig ::
+       (MonadThrow m, MonadIO m)
+    => Configuration s
+    -> (ConfTree (StateVar Text) -> Maybe w)
+    -> ClingoT m s (Maybe w)
 fromConfig s f = head <$> fromConfigMany s [f]
 
 -- | Like 'fromConfig' but supporting multiple paths.
-fromConfigMany :: Configuration s 
-               -> [ConfTree (StateVar Text) -> Maybe w] 
-               -> Clingo s [Maybe w]
+fromConfigMany ::
+       (MonadIO m, MonadThrow m)
+    => Configuration s
+    -> [ConfTree (StateVar Text) -> Maybe w]
+    -> ClingoT m s [Maybe w]
 fromConfigMany s fs = getTree s >>= \t -> return (force fs <*> [t])
