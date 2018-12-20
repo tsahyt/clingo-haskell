@@ -1,6 +1,10 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-missing-pattern-synonym-signatures #-}
 module Clingo.Internal.Types
 (
@@ -69,6 +73,9 @@ import Control.Applicative
 import Control.Monad.IO.Class
 import Control.Monad.Reader
 import Control.Monad.Catch
+import Control.Monad.State
+import Control.Monad.Writer
+import Control.Monad.Except
 import Data.Text (Text, pack)
 import Data.Bits
 import Data.Hashable
@@ -94,6 +101,24 @@ newtype ClingoT m s a = Clingo { clingo :: ReaderT Raw.Control m a }
 
 type Clingo s a = ClingoT (IOSym s) s a
 
+instance MonadState st m => MonadState st (ClingoT m s) where
+    get = liftC get
+    put = liftC . put
+    state = liftC . state
+
+instance MonadError e m => MonadError e (ClingoT m s) where
+    throwError = liftC . throwError
+    catchError (Clingo k) f = Clingo $ catchError k (clingo <$> f)
+
+instance MonadReader r m => MonadReader r (ClingoT m s) where
+    ask = liftC ask
+    local f (Clingo (ReaderT k)) = Clingo (ReaderT $ \ctrl -> local f (k ctrl))
+
+instance MonadWriter w m => MonadWriter w (ClingoT m s) where
+    writer = liftC . writer
+    listen (Clingo k) = Clingo (listen k)
+    pass (Clingo k) = Clingo (pass k)
+
 -- | Run a clingo computation from an explicit handle. The handle must be
 -- cleaned up manually afterwards, or on failure!
 runClingoT :: Raw.Control -> ClingoT m s a -> m a
@@ -107,6 +132,7 @@ runClingo ctrl k = iosym (runClingoT ctrl k)
 -- instances, 'ClingoT' cannot implement 'MonadTrans'.
 liftC :: Monad m => m a -> ClingoT m s a
 liftC k = Clingo (lift k)
+{-# INLINE liftC #-}
 
 -- | Get the control handle from the 'Clingo' monad. Arbitrarily unsafe things
 -- can be done with this!
