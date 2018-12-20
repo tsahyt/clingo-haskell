@@ -18,5 +18,5 @@ some faulty FFI usage. Feel free to report any bugs you encounter.
 ## Clingo Version
 
 In its current state this library provides bindings to the Clingo API version
-5.2.1. Due to breaking API changes in 5.2.0, this will *not* compile with
+5.3.0. Due to breaking API changes in 5.2.0, this will *not* compile with
 earlier Clingo versions!
