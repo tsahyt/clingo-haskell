@@ -10,6 +10,7 @@ module Clingo.Internal.Types
     runClingoT,
     Clingo,
     runClingo,
+    liftC,
     askC,
     mkClingo,
     freeClingo,
@@ -100,6 +101,12 @@ runClingoT ctrl a = runReaderT (clingo a) ctrl
 
 runClingo :: Raw.Control -> Clingo s a -> IO a
 runClingo ctrl k = iosym (runClingoT ctrl k)
+
+-- | A version of 'lift' for 'ClingoT'. Due to the additional @s@ parameter,
+-- which must occur after the @m@ to define 'MonadSymbol' and 'MonadModel'
+-- instances, 'ClingoT' cannot implement 'MonadTrans'.
+liftC :: Monad m => m a -> ClingoT m s a
+liftC k = Clingo (lift k)
 
 -- | Get the control handle from the 'Clingo' monad. Arbitrarily unsafe things
 -- can be done with this!

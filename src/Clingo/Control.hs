@@ -6,6 +6,7 @@ module Clingo.Control
     IOSym,
     ClingoT,
     Clingo,
+    liftC,
     ClingoWarning,
     warningString,
     ClingoSetting (..),
