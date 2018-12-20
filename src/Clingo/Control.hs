@@ -7,6 +7,7 @@ module Clingo.Control
     ClingoT,
     Clingo,
     liftC,
+    mapClingoT,
     ClingoWarning,
     warningString,
     ClingoSetting (..),

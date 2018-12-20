@@ -12,6 +12,7 @@ module Clingo.Internal.Types
     ClingoSetting (..),
     ClingoT(..),
     runClingoT,
+    mapClingoT,
     Clingo,
     runClingo,
     liftC,
@@ -99,7 +100,10 @@ newtype ClingoT m s a = Clingo { clingo :: ReaderT Raw.Control m a }
     deriving (Functor, Applicative, Monad, MonadMask, MonadThrow
              , MonadCatch, MonadIO, MonadFix, MonadPlus, Alternative)
 
-type Clingo s a = ClingoT (IOSym s) s a
+mapClingoT :: (m a -> n b) -> ClingoT m s a -> ClingoT n s b
+mapClingoT f (Clingo k) = Clingo (mapReaderT f k)
+
+type Clingo s a = ClingoT IO s a
 
 instance MonadState st m => MonadState st (ClingoT m s) where
     get = liftC get
@@ -125,7 +129,7 @@ runClingoT :: Raw.Control -> ClingoT m s a -> m a
 runClingoT ctrl a = runReaderT (clingo a) ctrl
 
 runClingo :: Raw.Control -> Clingo s a -> IO a
-runClingo ctrl k = iosym (runClingoT ctrl k)
+runClingo ctrl k = runClingoT ctrl k
 
 -- | A version of 'lift' for 'ClingoT'. Due to the additional @s@ parameter,
 -- which must occur after the @m@ to define 'MonadSymbol' and 'MonadModel'
