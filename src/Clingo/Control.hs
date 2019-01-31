@@ -60,7 +60,6 @@ where
 import Control.Monad.IO.Class
 import Control.Monad.Catch
 import Data.Text (Text, pack, unpack)
-import Data.List.NonEmpty (NonEmpty)
 import Data.Foldable
 
 import Foreign
@@ -136,7 +135,7 @@ freeRawPart p = do
     free (Raw.partParams p)
 
 type SymbolInjection
-     = Location -> Text -> [PureSymbol] -> IO (Either Text (NonEmpty PureSymbol))
+     = Location -> Text -> [PureSymbol] -> IO (Either Text [PureSymbol])
 
 -- | Ground logic program parts. A callback can be provided to inject symbols
 -- when needed.
@@ -181,7 +180,7 @@ wrapCBGround f = liftIO $ Raw.mkCallbackGround go
                 Right newSyms ->
                     let inject =
                             unwrapCBSymbol (Raw.getCallbackSymbol cbSym) cbSymD
-                     in inject (toList newSyms)
+                     in inject newSyms
 
 unwrapCBSymbol :: Raw.CallbackSymbol a -> Ptr a -> ([PureSymbol] -> IO ())
 unwrapCBSymbol f d syms = do
