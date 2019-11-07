@@ -71,12 +71,13 @@ where
 
 import Control.DeepSeq
 import Control.Applicative
+import Control.Monad.Catch
+import Control.Monad.Except
+import Control.Monad.Fail
 import Control.Monad.IO.Class
 import Control.Monad.Reader
-import Control.Monad.Catch
 import Control.Monad.State
 import Control.Monad.Writer
-import Control.Monad.Except
 import Data.Text (Text, pack)
 import Data.Bits
 import Data.Hashable
@@ -91,14 +92,14 @@ import Numeric.Natural
 -- still exists and can be used.
 newtype IOSym s a = IOSym { iosym :: IO a }
     deriving (Functor, Applicative, Monad, MonadMask, MonadThrow
-             , MonadCatch, MonadIO, MonadFix, MonadPlus, Alternative )
+             , MonadCatch, MonadIO, MonadFix, MonadPlus, MonadFail, Alternative )
 
 -- | The 'Clingo' monad provides a base monad for computations utilizing the
 -- clingo answer set solver. It uses an additional type parameter to ensure that
--- values that are managed by the solver can not leave scope. 
+-- values that are managed by the solver can not leave scope.
 newtype ClingoT m s a = Clingo { clingo :: ReaderT Raw.Control m a }
     deriving (Functor, Applicative, Monad, MonadMask, MonadThrow
-             , MonadCatch, MonadIO, MonadFix, MonadPlus, Alternative)
+             , MonadCatch, MonadIO, MonadFix, MonadPlus, MonadFail, Alternative)
 
 mapClingoT :: (m a -> n b) -> ClingoT m s a -> ClingoT n s b
 mapClingoT f (Clingo k) = Clingo (mapReaderT f k)
