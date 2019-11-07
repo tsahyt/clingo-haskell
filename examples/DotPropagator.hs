@@ -39,5 +39,5 @@ main = withDefaultClingo $ do
         }
     loadProgram path
     ground [Part "base" []] Nothing
-    withSolver [] (void . allModels)
+    withSolver [] (void . withModel (const $ return ()))
     liftIO (putChar '\n')

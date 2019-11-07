@@ -36,7 +36,7 @@ main = withDefaultClingo $ do
     -- Ground and solve a simple program
     addProgram "base" [] "a :- not b. b :- not a."
     ground [Part "base" []] Nothing
-    _ <- withSolver [] (allModels >=> mapM_ printModel)
+    _ <- withSolver [] (withModel printModel)
     stats <- statistics
 
     -- Print whole stats tree

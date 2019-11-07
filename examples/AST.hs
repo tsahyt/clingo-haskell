@@ -48,12 +48,12 @@ main = withDefaultClingo $ do
         literal <$> symbolicAtomFromSymbol s sym
         
     liftIO $ putStrLn "Solving with enable = false..."
-    withSolver [] (allModels >=> mapM_ printModel)
+    withSolver [] (withModel printModel)
 
     liftIO $ putStrLn "Solving with enable = true..."
     assignExternal lit TruthTrue
-    withSolver [] (allModels >=> mapM_ printModel)
+    withSolver [] (withModel printModel)
 
     liftIO $ putStrLn "Solving with enable = false..."
     assignExternal lit TruthFalse
-    withSolver [] (allModels >=> mapM_ printModel)
+    withSolver [] (withModel printModel)

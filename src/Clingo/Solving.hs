@@ -3,7 +3,7 @@ module Clingo.Solving
     ResultReady(..),
     MonadSolve(..),
     solverClose,
-    allModels
+    withModel
 )
 where
 
@@ -53,15 +53,15 @@ instance (MonadThrow m, MonadIO m) => MonadSolve (ClingoT m) where
     solverResume = solverResume'
     solverCancel = solverCancel'
 
--- | Convenience method to get all models. Note that this is dependent on the
--- solver configuration!
-allModels :: (Monad (m s), MonadSolve m) => Solver s -> m s [Model s]
-allModels solver = do
+-- | Convenience method to get a models. Provide a callback function which is called with a model as its argument.
+-- Note that this is dependent on the solver configuration!
+withModel :: (Monad (m s), MonadSolve m, Monoid a) => (Model s -> m s a) -> Solver s -> m s a
+withModel f solver = do
     solverResume solver
     m <- getModel solver
     case m of
-        Nothing -> pure []
-        Just x  -> (x :) <$> allModels solver
+        Nothing -> pure mempty
+        Just x  -> (<>) <$> f x <*> withModel f solver
 
 getResult' :: (MonadThrow m, MonadIO m) => Solver s -> m SolveResult
 getResult' (Solver s) = fromRawSolveResult <$> marshal1 (Raw.solveHandleGet s)
