@@ -59,6 +59,7 @@ module Clingo.Raw.Enums
 
     SolveEvent,
     pattern SolveEventModel,
+    pattern SolveEventStatistics,
     pattern SolveEventFinish,
 
     TheoryTermType,
@@ -168,6 +169,7 @@ pattern SolveModeYield = #{const clingo_solve_mode_yield}
 
 type SolveEvent = (#type clingo_solve_event_type_t)
 pattern SolveEventModel = #{const clingo_solve_event_type_model}
+pattern SolveEventStatistics = #{const clingo_solve_event_type_statistics}
 pattern SolveEventFinish = #{const clingo_solve_event_type_finish}
 
 type TheoryTermType = (#type clingo_theory_term_type_t)
