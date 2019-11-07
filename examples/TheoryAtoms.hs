@@ -57,4 +57,4 @@ main =
         ground [Part "base" []] Nothing
         lit <- theory =<< theoryAtoms
         flip addGroundStatements [assume [lit]] =<< backend
-        withSolver [] (allModels >=> mapM_ printModel)
+        withSolver [] (withModel printModel)

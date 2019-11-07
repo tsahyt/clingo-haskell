@@ -44,4 +44,4 @@ main = getArgs >>= \args ->
     withClingo (defaultClingo { clingoArgs = args }) $ do
         addProgram "base" [] "1 {a; b} 1. #show c : b. #show a/0."
         ground [Part "base" []] Nothing
-        withSolver [] (allModels >=> mapM_ printSolution)
+        withSolver [] (withModel printSolution)

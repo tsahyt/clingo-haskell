@@ -35,4 +35,4 @@ main = withDefaultClingo $ do
                   , atoms !! 2]
             ]
 
-    withSolver [] (allModels >=> mapM_ printModel)
+    withSolver [] (withModel printModel)
