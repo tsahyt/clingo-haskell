@@ -262,11 +262,12 @@ wrapCBEvent f = liftIO $ Raw.mkCallbackEvent go
              -> Ptr Raw.CBool 
              -> IO Raw.CBool
           go ev m _ r = reraiseIO $ do
-              m' <- case ev of
-                        Raw.SolveEventModel  -> Just . Model <$> peek m
-                        Raw.SolveEventFinish -> pure Nothing
+              cont <- case ev of
+                        Raw.SolveEventModel      -> peek m >>= iosym . f . Just . Model
+                        Raw.SolveEventStatistics -> return Continue
+                        Raw.SolveEventFinish     -> iosym $ f Nothing
                         _ -> error "wrapCBEvent: Invalid solve event"
-              poke r . fromBool. continueBool =<< iosym (f m')
+              poke r $ fromBool $ continueBool cont
 
 -- | Obtain statistics handle. See 'Clingo.Statistics'.
 statistics :: (MonadThrow m, MonadIO m) => ClingoT m s (Statistics s)
