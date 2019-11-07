@@ -32,4 +32,4 @@ main =
         ground
             [Part "base" []]
             (Just $ \l t s -> runExceptT (groundCallback l t s))
-        withSolver [] (allModels >=> mapM_ printModel)
+        withSolver [] (withModel printModel)

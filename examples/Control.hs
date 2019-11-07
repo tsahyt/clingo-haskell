@@ -21,4 +21,4 @@ main :: IO ()
 main = withDefaultClingo $ do
     addProgram "base" [] "a :- not b. b :- not a."
     ground [Part "base" []] Nothing
-    withSolver [] (allModels >=> mapM_ printModel)
+    withSolver [] (withModel printModel)
